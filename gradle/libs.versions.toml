@@ -31,6 +31,7 @@ lifecycleViewmodelComposeVersion = "2.8.7"
 loggerVersion = "2.2.0"
 loggingInterceptor = "4.12.0"
 mapsCompose = "6.1.1"
+material3Version = "1.3.2"
 navigationCompose = "2.8.9"
 playServicesLocation = "21.3.0"
 retrofit = "2.11.0"
@@ -42,6 +43,7 @@ uiVersion = "1.7.8"
 android-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "androidMapsUtilsVersion" }
 androidx-activity-compose-v1100 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
 androidx-adaptive = { module = "androidx.compose.material3.adaptive:adaptive" }
+androidx-compose-material3-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3Version" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }

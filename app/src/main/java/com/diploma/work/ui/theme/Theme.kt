@@ -11,6 +11,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.example.ui.theme.GrayLight
+import com.example.ui.theme.GreenLight
+import com.example.ui.theme.NeutralLight
+import com.example.ui.theme.PurpleDark
+import com.example.ui.theme.PurpleLight
+import com.example.ui.theme.PurpleMedium
+import com.example.ui.theme.RedLight
+import com.example.ui.theme.White
 
 sealed class AppThemeType {
     object Light : AppThemeType()
@@ -76,42 +84,41 @@ data class ColorScheme(
 }
 
 object AppTheme {
-    val Light =
-        ColorScheme(
-            primary = Color(0xFFFE724C),
-            primaryActive = Color(0xFFfe3e0a),
-            onPrimary = Color.White,
-            background = Color.White,
-            onBackground = Color.Black,
-            onBackgroundPositive = Color(0xFF578f40),
-            onBackgroundHint = Color(0xFF8a8a8a),
-            surface = Color.White,
-            onSurface = Color.Black,
-            error = Color(0xFFad2b2b),
-            onError = Color.White,
-            outline = Color(0xFFbdbdbd),
-            outlineActive = Color(0xFFbdbdbd),
-            outlineDanger = Color(0xFFad2b2b),
-            backgroundBox = Color(0xFFEDE5E3),
-        )
-    val Dark =
-        ColorScheme(
-            primary = Color(0xFFFE724C),
-            primaryActive = Color(0xFFFFAB94),
-            onPrimary = Color.White,
-            background = Color(0xFF191917),
-            onBackground = Color.White,
-            onBackgroundPositive = Color(0xFF578f40),
-            onBackgroundHint = Color(0xFF8a8a8a),
-            surface = Color(0xFF121212),
-            onSurface = Color.White,
-            error = Color(0xFFad2b2b),
-            onError = Color.White,
-            outline = Color(0xFFbdbdbd),
-            outlineActive = Color(0xFFbdbdbd),
-            outlineDanger = Color(0xFFad2b2b),
-            backgroundBox = Color(0xFF2F2F2F),
-        )
+    val Light = ColorScheme(
+        primary = PurpleMedium,
+        primaryActive = PurpleDark,
+        onPrimary = White,
+        background = NeutralLight,
+        onBackground = PurpleDark,
+        onBackgroundPositive = GreenLight,
+        onBackgroundHint = GrayLight,
+        surface = White,
+        onSurface = PurpleDark,
+        error = RedLight,
+        onError = White,
+        outline = GrayLight,
+        outlineActive = PurpleMedium,
+        outlineDanger = RedLight,
+        backgroundBox = PurpleLight
+    )
+
+    val Dark = ColorScheme(
+        primary = PurpleMedium,
+        primaryActive = PurpleLight,
+        onPrimary = White,
+        background = PurpleDark,
+        onBackground = NeutralLight,
+        onBackgroundPositive = GreenLight,
+        onBackgroundHint = GrayLight,
+        surface = PurpleDark,
+        onSurface = NeutralLight,
+        error = RedLight,
+        onError = White,
+        outline = PurpleLight,
+        outlineActive = PurpleMedium,
+        outlineDanger = RedLight,
+        backgroundBox = GrayLight
+    )
 }
 
 @Suppress("CompositionLocalAllowlist")
@@ -132,7 +139,7 @@ fun rememberCustomRippleIndicator(): IndicationNodeFactory {
 }
 
 @Composable
-fun CourseWorkTheme(
+fun DiplomaWorkTheme(
     theme: AppThemeType = if (isSystemInDarkTheme()) AppThemeType.Dark else AppThemeType.Light,
     content: @Composable () -> Unit,
 ) {

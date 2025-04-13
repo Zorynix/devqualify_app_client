@@ -118,6 +118,7 @@ dependencies {
 
     kapt(libs.kotlinx.metadata.jvm)
     implementation(libs.android.maps.utils)
+    implementation(libs.androidx.compose.material3.material3)
 
 }
 kapt {

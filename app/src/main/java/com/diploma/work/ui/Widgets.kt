@@ -1,8 +1,5 @@
 package com.diploma.work.ui
 
-import android.support.annotation.DrawableRes
-import android.support.annotation.StringRes
-import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -10,7 +7,6 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
@@ -29,15 +23,16 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,9 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -63,17 +56,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import com.diploma.work.R
-import com.diploma.work.ui.theme.Primary
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 
 @Composable
-fun BasicDialog(title: String, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BasicDialog(
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Surface(modifier = modifier) {
         Column(
-            modifier =
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .padding(16.dp),
@@ -82,20 +78,22 @@ fun BasicDialog(title: String, description: String, onClick: () -> Unit, modifie
             Text(
                 text = title,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
                 text = description,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.size(16.dp))
             Button(
                 onClick = onClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Text(
                     text = stringResource(id = R.string.ok),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 32.dp),
                 )
             }
@@ -104,7 +102,7 @@ fun BasicDialog(title: String, description: String, onClick: () -> Unit, modifie
 }
 
 @Composable
-fun CourseWorkTextField(
+fun DiplomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -120,11 +118,11 @@ fun CourseWorkTextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = RoundedCornerShape(10.dp),
-    colors: TextFieldColors =
-        OutlinedTextFieldDefaults.colors().copy(
-            focusedIndicatorColor = Primary,
-            unfocusedIndicatorColor = Color.LightGray.copy(alpha = 0.4f),
-        ),
+    colors: TextFieldColors = TextFieldDefaults.colors(
+        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+        errorIndicatorColor = MaterialTheme.colorScheme.error
+    ),
     label: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
@@ -145,32 +143,31 @@ fun CourseWorkTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            enabled,
-            readOnly,
-            textStyle.copy(fontWeight = FontWeight.SemiBold),
-            null,
-            placeholder,
-            leadingIcon,
-            trailingIcon,
-            prefix,
-            suffix,
-            supportingText,
-            isError,
-            visualTransformation,
-            keyboardOptions,
-            keyboardActions,
-            singleLine,
-            maxLines,
-            minLines,
-            interactionSource,
-            shape,
-            colors,
+            enabled = enabled,
+            readOnly = readOnly,
+            textStyle = textStyle.copy(fontWeight = FontWeight.SemiBold),
+            placeholder = placeholder,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            prefix = prefix,
+            suffix = suffix,
+            supportingText = supportingText,
+            isError = isError,
+            visualTransformation = visualTransformation,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            singleLine = singleLine,
+            maxLines = maxLines,
+            minLines = minLines,
+            interactionSource = interactionSource,
+            shape = shape,
+            colors = colors,
         )
     }
 }
 
 @Composable
-fun CourseWorkPasswordTextField(
+fun DiplomPasswordTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -180,28 +177,23 @@ fun CourseWorkPasswordTextField(
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    CourseWorkTextField(
+    DiplomTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
         enabled = enabled,
         label = label,
-        visualTransformation =
-        if (isPasswordVisible) {
-            VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
+        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
         trailingIcon = {
             IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                 Icon(
-                    painter =
-                    painterResource(
+                    painter = painterResource(
                         id = if (isPasswordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye,
                     ),
                     contentDescription = "Toggle password visibility",
                     modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         },
@@ -254,7 +246,7 @@ fun <T> LazyListScope.gridItems(
 }
 
 @Composable
-fun CourseWorkNavHost(
+fun DiplomNavHost(
     navController: NavHostController,
     startDestination: Any,
     modifier: Modifier = Modifier,

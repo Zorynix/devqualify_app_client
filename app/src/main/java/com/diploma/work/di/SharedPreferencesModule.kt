@@ -11,9 +11,6 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class SearchHistoryPrefs
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -22,12 +19,6 @@ annotation class AppPrefs
 @Module
 @InstallIn(SingletonComponent::class)
 object SharedPreferencesModule {
-    @Provides
-    @Singleton
-    @SearchHistoryPrefs
-    fun provideSearchHistoryPreferences(@ApplicationContext context: Context): SharedPreferences {
-        return context.getSharedPreferences("search_history_prefs", Context.MODE_PRIVATE)
-    }
 
     @Provides
     @Singleton
@@ -35,12 +26,6 @@ object SharedPreferencesModule {
     fun provideAppPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     }
-
-//    @Provides
-//    @Singleton
-//    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
-//        return context.getSharedPreferences("default_prefs", Context.MODE_PRIVATE)
-//    }
 
     @Provides
     @Singleton
