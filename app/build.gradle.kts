@@ -1,3 +1,5 @@
+apply(plugin = "com.google.protobuf")
+
 plugins {
     alias(libs.plugins.android.application)
     id("kotlin-kapt")
@@ -7,6 +9,7 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
     alias(libs.plugins.compose.compiler)
+    id("com.google.protobuf")
 }
 
 android {
@@ -53,11 +56,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
     buildToolsVersion = "35.0.0"
 }
 
 dependencies {
-
     val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
@@ -105,22 +108,48 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    implementation(libs.facebook.login)
     implementation(libs.coil.compose)
     implementation(libs.ui)
     implementation(libs.coil.network.okhttp)
     implementation(libs.maps.compose)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
-    implementation(libs.stripe.android)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging.ktx)
 
     kapt(libs.kotlinx.metadata.jvm)
     implementation(libs.android.maps.utils)
     implementation(libs.androidx.compose.material3.material3)
+    implementation(libs.grpc.okhttp)
+    implementation(libs.grpc.protobuf)
+    implementation(libs.grpc.stub)
+    implementation(libs.protobuf.java)
+    implementation(libs.javax.annotation.api)
+//    implementation(libs.protobuf.gradle.plugin)
 
 }
 kapt {
     correctErrorTypes = true
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.30.2"
+    }
+    plugins {
+        create("java")
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.71.0"
+        }
+    }
+    generateProtoTasks {
+        all().forEach {
+            it.plugins {
+                create("grpc")
+            }
+            it.builtins {
+                create("java")
+            }
+        }
+    }
 }

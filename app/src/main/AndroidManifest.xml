@@ -10,6 +10,7 @@
         android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
         android:maxSdkVersion="34" />
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.diploma.work.ui.DiplomNavHost
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
+import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.Register
 
@@ -53,6 +54,9 @@ fun AppNavigation() {
         }
         composable<Register> {
             RegistrationScreen(navController)
+        }
+        composable("home") {
+            HomeScreen()
         }
     }
 }

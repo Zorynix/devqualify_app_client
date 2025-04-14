@@ -6,12 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +38,16 @@ fun LoginScreen(
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
     val loginEnabled by viewModel.loginEnabled.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val loginSuccess by viewModel.loginSuccess.collectAsState()
+
+    if (loginSuccess) {
+        navController.navigate("home") {
+            popUpTo(navController.graph.startDestinationId)
+            launchSingleTop = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -45,7 +56,6 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
         }
@@ -66,14 +76,30 @@ fun LoginScreen(
             modifier = Modifier.padding(top = 8.dp)
         )
 
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                style = TextStyle.bodySmall,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
         Button(
             onClick = { viewModel.onLoginClicked() },
-            enabled = loginEnabled,
+            enabled = loginEnabled && !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.padding(top = 16.dp)
         ) {
-            Text("Войти", color = MaterialTheme.colorScheme.onPrimary)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text("Войти", color = MaterialTheme.colorScheme.onPrimary)
+            }
         }
 
         Row(modifier = Modifier.padding(top = 16.dp)) {
