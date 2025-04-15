@@ -22,7 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
@@ -33,9 +33,8 @@ import com.diploma.work.ui.theme.TextStyle
 @Composable
 fun RegistrationScreen(
     navController: NavController,
-    viewModel: RegistrationViewModel = viewModel()
+    viewModel: RegistrationViewModel = hiltViewModel()
 ) {
-    val username by viewModel.username.collectAsState()
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val confirmPassword by viewModel.confirmPassword.collectAsState()
@@ -63,13 +62,6 @@ fun RegistrationScreen(
         }
 
         Text("Регистрация", style = TextStyle.titleLarge)
-
-        DiplomTextField(
-            value = username,
-            onValueChange = { viewModel.onUsernameChanged(it) },
-            label = { Text("Имя пользователя", style = TextStyle.bodySmall) },
-            modifier = Modifier.padding(top = 16.dp)
-        )
 
         DiplomTextField(
             value = email,

@@ -18,8 +18,6 @@ import javax.inject.Inject
 class RegistrationViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val _username = MutableStateFlow("")
-    val username: StateFlow<String> = _username
 
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email
@@ -39,15 +37,9 @@ class RegistrationViewModel @Inject constructor(
     private val _registerSuccess = MutableStateFlow(false)
     val registerSuccess: StateFlow<Boolean> = _registerSuccess
 
-    val registerEnabled: StateFlow<Boolean> = combine(username, email, password, confirmPassword) { u, e, p, cp ->
-        u.isNotEmpty() && e.isNotEmpty() && p.isNotEmpty() && cp == p
+    val registerEnabled: StateFlow<Boolean> = combine(email, password, confirmPassword) { e, p, cp -> e.isNotEmpty() && p.isNotEmpty() && cp == p
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    fun onUsernameChanged(newValue: String) {
-        _username.value = newValue
-        _errorMessage.value = null
-        Logger.d("Username changed to: $newValue")
-    }
 
     fun onEmailChanged(newValue: String) {
         _email.value = newValue

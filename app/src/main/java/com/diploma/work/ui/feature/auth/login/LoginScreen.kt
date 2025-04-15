@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.diploma.work.ui.DiplomPasswordTextField
@@ -33,13 +34,13 @@ import com.diploma.work.ui.theme.TextStyle
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
     val loginEnabled by viewModel.loginEnabled.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val username by viewModel.username.collectAsState()
     val loginSuccess by viewModel.loginSuccess.collectAsState()
 
     if (loginSuccess) {
@@ -65,7 +66,7 @@ fun LoginScreen(
         DiplomTextField(
             value = username,
             onValueChange = { viewModel.onUsernameChanged(it) },
-            label = { Text("Имя пользователя или Email", style = TextStyle.bodySmall) },
+            label = { Text("Email", style = TextStyle.bodySmall) },
             modifier = Modifier.padding(top = 16.dp)
         )
 
