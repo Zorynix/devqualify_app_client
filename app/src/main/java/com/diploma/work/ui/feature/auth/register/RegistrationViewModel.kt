@@ -2,6 +2,8 @@ package com.diploma.work.ui.feature.auth.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.diploma.work.data.AppSession
+import com.diploma.work.data.models.LoginRequest
 import com.diploma.work.data.models.RegisterRequest
 import com.diploma.work.data.repository.AuthRepository
 import com.orhanobut.logger.Logger
@@ -16,9 +18,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val session: AppSession
 ) : ViewModel() {
-
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email
 
@@ -37,9 +39,9 @@ class RegistrationViewModel @Inject constructor(
     private val _registerSuccess = MutableStateFlow(false)
     val registerSuccess: StateFlow<Boolean> = _registerSuccess
 
-    val registerEnabled: StateFlow<Boolean> = combine(email, password, confirmPassword) { e, p, cp -> e.isNotEmpty() && p.isNotEmpty() && cp == p
+    val registerEnabled: StateFlow<Boolean> = combine(email, password, confirmPassword) { e, p, cp ->
+        e.isNotEmpty() && p.isNotEmpty() && cp == p
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
-
 
     fun onEmailChanged(newValue: String) {
         _email.value = newValue
@@ -59,23 +61,36 @@ class RegistrationViewModel @Inject constructor(
         Logger.d("Confirm password changed")
     }
 
-    fun onRegisterClicked() {
+    fun onRegisterClicked(session: AppSession) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
             Logger.d("Registration attempt with email: ${email.value}")
 
-            val request = RegisterRequest(
+            val registerRequest = RegisterRequest(
                 email = email.value,
                 password = password.value
             )
 
-            val result = authRepository.register(request)
+            val registerResult = authRepository.register(registerRequest)
             _isLoading.value = false
 
-            result.onSuccess { response ->
-                _registerSuccess.value = true
+            registerResult.onSuccess { response ->
                 Logger.d("Registration successful: User ID = ${response.userId}")
+                val loginRequest = LoginRequest(
+                    email = email.value,
+                    password = password.value,
+                    appId = 1
+                )
+                val loginResult = authRepository.login(loginRequest)
+                loginResult.onSuccess { loginResponse ->
+                    session.storeToken(loginResponse.accessToken)
+                    _registerSuccess.value = true
+                    Logger.d("Auto-login successful: Access Token = ${loginResponse.accessToken}")
+                }.onFailure { loginError ->
+                    _errorMessage.value = loginError.message ?: "Ошибка автоматического входа"
+                    Logger.e("Auto-login failed: ${loginError.message}")
+                }
             }.onFailure { error ->
                 _errorMessage.value = error.message ?: "Ошибка регистрации"
                 Logger.e("Registration failed: ${error.message}")

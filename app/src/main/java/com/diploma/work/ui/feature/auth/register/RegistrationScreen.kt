@@ -26,6 +26,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.data.AppSession
+import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -33,6 +35,7 @@ import com.diploma.work.ui.theme.TextStyle
 @Composable
 fun RegistrationScreen(
     navController: NavController,
+    session: AppSession,
     viewModel: RegistrationViewModel = hiltViewModel()
 ) {
     val email by viewModel.email.collectAsState()
@@ -44,8 +47,8 @@ fun RegistrationScreen(
     val registerSuccess by viewModel.registerSuccess.collectAsState()
 
     if (registerSuccess) {
-        navController.navigate("home") {
-            popUpTo(navController.graph.startDestinationId)
+        navController.navigate(Home) {
+            popUpTo(navController.graph.startDestinationId) { inclusive = true }
             launchSingleTop = true
         }
     }
@@ -94,7 +97,7 @@ fun RegistrationScreen(
         }
 
         Button(
-            onClick = { viewModel.onRegisterClicked() },
+            onClick = { viewModel.onRegisterClicked(session) },
             enabled = registerEnabled && !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),

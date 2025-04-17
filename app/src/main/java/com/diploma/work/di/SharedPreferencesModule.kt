@@ -2,7 +2,6 @@ package com.diploma.work.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.diploma.work.ui.theme.ThemeManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,11 +24,5 @@ object SharedPreferencesModule {
     @AppPrefs
     fun provideAppPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    }
-
-    @Provides
-    @Singleton
-    fun provideThemeManager(@AppPrefs preferences: SharedPreferences): ThemeManager {
-        return ThemeManager(preferences)
     }
 }

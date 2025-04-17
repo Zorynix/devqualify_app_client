@@ -1,4 +1,5 @@
-package com.diploma.work.ui.feature.home
+package com.diploma.work.ui.feature.achievements
+
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,9 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
+fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Home Screen: Test Selection\nState: ${state.testCount} tests available")
+        Text(text = "Achievements Screen\nAchievements: ${state.achievementCount}")
     }
 }

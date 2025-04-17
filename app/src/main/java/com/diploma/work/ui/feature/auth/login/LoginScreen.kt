@@ -23,10 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -34,6 +35,7 @@ import com.diploma.work.ui.theme.TextStyle
 @Composable
 fun LoginScreen(
     navController: NavController,
+    session: AppSession,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val password by viewModel.password.collectAsState()
@@ -44,8 +46,8 @@ fun LoginScreen(
     val loginSuccess by viewModel.loginSuccess.collectAsState()
 
     if (loginSuccess) {
-        navController.navigate("home") {
-            popUpTo(navController.graph.startDestinationId)
+        navController.navigate(Home) {
+            popUpTo(navController.graph.startDestinationId) { inclusive = true }
             launchSingleTop = true
         }
     }
@@ -87,7 +89,7 @@ fun LoginScreen(
         }
 
         Button(
-            onClick = { viewModel.onLoginClicked() },
+            onClick = { viewModel.onLoginClicked(session) },
             enabled = loginEnabled && !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),

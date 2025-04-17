@@ -125,6 +125,8 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.protobuf.java)
     implementation(libs.javax.annotation.api)
+    implementation(libs.androidx.compose.material3.material32)
+    implementation(libs.kotlin.reflect)
 //    implementation(libs.protobuf.gradle.plugin)
 
 }

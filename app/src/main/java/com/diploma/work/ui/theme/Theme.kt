@@ -4,11 +4,14 @@ import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.example.ui.theme.GrayLight
@@ -57,9 +60,22 @@ data class ColorScheme(
     val outlineActive: Color,
     val outlineDanger: Color,
     val backgroundBox: Color,
+    val isDark: Boolean
 ) {
     val material: androidx.compose.material3.ColorScheme
-        get() =
+        get() = if (isDark) {
+            darkColorScheme(
+                primary = primary,
+                onPrimary = onPrimary,
+                background = background,
+                onBackground = onBackground,
+                surface = surface,
+                onSurface = onSurface,
+                error = error,
+                onError = onError,
+                outline = outline
+            )
+        } else {
             lightColorScheme(
                 primary = primary,
                 onPrimary = onPrimary,
@@ -69,18 +85,19 @@ data class ColorScheme(
                 onSurface = onSurface,
                 error = error,
                 onError = onError,
-                outline = outline)
+                outline = outline
+            )
+        }
 
     val extended: ExtendedColorScheme
-        get() =
-            ExtendedColorScheme(
-                primaryActive = primaryActive,
-                onBackgroundPositive = onBackgroundPositive,
-                onBackgroundHint = onBackgroundHint,
-                outlineActive = outlineActive,
-                outlineDanger = outlineDanger,
-                backgroundBox = backgroundBox,
-            )
+        get() = ExtendedColorScheme(
+            primaryActive = primaryActive,
+            onBackgroundPositive = onBackgroundPositive,
+            onBackgroundHint = onBackgroundHint,
+            outlineActive = outlineActive,
+            outlineDanger = outlineDanger,
+            backgroundBox = backgroundBox,
+        )
 }
 
 object AppTheme {
@@ -99,7 +116,8 @@ object AppTheme {
         outline = GrayLight,
         outlineActive = PurpleMedium,
         outlineDanger = RedLight,
-        backgroundBox = PurpleLight
+        backgroundBox = PurpleLight,
+        isDark = false
     )
 
     val Dark = ColorScheme(
@@ -117,7 +135,8 @@ object AppTheme {
         outline = PurpleLight,
         outlineActive = PurpleMedium,
         outlineDanger = RedLight,
-        backgroundBox = GrayLight
+        backgroundBox = GrayLight,
+        isDark = true
     )
 }
 
@@ -140,9 +159,10 @@ fun rememberCustomRippleIndicator(): IndicationNodeFactory {
 
 @Composable
 fun DiplomaWorkTheme(
-    theme: AppThemeType = if (isSystemInDarkTheme()) AppThemeType.Dark else AppThemeType.Light,
+    themeManager: ThemeManager,
     content: @Composable () -> Unit,
 ) {
+    val theme by themeManager.currentTheme.collectAsState()
     val colorScheme = when (theme) {
         AppThemeType.Dark -> AppTheme.Dark
         AppThemeType.Light -> AppTheme.Light

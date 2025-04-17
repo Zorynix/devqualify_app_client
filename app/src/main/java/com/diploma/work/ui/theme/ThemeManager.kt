@@ -1,19 +1,19 @@
 package com.diploma.work.ui.theme
 
-import android.content.SharedPreferences
-import com.diploma.work.di.AppPrefs
+import com.diploma.work.data.AppSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
 @Singleton
 class ThemeManager @Inject constructor(
-    @AppPrefs private val preferences: SharedPreferences
+    private val session: AppSession
 ) {
     private val _currentTheme = MutableStateFlow<AppThemeType>(
-        if (preferences.getBoolean("isDarkTheme", false)) AppThemeType.Dark else AppThemeType.Light
+        if (session.getTheme()) AppThemeType.Dark else AppThemeType.Light
     )
     val currentTheme: StateFlow<AppThemeType> = _currentTheme.asStateFlow()
 
@@ -22,6 +22,6 @@ class ThemeManager @Inject constructor(
             AppThemeType.Light -> AppThemeType.Dark
             AppThemeType.Dark -> AppThemeType.Light
         }
-        preferences.edit().putBoolean("isDarkTheme", _currentTheme.value == AppThemeType.Dark).apply()
+        session.setTheme(_currentTheme.value == AppThemeType.Dark)
     }
 }

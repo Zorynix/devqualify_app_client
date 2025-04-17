@@ -10,3 +10,12 @@ object Login : NavRoute
 
 @Serializable
 object Register : NavRoute
+
+@Serializable
+object Home : NavRoute
+
+@Serializable
+object Profile : NavRoute
+
+@Serializable
+object Achievements : NavRoute

@@ -2,6 +2,7 @@ package com.diploma.work.ui.feature.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.LoginRequest
 import com.diploma.work.data.repository.AuthRepository
 import com.orhanobut.logger.Logger
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val session: AppSession
 ) : ViewModel() {
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username
@@ -49,7 +51,7 @@ class LoginViewModel @Inject constructor(
         Logger.d("Password changed")
     }
 
-    fun onLoginClicked() {
+    fun onLoginClicked(session: AppSession) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -65,6 +67,7 @@ class LoginViewModel @Inject constructor(
             _isLoading.value = false
 
             result.onSuccess { response ->
+                session.storeToken(response.accessToken)
                 _loginSuccess.value = true
                 Logger.d("Login successful: Access Token = ${response.accessToken}, Refresh Token = ${response.refreshToken}")
             }.onFailure { error ->

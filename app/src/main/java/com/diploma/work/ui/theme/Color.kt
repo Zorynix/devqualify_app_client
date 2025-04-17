@@ -2,7 +2,7 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val NeutralLight = Color(0xFFE3E4DB)
+val NeutralLight = Color(0xFFFFFFFF)
 val PurpleDark = Color(0xFF3B252C)
 val PurpleMedium = Color(0xFF8F6593)
 val PurpleLight = Color(0xFFAEA4BF)
