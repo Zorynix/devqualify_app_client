@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -24,10 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
-import com.diploma.work.data.AppSession
-import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -44,12 +44,13 @@ fun RegistrationScreen(
     val registerEnabled by viewModel.registerEnabled.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val registerSuccess by viewModel.registerSuccess.collectAsState()
 
-    if (registerSuccess) {
-        navController.navigate(Home) {
-            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-            launchSingleTop = true
+    LaunchedEffect(Unit) {
+        viewModel.navigationChannel.collect { destination ->
+            navController.navigate(destination) {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 

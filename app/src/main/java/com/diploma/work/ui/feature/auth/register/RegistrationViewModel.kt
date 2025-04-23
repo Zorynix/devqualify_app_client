@@ -3,15 +3,19 @@ package com.diploma.work.ui.feature.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
-import com.diploma.work.data.models.LoginRequest
 import com.diploma.work.data.models.RegisterRequest
 import com.diploma.work.data.repository.AuthRepository
+import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
+import com.diploma.work.ui.navigation.EmailConfirmation
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,8 +40,8 @@ class RegistrationViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _registerSuccess = MutableStateFlow(false)
-    val registerSuccess: StateFlow<Boolean> = _registerSuccess
+    private val _navigationChannel = Channel<String>(Channel.BUFFERED)
+    val navigationChannel: Flow<String> = _navigationChannel.receiveAsFlow()
 
     val registerEnabled: StateFlow<Boolean> = combine(email, password, confirmPassword) { e, p, cp ->
         e.isNotEmpty() && p.isNotEmpty() && cp == p
@@ -75,22 +79,9 @@ class RegistrationViewModel @Inject constructor(
             val registerResult = authRepository.register(registerRequest)
             _isLoading.value = false
 
-            registerResult.onSuccess { response ->
-                Logger.d("Registration successful: User ID = ${response.userId}")
-                val loginRequest = LoginRequest(
-                    email = email.value,
-                    password = password.value,
-                    appId = 1
-                )
-                val loginResult = authRepository.login(loginRequest)
-                loginResult.onSuccess { loginResponse ->
-                    session.storeToken(loginResponse.accessToken)
-                    _registerSuccess.value = true
-                    Logger.d("Auto-login successful: Access Token = ${loginResponse.accessToken}")
-                }.onFailure { loginError ->
-                    _errorMessage.value = loginError.message ?: "Ошибка автоматического входа"
-                    Logger.e("Auto-login failed: ${loginError.message}")
-                }
+            registerResult.onSuccess {
+                Logger.d("Registration successful")
+                _navigationChannel.send("emailConfirmation/${email.value}")
             }.onFailure { error ->
                 _errorMessage.value = error.message ?: "Ошибка регистрации"
                 Logger.e("Registration failed: ${error.message}")

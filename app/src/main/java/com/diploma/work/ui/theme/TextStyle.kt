@@ -25,6 +25,15 @@ sealed interface TextStyle {
                 lineHeight = 20.sp)
     }
 
+    data object bodyLarge: TextStyle {
+        override val value: androidx.compose.ui.text.TextStyle
+            get() = androidx.compose.ui.text.TextStyle(
+                fontFamily = displayFontFamily,
+                fontSize = 18.sp,
+                fontWeight = FontWeight(400),
+                lineHeight = 22.sp)
+    }
+
     data object bodySmall: TextStyle {
         override val value: androidx.compose.ui.text.TextStyle
             get() = androidx.compose.ui.text.TextStyle(
@@ -47,9 +56,9 @@ sealed interface TextStyle {
         override val value: androidx.compose.ui.text.TextStyle
             get() = androidx.compose.ui.text.TextStyle(
                 fontFamily = displayFontFamily,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight(500),
-                lineHeight = 25.sp)
+                lineHeight = 27.sp)
     }
 
 

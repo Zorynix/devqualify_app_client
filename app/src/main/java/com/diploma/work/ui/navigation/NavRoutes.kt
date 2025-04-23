@@ -19,3 +19,6 @@ object Profile : NavRoute
 
 @Serializable
 object Achievements : NavRoute
+
+@Serializable
+data class EmailConfirmation(val email: String) : NavRoute

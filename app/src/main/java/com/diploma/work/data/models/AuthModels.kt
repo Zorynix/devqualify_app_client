@@ -35,3 +35,20 @@ data class IsAdminRequest(
 data class IsAdminResponse(
     val isAdmin: Boolean
 )
+
+data class ConfirmEmailRequest(
+    val confirmationToken: String,
+    val email: String
+)
+
+data class ConfirmEmailResponse(
+    val confirmed: Boolean
+)
+
+data class SendConfirmationCodeRequest(
+    val email: String
+)
+
+data class SendConfirmationCodeResponse(
+    val success: Boolean
+)

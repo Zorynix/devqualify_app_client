@@ -21,12 +21,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomNavHost
 import com.diploma.work.ui.feature.achievements.AchievementsScreen
+import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.home.HomeScreen
@@ -125,6 +128,14 @@ fun AppNavigation(session: AppSession) {
             composable<Achievements> {
                 shouldShowBottomNav.value = true
                 AchievementsScreen()
+            }
+            composable(
+                route = "emailConfirmation/{email}",
+                arguments = listOf(navArgument("email") { type = NavType.StringType })
+            ) { backStackEntry ->
+                shouldShowBottomNav.value = false
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                EmailConfirmationScreen(navController = navController, email = email)
             }
         }
     }
