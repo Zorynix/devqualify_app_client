@@ -52,6 +52,24 @@ class EmailConfirmationViewModel @Inject constructor(
         }
     }
 
+    private fun sendConfirmationCode() = viewModelScope.launch {
+        _isLoading.value = true
+        val request = SendConfirmationCodeRequest(email = email)
+        authRepository.sendConfirmationCode(request)
+            .onSuccess {
+                if(it.success) _successMessage.value = "Код отправлен"
+                else _errorMessage.value = "Ошибка отправки"
+            }
+            .onFailure { error ->
+                _errorMessage.value = error.message ?: "Ошибка отправки кода"
+            }
+            .also { _isLoading.value = false }
+    }
+
+    fun onSendCodeClicked() = sendConfirmationCode()
+
+    fun onResendCodeClicked() = sendConfirmationCode()
+
     fun onConfirmClicked() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -72,23 +90,5 @@ class EmailConfirmationViewModel @Inject constructor(
         }
     }
 
-    fun onResendCodeClicked() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-            _successMessage.value = null
-            val request = SendConfirmationCodeRequest(email = email)
-            val sendCodeResult = authRepository.sendConfirmationCode(request)
-            _isLoading.value = false
-            sendCodeResult.onSuccess { response ->
-                if (response.success) {
-                    _successMessage.value = "Код отправлен повторно"
-                } else {
-                    _errorMessage.value = "Не удалось отправить код"
-                }
-            }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Ошибка отправки кода"
-            }
-        }
-    }
+
 }

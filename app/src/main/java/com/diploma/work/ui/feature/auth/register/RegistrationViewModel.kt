@@ -47,6 +47,11 @@ class RegistrationViewModel @Inject constructor(
         e.isNotEmpty() && p.isNotEmpty() && cp == p
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
+    private fun isValidEmail(email: String): Boolean {
+        val regex = """^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".toRegex()
+        return regex.matches(email)
+    }
+
     fun onEmailChanged(newValue: String) {
         _email.value = newValue
         _errorMessage.value = null
@@ -69,6 +74,13 @@ class RegistrationViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
+
+            if (!isValidEmail(email.value)) {
+                _errorMessage.value = "Некорректный email. Проверьте формат"
+                _isLoading.value = false
+                return@launch
+            }
+
             Logger.d("Registration attempt with email: ${email.value}")
 
             val registerRequest = RegisterRequest(
