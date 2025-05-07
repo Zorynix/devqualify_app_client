@@ -27,4 +27,15 @@ class AppSession(context: Context) {
     fun getTheme(): Boolean {
         return sharedPrefs.getBoolean("is_dark_theme", false)
     }
+    
+    fun storeUserId(userId: Long) {
+        sharedPrefs.edit() { putLong("user_id", userId) }
+    }
+    
+    fun getUserId(): Long? {
+        if (!sharedPrefs.contains("user_id")) {
+            return null
+        }
+        return sharedPrefs.getLong("user_id", -1)
+    }
 }

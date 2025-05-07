@@ -34,6 +34,7 @@ import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.feature.profile.ProfileScreen
+import com.diploma.work.ui.feature.userinfo.UserInfoScreen
 
 @Composable
 fun AppNavigation(session: AppSession) {
@@ -128,6 +129,10 @@ fun AppNavigation(session: AppSession) {
             composable<Achievements> {
                 shouldShowBottomNav.value = true
                 AchievementsScreen()
+            }
+            composable<UserInfo> {
+                shouldShowBottomNav.value = true
+                UserInfoScreen(navController)
             }
             composable(
                 route = "emailConfirmation/{email}",

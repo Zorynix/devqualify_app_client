@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package userinfo.v1;
+
+option go_package = "diploma.userinfo.v1;userinfov1";
+option java_package = "com.diploma.work.grpc";
+option java_multiple_files = true;
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  BACKEND = 1;
+  FRONTEND = 2;
+  DEVOPS = 3;
+  DATA_SCIENCE = 4;
+}
+
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  JUNIOR = 1;
+  MIDDLE = 2;
+  SENIOR = 3;
+}
+
+message Pagination {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message Achievement {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_url = 4;
+  string date_earned = 5;
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+  Direction direction = 4;
+  Level level = 5;
+  int32 total_correct_answers = 6;
+  int32 total_incorrect_answers = 7;
+  int32 completed_tests_count = 8;
+  int32 achievements_count = 9;
+  repeated Achievement achievements = 10;
+}
+
+message TestSummary {
+  int64 id = 1;
+  string title = 2;
+  string completion_date = 3;
+  int32 score = 4;
+  int32 total_points = 5;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  rpc GetUserTestHistory(GetUserTestHistoryRequest) returns (GetUserTestHistoryResponse);
+  rpc GetUserAchievements(GetUserAchievementsRequest) returns (GetUserAchievementsResponse);
+  rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse);
+  rpc UpdateUserAchievements(UpdateUserAchievementsRequest) returns (UpdateUserAchievementsResponse);
+}
+
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message UpdateUserProfileRequest {
+  int64 user_id = 1;
+  string username = 2;
+  Direction direction = 3;
+  Level level = 4;
+}
+
+message UpdateUserProfileResponse {
+  User user = 1;
+}
+
+message GetUserTestHistoryRequest {
+  int64 user_id = 1;
+  Pagination pagination = 2;
+}
+
+message GetUserTestHistoryResponse {
+  repeated TestSummary tests = 1;
+  string next_page_token = 2;
+}
+
+message GetUserAchievementsRequest {
+  int64 user_id = 1;
+}
+
+message GetUserAchievementsResponse {
+  repeated Achievement achievements = 1;
+}
+
+message GetLeaderboardRequest {
+  Direction direction = 1;
+  Level level = 2;
+  Pagination pagination = 3;
+}
+
+message GetLeaderboardResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+}
+
+message UpdateUserAchievementsRequest {
+  int64 user_id = 1;
+  repeated int64 achievement_ids = 2;
+}
+
+message UpdateUserAchievementsResponse {
+  bool success = 1;
+  repeated Achievement achievements = 2;
+  string message = 3;
+}

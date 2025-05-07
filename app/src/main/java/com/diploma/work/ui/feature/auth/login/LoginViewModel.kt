@@ -13,7 +13,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.json.JSONException
+import org.json.JSONObject
+import android.util.Base64
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
+import kotlin.math.absoluteValue
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -68,12 +73,75 @@ class LoginViewModel @Inject constructor(
 
             result.onSuccess { response ->
                 session.storeToken(response.accessToken)
+
+                val userId = extractUserIdFromToken(response.accessToken)
+
+                if (userId != null) {
+                    session.storeUserId(userId)
+                    Logger.d("User ID extracted and stored: $userId")
+                } else {
+                    val tempUserId = username.value.hashCode().toLong().absoluteValue
+                    session.storeUserId(tempUserId)
+                    Logger.d("Using temporary user ID: $tempUserId")
+                }
+                
                 _loginSuccess.value = true
-                Logger.d("Login successful: Access Token = ${response.accessToken}, Refresh Token = ${response.refreshToken}")
+                Logger.d("Login successful: Access Token = ${response.accessToken}")
             }.onFailure { error ->
                 _errorMessage.value = error.message ?: "Ошибка авторизации"
                 Logger.e("Login failed: ${error.message}")
             }
+        }
+    }
+    
+    private fun extractUserIdFromToken(token: String): Long? {
+        try {
+            val parts = token.split(".")
+            if (parts.size < 2) {
+                Logger.e("Invalid token format")
+                return null
+            }
+            var payload = parts[1]
+
+            while (payload.length % 4 != 0) {
+                payload += "="
+            }
+
+            val decodedString = try {
+                val bytes = Base64.decode(payload, Base64.URL_SAFE)
+                String(bytes, StandardCharsets.UTF_8)
+            } catch (e: Exception) {
+                try {
+                    val bytes = Base64.decode(payload, Base64.DEFAULT)
+                    String(bytes, StandardCharsets.UTF_8)
+                } catch (e2: Exception) {
+                    Logger.e("Base64 decoding failed: ${e2.message}")
+                    return null
+                }
+            }
+            
+            try {
+                val jsonObject = JSONObject(decodedString)
+                Logger.d("Token payload fields: ${jsonObject.keys().asSequence().toList()}")
+
+                return when {
+                    jsonObject.has("sub") -> jsonObject.getString("sub").toLong()
+                    jsonObject.has("user_id") -> jsonObject.getLong("user_id")
+                    jsonObject.has("id") -> jsonObject.getLong("id")
+                    jsonObject.has("userId") -> jsonObject.getLong("userId")
+                    jsonObject.has("uid") -> jsonObject.getLong("uid")
+                    else -> {
+                        Logger.e("Token payload doesn't contain recognized user ID field")
+                        null
+                    }
+                }
+            } catch (e: JSONException) {
+                Logger.e("JSON parsing error: ${e.message}")
+                return null
+            }
+        } catch (e: Exception) {
+            Logger.e("Failed to decode token: ${e.message}")
+            return null
         }
     }
 }

@@ -4,8 +4,11 @@ import android.content.Context
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.grpc.AuthGrpcClient
 import com.diploma.work.data.grpc.GrpcClient
+import com.diploma.work.data.grpc.UserInfoGrpcClient
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.data.repository.AuthRepositoryImpl
+import com.diploma.work.data.repository.UserInfoRepository
+import com.diploma.work.data.repository.UserInfoRepositoryImpl
 import com.diploma.work.ui.theme.ThemeManager
 import dagger.Module
 import dagger.Provides
@@ -14,16 +17,35 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthChannel
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class UserInfoChannel
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    @AuthChannel
     @Provides
     @Singleton
-    fun provideManagedChannel(): ManagedChannel {
+    fun provideAuthManagedChannel(): ManagedChannel {
         return ManagedChannelBuilder.forTarget("10.0.2.2:50051")
+            .usePlaintext()
+            .build()
+    }
+    
+    @UserInfoChannel
+    @Provides
+    @Singleton
+    fun provideUserInfoManagedChannel(): ManagedChannel {
+        return ManagedChannelBuilder.forTarget("10.0.2.2:50052")
             .usePlaintext()
             .build()
     }
@@ -42,14 +64,26 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthGrpcClient(channel: ManagedChannel): AuthGrpcClient {
+    fun provideAuthGrpcClient(@AuthChannel channel: ManagedChannel): AuthGrpcClient {
         return AuthGrpcClient(channel)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserInfoGrpcClient(@UserInfoChannel channel: ManagedChannel): UserInfoGrpcClient {
+        return UserInfoGrpcClient(channel)
     }
 
     @Provides
     @Singleton
     fun provideAuthRepository(authGrpcClient: AuthGrpcClient): AuthRepository {
         return AuthRepositoryImpl(authGrpcClient)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserInfoRepository(userInfoGrpcClient: UserInfoGrpcClient): UserInfoRepository {
+        return UserInfoRepositoryImpl(userInfoGrpcClient)
     }
 
     @Provides
