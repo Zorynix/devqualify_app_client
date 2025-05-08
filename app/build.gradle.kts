@@ -127,8 +127,9 @@ dependencies {
     implementation(libs.javax.annotation.api)
     implementation(libs.androidx.compose.material3.material32)
     implementation(libs.kotlin.reflect)
-//    implementation(libs.protobuf.gradle.plugin)
-
+    implementation(libs.accompanist.swiperefresh)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.coil.compose.v310)
 }
 kapt {
     correctErrorTypes = true

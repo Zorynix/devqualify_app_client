@@ -35,6 +35,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -53,6 +54,8 @@ fun EmailConfirmationScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val successMessage by viewModel.successMessage.collectAsState()
+    val resendCooldownSeconds by viewModel.resendCooldownSeconds.collectAsState()
+    val resendEnabled by viewModel.resendEnabled.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.onSendCodeClicked()
@@ -163,12 +166,16 @@ fun EmailConfirmationScreen(
         }
 
         Text(
-            text = "Отправить код повторно",
+            text = if (resendCooldownSeconds > 0) 
+                "Отправить код повторно (${resendCooldownSeconds}с)" 
+                else "Отправить код повторно",
             style = TextStyle.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
+            color = if (resendEnabled) MaterialTheme.colorScheme.primary 
+                else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 16.dp)
-                .clickable(enabled = !isLoading) { viewModel.onResendCodeClicked() }
+                .clickable(enabled = resendEnabled) { viewModel.onResendCodeClicked() }
         )
     }
 }

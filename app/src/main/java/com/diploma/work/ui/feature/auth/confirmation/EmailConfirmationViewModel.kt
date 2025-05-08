@@ -11,6 +11,7 @@ import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.NavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +41,13 @@ class EmailConfirmationViewModel @Inject constructor(
 
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
+    
+    private val _resendCooldownSeconds = MutableStateFlow(0)
+    val resendCooldownSeconds: StateFlow<Int> = _resendCooldownSeconds
+    
+    val resendEnabled: StateFlow<Boolean> = _resendCooldownSeconds
+        .map { it == 0 && !_isLoading.value }
+        .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     private val _navigationChannel = Channel<NavRoute>(Channel.BUFFERED)
     val navigationChannel: Flow<NavRoute> = _navigationChannel.receiveAsFlow()
@@ -52,12 +60,25 @@ class EmailConfirmationViewModel @Inject constructor(
         }
     }
 
+    private fun startResendCooldown() {
+        viewModelScope.launch {
+            _resendCooldownSeconds.value = 60
+            while (_resendCooldownSeconds.value > 0) {
+                delay(1000)
+                _resendCooldownSeconds.value -= 1
+            }
+        }
+    }
+
     private fun sendConfirmationCode() = viewModelScope.launch {
         _isLoading.value = true
         val request = SendConfirmationCodeRequest(email = email)
         authRepository.sendConfirmationCode(request)
             .onSuccess {
-                if(it.success) _successMessage.value = "Код отправлен"
+                if(it.success) {
+                    _successMessage.value = "Код отправлен"
+                    startResendCooldown()
+                }
                 else _errorMessage.value = "Ошибка отправки"
             }
             .onFailure { error ->
@@ -68,7 +89,11 @@ class EmailConfirmationViewModel @Inject constructor(
 
     fun onSendCodeClicked() = sendConfirmationCode()
 
-    fun onResendCodeClicked() = sendConfirmationCode()
+    fun onResendCodeClicked() {
+        if (_resendCooldownSeconds.value == 0) {
+            sendConfirmationCode()
+        }
+    }
 
     fun onConfirmClicked() {
         viewModelScope.launch {
@@ -89,6 +114,4 @@ class EmailConfirmationViewModel @Inject constructor(
             }
         }
     }
-
-
 }
