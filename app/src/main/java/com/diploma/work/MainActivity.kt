@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DiplomaWorkTheme(themeManager = themeManager) {
-                AppNavigation(session = session)
+                AppNavigation(session = session, themeManager)
             }
         }
     }

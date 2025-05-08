@@ -10,14 +10,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -33,13 +38,31 @@ import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.home.HomeScreen
+import com.diploma.work.ui.feature.profile.AppDrawerContent
 import com.diploma.work.ui.feature.profile.ProfileScreen
-import com.diploma.work.ui.feature.userinfo.UserInfoScreen
+import com.diploma.work.ui.theme.AppThemeType
+import com.diploma.work.ui.theme.ThemeManager
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @Composable
-fun AppNavigation(session: AppSession) {
+fun AppNavigation(
+    session: AppSession,
+    themeManager: ThemeManager
+) {
     val navController = rememberNavController()
     val shouldShowBottomNav = remember { mutableStateOf(session.getToken() != null) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    
+    val isLoggedIn = session.getToken() != null
+    
+    val username = session.observeUsername().collectAsState(initial = session.getUsername() ?: "User")
+    val avatarUrl = session.observeAvatarUrl().collectAsState(
+        initial = session.getAvatarUrl() ?: "https://ui-avatars.com/api/?name=User&background=random&size=200"
+    )
+    
+    val theme by themeManager.currentTheme.collectAsState()
 
     val navItems = listOf(
         BottomNavItem.Home,
@@ -47,100 +70,141 @@ fun AppNavigation(session: AppSession) {
         BottomNavItem.Achievements
     )
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (shouldShowBottomNav.value) {
-                NavigationBar {
-                    val currentRoute by navController.currentBackStackEntryAsState()
-                    navItems.forEach { item ->
-                        val selected = currentRoute?.destination?.hierarchy?.any {
-                            it.route == item.route::class.qualifiedName
-                        } == true
-
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.route::class.simpleName
-                                )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = isLoggedIn,
+        drawerContent = {
+            if (isLoggedIn) {
+                AppDrawerContent(
+                    username = username.value ?: "User",
+                    avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
+                    theme = theme,
+                    onThemeToggle = { 
+                        themeManager.toggleTheme()
+                    },
+                    onLogout = {
+                        session.clearToken()
+                        shouldShowBottomNav.value = false
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Login) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
                             }
-                        )
+                        }
+                    }
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            bottomBar = {
+                if (shouldShowBottomNav.value) {
+                    NavigationBar {
+                        val currentRoute by navController.currentBackStackEntryAsState()
+                        navItems.forEach { item ->
+                            val selected = currentRoute?.destination?.hierarchy?.any {
+                                it.route == item.route::class.qualifiedName
+                            } == true
+
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.route::class.simpleName
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
-    ) { innerPadding ->
-        DiplomNavHost(
-            navController = navController,
-            startDestination = if (session.getToken() != null) Home else Login,
-            modifier = Modifier.padding(innerPadding),
-            enterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                    animationSpec = tween(300)
-                ) + fadeIn(animationSpec = tween(300))
-            },
-            exitTransition = {
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                    animationSpec = tween(300)
-                ) + fadeOut(animationSpec = tween(300))
-            },
-            popEnterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                    animationSpec = tween(300)
-                ) + fadeIn(animationSpec = tween(300))
-            },
-            popExitTransition = {
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                    animationSpec = tween(300)
-                ) + fadeOut(animationSpec = tween(300))
-            }
-        ) {
-            composable<Login> {
-                shouldShowBottomNav.value = false
-                LoginScreen(navController, session)
-            }
-            composable<Register> {
-                shouldShowBottomNav.value = false
-                RegistrationScreen(navController, session)
-            }
-            composable<Home> {
-                shouldShowBottomNav.value = true
-                HomeScreen()
-            }
-            composable<Profile> {
-                shouldShowBottomNav.value = true
-                ProfileScreen(navController)
-            }
-            composable<Achievements> {
-                shouldShowBottomNav.value = true
-                AchievementsScreen()
-            }
-            composable<UserInfo> {
-                shouldShowBottomNav.value = true
-                UserInfoScreen(navController)
-            }
-            composable(
-                route = "emailConfirmation/{email}",
-                arguments = listOf(navArgument("email") { type = NavType.StringType })
-            ) { backStackEntry ->
-                shouldShowBottomNav.value = false
-                val email = backStackEntry.arguments?.getString("email") ?: ""
-                EmailConfirmationScreen(navController = navController, email = email)
+        ) { innerPadding ->
+            DiplomNavHost(
+                navController = navController,
+                startDestination = if (session.getToken() != null) Home else Login,
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(300)
+                    ) + fadeIn(animationSpec = tween(300))
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(300)
+                    ) + fadeOut(animationSpec = tween(300))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(300)
+                    ) + fadeIn(animationSpec = tween(300))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(300)
+                    ) + fadeOut(animationSpec = tween(300))
+                }
+            ) {
+                composable<Login> {
+                    shouldShowBottomNav.value = false
+                    LoginScreen(navController, session)
+                }
+                composable<Register> {
+                    shouldShowBottomNav.value = false
+                    RegistrationScreen(navController, session)
+                }
+                composable<Home> {
+                    shouldShowBottomNav.value = true
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    HomeScreen()
+                }
+                composable<Profile> {
+                    shouldShowBottomNav.value = true
+                    val profileScreen = ProfileScreen(
+                        navController = navController,
+                        drawerState = drawerState,
+                        themeManager = themeManager
+                    )
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    profileScreen
+                }
+                composable<Achievements> {
+                    shouldShowBottomNav.value = true
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    AchievementsScreen()
+                }
+                composable(
+                    route = "emailConfirmation/{email}",
+                    arguments = listOf(navArgument("email") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    shouldShowBottomNav.value = false
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    EmailConfirmationScreen(navController = navController, email = email)
+                }
             }
         }
     }

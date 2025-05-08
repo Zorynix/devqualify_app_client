@@ -90,7 +90,7 @@ fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
                         )
                     }
                     uiState.achievements.isEmpty() -> {
-                        EmptyAchievementsView()
+                        EmptyAchievementsView(onRefresh = { viewModel.loadAchievements() })
                     }
                     else -> {
                         AchievementsGrid(
@@ -391,7 +391,7 @@ fun ErrorView(
 }
 
 @Composable
-fun EmptyAchievementsView() {
+fun EmptyAchievementsView(onRefresh: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -421,6 +421,17 @@ fun EmptyAchievementsView() {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 32.dp)
         )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Button(
+            onClick = onRefresh,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(text = "Refresh")
+        }
     }
 }
 
