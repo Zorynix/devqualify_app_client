@@ -1,6 +1,5 @@
 package com.diploma.work.ui.feature.profile
 
-import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,11 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DismissibleDrawerSheet
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -37,12 +34,9 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -67,7 +61,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -77,10 +70,10 @@ import com.diploma.work.data.models.User
 import com.diploma.work.grpc.Direction
 import com.diploma.work.grpc.Level
 import com.diploma.work.ui.DiplomTextField
-import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.diploma.work.ui.theme.Theme
 import com.diploma.work.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 
@@ -123,7 +116,7 @@ fun ProfileScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Profile") }
+                title = { Text("Profile", style = TextStyle.HeadlineMedium.value) }
             )
         }
     ) { paddingValues ->
@@ -155,8 +148,7 @@ fun ProfileScreen(
                     },
                     onUpdateClicked = { viewModel.updateUserProfile() },
                     isLoading = isLoading
-                )
-            } else {
+                )            } else {
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -165,14 +157,18 @@ fun ProfileScreen(
                 ) {
                     Text(
                         "Failed to load user data. Please try again.",
-                        style = TextStyle.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
+                        style = TextStyle.BodyMedium.value,
+                        color = Theme.extendedColorScheme.outlineDanger
                     )
                     Button(
                         onClick = { viewModel.loadProfile() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
                         modifier = Modifier.padding(top = 16.dp)
                     ) {
-                        Text("Retry")
+                        Text("Retry", style = TextStyle.ButtonText.value)
                     }
                 }
             }
@@ -189,7 +185,7 @@ fun AppDrawerContent(
     onThemeToggle: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val session = androidx.hilt.navigation.compose.hiltViewModel<ProfileViewModel>().session
+    val session = hiltViewModel<ProfileViewModel>().session
     
     DismissibleDrawerSheet(
         modifier = Modifier.width(280.dp)
@@ -219,7 +215,7 @@ fun AppDrawerContent(
                         
                         Text(
                             text = username,
-                            style = TextStyle.titleMedium,
+                            style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -246,7 +242,7 @@ fun AppDrawerContent(
                     
                     Text(
                         text = if (theme == AppThemeType.Dark) "Light Mode" else "Dark Mode",
-                        style = TextStyle.bodyLarge,
+                        style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                 }
@@ -270,7 +266,7 @@ fun AppDrawerContent(
                     
                     Text(
                         text = "Logout",
-                        style = TextStyle.bodyLarge,
+                        style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                 }
@@ -300,7 +296,7 @@ private fun UserProfileContent(
     var showAvatarDialog by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
-    val viewModel = androidx.hilt.navigation.compose.hiltViewModel<ProfileViewModel>()
+    val viewModel = hiltViewModel<ProfileViewModel>()
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? -> 
@@ -362,28 +358,26 @@ private fun UserProfileContent(
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
-        Text("Personal Information", style = TextStyle.titleMedium)
+        Text("Personal Information", style = TextStyle.TitleMedium.value)
         Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Email", style = TextStyle.bodySmall)
+        Text("Email", style = TextStyle.BodyMedium.value)
         Text(
             text = user.email,
-            style = TextStyle.bodyMedium,
+            style = TextStyle.BodyLarge.value,
             modifier = Modifier.padding(vertical = 4.dp)
         )
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Username", style = TextStyle.bodySmall)
+        Text("Username", style = TextStyle.BodyMedium.value)
         DiplomTextField(
             value = username,
             onValueChange = onUsernameChanged,
             modifier = Modifier.fillMaxWidth()
         )
+          Spacer(modifier = Modifier.height(16.dp))
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text("Direction", style = TextStyle.bodySmall)
+        Text("Direction", style = TextStyle.BodyMedium.value)
         ExposedDropdownMenuBox(
             expanded = directionMenuExpanded,
             onExpandedChange = { directionMenuExpanded = it },
@@ -414,10 +408,9 @@ private fun UserProfileContent(
                 }
             }
         }
+          Spacer(modifier = Modifier.height(16.dp))
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text("Level", style = TextStyle.bodySmall)
+        Text("Level", style = TextStyle.BodyMedium.value)
         ExposedDropdownMenuBox(
             expanded = levelMenuExpanded,
             onExpandedChange = { levelMenuExpanded = it },
@@ -451,7 +444,7 @@ private fun UserProfileContent(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
         
-        Text("Statistics", style = TextStyle.titleMedium)
+        Text("Statistics", style = TextStyle.TitleMedium.value)
         Spacer(modifier = Modifier.height(8.dp))
         
         StatisticRow("Completed Tests", "${user.completedTestsCount}")
@@ -464,7 +457,8 @@ private fun UserProfileContent(
         Button(
             onClick = onUpdateClicked,
             enabled = !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -507,7 +501,7 @@ fun AvatarSelectionDialog(
         ) {
             Text(
                 "Select Avatar",
-                style = TextStyle.titleLarge,
+                style = TextStyle.TitleLarge.value,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             
@@ -529,9 +523,13 @@ fun AvatarSelectionDialog(
             
             Button(
                 onClick = onPickImageClicked,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Choose from Device")
+                Text("Choose from Device", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -558,8 +556,8 @@ private fun StatisticRow(label: String, value: String) {
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, style = TextStyle.bodyMedium)
-        Text(value, style = TextStyle.bodyMedium, color = MaterialTheme.colorScheme.primary)
+        Text(label, style = TextStyle.BodyMedium.value)
+        Text(value, style = TextStyle.BodyMedium.value, color = MaterialTheme.colorScheme.primary)
     }
 }
 

@@ -14,14 +14,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.example.ui.theme.GrayLight
-import com.example.ui.theme.GreenLight
-import com.example.ui.theme.NeutralLight
-import com.example.ui.theme.PurpleDark
-import com.example.ui.theme.PurpleLight
-import com.example.ui.theme.PurpleMedium
-import com.example.ui.theme.RedLight
-import com.example.ui.theme.White
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.ui.platform.LocalContext
 
 sealed class AppThemeType {
     object Light : AppThemeType()
@@ -41,6 +36,8 @@ data class ExtendedColorScheme(
     val outlineActive: Color,
     val outlineDanger: Color,
     val backgroundBox: Color,
+    val surfaceContainerHigh: Color = Color.Unspecified,
+    val surfaceContainerLow: Color = Color.Unspecified
 )
 
 @Immutable
@@ -48,17 +45,41 @@ data class ColorScheme(
     val primary: Color,
     val primaryActive: Color,
     val onPrimary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
+    val secondary: Color = Color.Unspecified,
+    val onSecondary: Color = Color.Unspecified,
+    val secondaryContainer: Color = Color.Unspecified,
+    val onSecondaryContainer: Color = Color.Unspecified,
+    val tertiary: Color = Color.Unspecified,
+    val onTertiary: Color = Color.Unspecified,
+    val tertiaryContainer: Color = Color.Unspecified,
+    val onTertiaryContainer: Color = Color.Unspecified,
     val background: Color,
     val onBackground: Color,
     val onBackgroundPositive: Color,
     val onBackgroundHint: Color,
     val surface: Color,
     val onSurface: Color,
+    val surfaceVariant: Color = Color.Unspecified,
+    val onSurfaceVariant: Color = Color.Unspecified,
+    val inverseSurface: Color = Color.Unspecified,
+    val inverseOnSurface: Color = Color.Unspecified,
+    val inversePrimary: Color = Color.Unspecified,
+    val surfaceContainerLowest: Color = Color.Unspecified,
+    val surfaceContainerLow: Color = Color.Unspecified,
+    val surfaceContainer: Color = Color.Unspecified,
+    val surfaceContainerHigh: Color = Color.Unspecified,
+    val surfaceContainerHighest: Color = Color.Unspecified,
     val error: Color,
     val onError: Color,
+    val errorContainer: Color = Color.Unspecified,
+    val onErrorContainer: Color = Color.Unspecified,
     val outline: Color,
     val outlineActive: Color,
     val outlineDanger: Color,
+    val outlineVariant: Color = Color.Unspecified,
+    val scrim: Color = Color.Unspecified,
     val backgroundBox: Color,
     val isDark: Boolean
 ) {
@@ -67,6 +88,8 @@ data class ColorScheme(
             darkColorScheme(
                 primary = primary,
                 onPrimary = onPrimary,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
                 background = background,
                 onBackground = onBackground,
                 surface = surface,
@@ -79,6 +102,8 @@ data class ColorScheme(
             lightColorScheme(
                 primary = primary,
                 onPrimary = onPrimary,
+                primaryContainer = primaryContainer,
+                onPrimaryContainer = onPrimaryContainer,
                 background = background,
                 onBackground = onBackground,
                 surface = surface,
@@ -102,40 +127,44 @@ data class ColorScheme(
 
 object AppTheme {
     val Light = ColorScheme(
-        primary = PurpleMedium,
-        primaryActive = PurpleDark,
-        onPrimary = White,
-        background = NeutralLight,
-        onBackground = PurpleDark,
-        onBackgroundPositive = GreenLight,
-        onBackgroundHint = GrayLight,
-        surface = White,
-        onSurface = PurpleDark,
-        error = RedLight,
-        onError = White,
-        outline = GrayLight,
-        outlineActive = PurpleMedium,
-        outlineDanger = RedLight,
-        backgroundBox = PurpleLight,
+        primary = primaryLightHighContrast,
+        onPrimaryContainer = onPrimaryContainerLightHighContrast,
+        primaryContainer = primaryContainerLightHighContrast,
+        primaryActive = primaryContainerLightHighContrast,
+        onPrimary = onPrimaryLightHighContrast,
+        background = backgroundLightHighContrast,
+        onBackground = onBackgroundLightHighContrast,
+        onBackgroundPositive = secondaryLightHighContrast,
+        onBackgroundHint = outlineLightHighContrast,
+        surface = surfaceLightHighContrast,
+        onSurface = onSurfaceLightHighContrast,
+        error = errorLightHighContrast,
+        onError = onErrorLightHighContrast,
+        outline = outlineLightHighContrast,
+        outlineActive = outlineVariantLightHighContrast,
+        outlineDanger = errorContainerLightHighContrast,
+        backgroundBox = surfaceContainerLightHighContrast,
         isDark = false
     )
 
     val Dark = ColorScheme(
-        primary = PurpleMedium,
-        primaryActive = PurpleLight,
-        onPrimary = White,
-        background = PurpleDark,
-        onBackground = NeutralLight,
-        onBackgroundPositive = GreenLight,
-        onBackgroundHint = GrayLight,
-        surface = PurpleDark,
-        onSurface = NeutralLight,
-        error = RedLight,
-        onError = White,
-        outline = PurpleLight,
-        outlineActive = PurpleMedium,
-        outlineDanger = RedLight,
-        backgroundBox = GrayLight,
+        primary = primaryDarkHighContrast,
+        primaryContainer = primaryContainerDarkHighContrast,
+        onPrimaryContainer = onPrimaryContainerDarkHighContrast,
+        primaryActive = primaryContainerDarkHighContrast,
+        onPrimary = onPrimaryDarkHighContrast,
+        background = backgroundDarkHighContrast,
+        onBackground = onBackgroundDarkHighContrast,
+        onBackgroundPositive = secondaryDarkHighContrast,
+        onBackgroundHint = outlineDarkHighContrast,
+        surface = surfaceDarkHighContrast,
+        onSurface = onSurfaceDarkHighContrast,
+        error = errorDarkHighContrast,
+        onError = onErrorDarkHighContrast,
+        outline = outlineDarkHighContrast,
+        outlineActive = tertiaryContainerDarkHighContrast,
+        outlineDanger = errorContainerDarkHighContrast,
+        backgroundBox = surfaceContainerDarkHighContrast,
         isDark = true
     )
 }
@@ -157,10 +186,23 @@ fun rememberCustomRippleIndicator(): IndicationNodeFactory {
     return ripple(color = MaterialTheme.colorScheme.onBackground, bounded = true)
 }
 
+@Immutable
+data class ColorFamily(
+    val color: Color,
+    val onColor: Color,
+    val colorContainer: Color,
+    val onColorContainer: Color
+)
+
+val unspecified_scheme = ColorFamily(
+    Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
+)
+
 @Composable
 fun DiplomaWorkTheme(
     themeManager: ThemeManager,
     content: @Composable () -> Unit,
+    dynamicColor: Boolean = true,
 ) {
     val theme by themeManager.currentTheme.collectAsState()
     val colorScheme = when (theme) {

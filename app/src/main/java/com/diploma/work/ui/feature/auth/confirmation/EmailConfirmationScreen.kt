@@ -42,6 +42,7 @@ import androidx.navigation.NavController
 import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.diploma.work.ui.theme.Theme
 
 @Composable
 fun EmailConfirmationScreen(
@@ -86,9 +87,8 @@ fun EmailConfirmationScreen(
                 contentDescription = "Назад"
             )
         }
-
-        Text("Подтверждение почты", style = TextStyle.titleLarge, modifier = Modifier.padding(16.dp))
-        Text("Введите 6-значный код, отправленный на $email", style = TextStyle.bodyMedium, modifier = Modifier.padding(16.dp))
+        Text("Подтверждение почты", style = TextStyle.TitleLarge.value, modifier = Modifier.padding(16.dp))
+        Text("Введите 6-значный код, отправленный на $email", style = TextStyle.BodyMedium.value, modifier = Modifier.padding(16.dp))
 
         val focusRequester = remember { FocusRequester() }
         Box {
@@ -120,8 +120,7 @@ fun EmailConfirmationScreen(
                             .padding(4.dp)
                             .clickable(enabled = !isLoading) { focusRequester.requestFocus() },
                         contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = if (i < code.length) code[i].toString() else "", style = TextStyle.bodyMedium, color = Color.Black)
+                    ) {                        Text(text = if (i < code.length) code[i].toString() else "", style = TextStyle.BodyMedium.value, color = Color.Black)
                     }
                 }
             }
@@ -129,12 +128,11 @@ fun EmailConfirmationScreen(
         LaunchedEffect(Unit) {
             focusRequester.requestFocus()
         }
-
         errorMessage?.let {
             Text(
                 text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = TextStyle.bodySmall,
+                color = Theme.extendedColorScheme.outlineDanger,
+                style = TextStyle.BodySmall.value,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
@@ -142,16 +140,18 @@ fun EmailConfirmationScreen(
         successMessage?.let {
             Text(
                 text = it,
-                color = MaterialTheme.colorScheme.primary,
-                style = TextStyle.bodySmall,
+                color = Theme.extendedColorScheme.onBackgroundPositive,
+                style = TextStyle.BodySmall.value,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
         Button(
             onClick = { viewModel.onConfirmClicked() },
             enabled = confirmEnabled && !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.padding(top = 16.dp)
         ) {
@@ -161,17 +161,16 @@ fun EmailConfirmationScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Подтвердить", color = MaterialTheme.colorScheme.onPrimary)
+                Text("Подтвердить", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
-
         Text(
             text = if (resendCooldownSeconds > 0) 
                 "Отправить код повторно (${resendCooldownSeconds}с)" 
                 else "Отправить код повторно",
-            style = TextStyle.bodySmall,
-            color = if (resendEnabled) MaterialTheme.colorScheme.primary 
-                else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            style = TextStyle.Link.value,
+            color = if (resendEnabled) Theme.extendedColorScheme.onBackgroundPositive 
+                else Theme.extendedColorScheme.onBackgroundHint,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 16.dp)

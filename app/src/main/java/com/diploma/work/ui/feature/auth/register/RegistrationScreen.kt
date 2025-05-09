@@ -31,6 +31,7 @@ import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.diploma.work.ui.theme.Theme
 
 @Composable
 fun RegistrationScreen(
@@ -64,43 +65,41 @@ fun RegistrationScreen(
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
         }
-
-        Text("Регистрация", style = TextStyle.titleLarge)
-
+        Text("Регистрация", style = TextStyle.TitleLarge.value)
         DiplomTextField(
             value = email,
             onValueChange = { viewModel.onEmailChanged(it) },
-            label = { Text("Email", style = TextStyle.bodySmall) },
+            label = { Text("Email", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
-
         DiplomPasswordTextField(
             value = password,
             onValueChange = { viewModel.onPasswordChanged(it) },
-            label = { Text("Пароль", style = TextStyle.bodySmall) },
+            label = { Text("Пароль", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
 
         DiplomPasswordTextField(
             value = confirmPassword,
             onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-            label = { Text("Подтвердите пароль", style = TextStyle.bodySmall) },
+            label = { Text("Подтвердите пароль", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
-
         if (errorMessage != null) {
             Text(
                 text = errorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                style = TextStyle.bodySmall,
+                color = Theme.extendedColorScheme.outlineDanger,
+                style = TextStyle.BodySmall.value,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
         Button(
             onClick = { viewModel.onRegisterClicked(session) },
             enabled = registerEnabled && !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.padding(top = 16.dp)
         ) {
@@ -110,16 +109,15 @@ fun RegistrationScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Зарегистрироваться", color = MaterialTheme.colorScheme.onPrimary)
+                Text("Зарегистрироваться", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
-
         Row(modifier = Modifier.padding(top = 16.dp)) {
-            Text("Уже зарегистрированы? ", style = TextStyle.bodySmall)
+            Text("Уже зарегистрированы? ", style = TextStyle.BodyMedium.value)
             Text(
                 "Войти",
-                style = TextStyle.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                style = TextStyle.Link.value,
+                color = Theme.extendedColorScheme.onBackgroundPositive,
                 modifier = Modifier.clickable {
                     navController.navigate(Login)
                 }

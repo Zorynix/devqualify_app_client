@@ -16,15 +16,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import com.diploma.work.ui.theme.TextStyle
-
 
 
 @Composable
 fun Text(
     text: String,
     modifier: Modifier = Modifier,
-    style: TextStyle = TextStyle.Paragraph,
+    style: androidx.compose.ui.text.TextStyle = TextStyle.Paragraph.value,
     color: Color = MaterialTheme.colorScheme.onBackground,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
@@ -41,14 +39,13 @@ fun Text(
     shadow: Shadow? = null,
     onTextLayout: ((TextLayoutResult) -> Unit)? = null
 ) {
-    val styleValue = style.value
-
+    val styleValue = style
     val textColor = color.takeOrElse { styleValue.color.takeOrElse { LocalContentColor.current } }
 
     BasicText(
-        text,
-        modifier,
-        styleValue.merge(
+        text = text,
+        modifier = modifier,
+        style = styleValue.merge(
             color = textColor,
             fontSize = fontSize,
             fontWeight = fontWeight,
@@ -60,9 +57,10 @@ fun Text(
             letterSpacing = letterSpacing,
             shadow = shadow,
         ),
-        onTextLayout,
-        overflow,
-        softWrap,
-        maxLines,
-        minLines)
+        onTextLayout = onTextLayout,
+        overflow = overflow,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        minLines = minLines
+    )
 }

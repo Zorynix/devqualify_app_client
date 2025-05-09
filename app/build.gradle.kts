@@ -61,6 +61,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.ui.text.google.fonts)
     val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)

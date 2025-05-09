@@ -1,7 +1,5 @@
 package com.diploma.work.ui.feature.leaderboard
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,32 +11,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -46,36 +46,24 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.diploma.work.R
 import com.diploma.work.data.models.User
 import com.diploma.work.grpc.Direction
 import com.diploma.work.grpc.Level
-import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.components.AvatarImage
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,7 +99,7 @@ fun LeaderboardScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Leaderboard") },
+                title = { Text("Leaderboard", style = TextStyle.HeadlineMedium.value) },
                 actions = {
                     IconButton(onClick = { viewModel.loadLeaderboard(true) }) {
                         Icon(
@@ -147,7 +135,7 @@ fun LeaderboardScreen(
                         .padding(horizontal = 16.dp)
                 ) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    FilterSection(
+                    CompactFilterSortSection(
                         selectedDirection = uiState.direction,
                         selectedLevel = uiState.level,
                         selectedSortType = uiState.sortType,
@@ -156,7 +144,7 @@ fun LeaderboardScreen(
                         onSortTypeSelected = { viewModel.setSortType(it) }
                     )
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     if (uiState.users.isEmpty() && !uiState.isLoading) {
                         Box(
@@ -167,7 +155,7 @@ fun LeaderboardScreen(
                         ) {
                             Text(
                                 text = "No users found for these filters.",
-                                style = TextStyle.bodyMedium,
+                                style = TextStyle.BodyMedium.value,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -227,7 +215,7 @@ fun LeaderboardScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilterSection(
+fun CompactFilterSortSection(
     selectedDirection: Direction,
     selectedLevel: Level,
     selectedSortType: LeaderboardSortType,
@@ -235,165 +223,166 @@ fun FilterSection(
     onLevelSelected: (Level) -> Unit,
     onSortTypeSelected: (LeaderboardSortType) -> Unit
 ) {
-    var directionMenuExpanded by remember { mutableStateOf(false) }
-    var levelMenuExpanded by remember { mutableStateOf(false) }
-    var sortTypeMenuExpanded by remember { mutableStateOf(false) }
+    var showFilterDialog by remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
+
+    val filterLabel = when {
+        selectedDirection != Direction.DIRECTION_UNSPECIFIED && selectedLevel != Level.LEVEL_UNSPECIFIED -> 
+            "${directionToString(selectedDirection)}, ${levelToString(selectedLevel)}"
+        selectedDirection != Direction.DIRECTION_UNSPECIFIED -> 
+            directionToString(selectedDirection)
+        selectedLevel != Level.LEVEL_UNSPECIFIED -> 
+            levelToString(selectedLevel)
+        else -> "Filter"
+    }
     
-    Card(
+    val hasActiveFilters = selectedDirection != Direction.DIRECTION_UNSPECIFIED || 
+                          selectedLevel != Level.LEVEL_UNSPECIFIED
+    
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Filters", style = TextStyle.titleMedium)
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Direction",
-                        style = TextStyle.bodySmall,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    
-                    ExposedDropdownMenuBox(
-                        expanded = directionMenuExpanded,
-                        onExpandedChange = { directionMenuExpanded = it }
-                    ) {
-                        DiplomTextField(
-                            value = directionToString(selectedDirection),
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = directionMenuExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-                        )
-                        
-                        ExposedDropdownMenu(
-                            expanded = directionMenuExpanded,
-                            onDismissRequest = { directionMenuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("All Directions") },
-                                onClick = {
-                                    onDirectionSelected(Direction.DIRECTION_UNSPECIFIED)
-                                    directionMenuExpanded = false
-                                }
-                            )
-                            
-                            Direction.entries.filter { 
-                                it != Direction.UNRECOGNIZED && it != Direction.DIRECTION_UNSPECIFIED 
-                            }.forEach { direction ->
-                                DropdownMenuItem(
-                                    text = { Text(directionToString(direction)) },
-                                    onClick = {
-                                        onDirectionSelected(direction)
-                                        directionMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Level",
-                        style = TextStyle.bodySmall,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    
-                    ExposedDropdownMenuBox(
-                        expanded = levelMenuExpanded,
-                        onExpandedChange = { levelMenuExpanded = it }
-                    ) {
-                        DiplomTextField(
-                            value = levelToString(selectedLevel),
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = levelMenuExpanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-                        )
-                        
-                        ExposedDropdownMenu(
-                            expanded = levelMenuExpanded,
-                            onDismissRequest = { levelMenuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("All Levels") },
-                                onClick = {
-                                    onLevelSelected(Level.LEVEL_UNSPECIFIED)
-                                    levelMenuExpanded = false
-                                }
-                            )
-                            
-                            Level.entries.filter { 
-                                it != Level.UNRECOGNIZED && it != Level.LEVEL_UNSPECIFIED 
-                            }.forEach { level ->
-                                DropdownMenuItem(
-                                    text = { Text(levelToString(level)) },
-                                    onClick = {
-                                        onLevelSelected(level)
-                                        levelMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Sort By",
-                    style = TextStyle.bodySmall,
-                    modifier = Modifier.padding(bottom = 4.dp)
+        FilterChip(
+            selected = hasActiveFilters,
+            onClick = { showFilterDialog = !showFilterDialog },
+            label = { Text(filterLabel) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    tint = LocalContentColor.current
                 )
-                
-                ExposedDropdownMenuBox(
-                    expanded = sortTypeMenuExpanded,
-                    onExpandedChange = { sortTypeMenuExpanded = it }
-                ) {
-                    DiplomTextField(
-                        value = selectedSortType.displayName,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sortTypeMenuExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        FilterChip(
+            selected = false,
+            onClick = { showSortDialog = !showSortDialog },
+            label = { Text("Sort: ${selectedSortType.displayName}") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Sort,
+                    contentDescription = "Sort",
+                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    tint = LocalContentColor.current
+                )
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    if (showFilterDialog) {
+        AlertDialog(
+            onDismissRequest = { showFilterDialog = false },
+            title = { Text("Filter", style = TextStyle.TitleLarge.value) },
+            text = {
+                Column {
+                    Text(
+                        text = "Direction",
+                        style = TextStyle.LabelMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    ChipGroup(
+                        items = listOf(Direction.DIRECTION_UNSPECIFIED) + 
+                                Direction.entries.filter { it != Direction.UNRECOGNIZED && it != Direction.DIRECTION_UNSPECIFIED },
+                        selectedItem = selectedDirection,
+                        onSelectedChanged = { onDirectionSelected(it) },
+                        chipLabel = { directionToString(it) }
                     )
                     
-                    ExposedDropdownMenu(
-                        expanded = sortTypeMenuExpanded,
-                        onDismissRequest = { sortTypeMenuExpanded = false }
-                    ) {
-                        LeaderboardSortType.entries.forEach { sortType ->
-                            DropdownMenuItem(
-                                text = { Text(sortType.displayName) },
-                                onClick = {
-                                    onSortTypeSelected(sortType)
-                                    sortTypeMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "Level",
+                        style = TextStyle.LabelMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    ChipGroup(
+                        items = listOf(Level.LEVEL_UNSPECIFIED) + 
+                                Level.entries.filter { it != Level.UNRECOGNIZED && it != Level.LEVEL_UNSPECIFIED },
+                        selectedItem = selectedLevel,
+                        onSelectedChanged = { onLevelSelected(it) },
+                        chipLabel = { levelToString(it) }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showFilterDialog = false }
+                ) {
+                    Text("Close")
                 }
             }
+        )
+    }
+
+    if (showSortDialog) {
+        AlertDialog(
+            onDismissRequest = { showSortDialog = false },
+            title = { Text("Sort by", style = TextStyle.TitleLarge.value) },
+            text = {
+                Column {
+                    ChipGroup(
+                        items = LeaderboardSortType.entries.toList(),
+                        selectedItem = selectedSortType,
+                        onSelectedChanged = { 
+                            onSortTypeSelected(it)
+                            showSortDialog = false
+                        },
+                        chipLabel = { it.displayName }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showSortDialog = false }
+                ) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> ChipGroup(
+    items: List<T>,
+    selectedItem: T,
+    onSelectedChanged: (T) -> Unit,
+    chipLabel: (T) -> String
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(items) { item ->
+            FilterChip(
+                selected = item == selectedItem,
+                onClick = { onSelectedChanged(item) },
+                label = { Text(chipLabel(item)) },
+                leadingIcon = if (item == selectedItem) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "Selected",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            tint = LocalContentColor.current
+                        )
+                    }
+                } else null
+            )
         }
     }
 }
+
 
 @Composable
 fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit) {
@@ -425,13 +414,13 @@ fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit)
             ) {
                 Text(
                     text = user.username,
-                    style = TextStyle.titleMedium,
+                    style = TextStyle.TitleMedium.value,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Text(
                     text = "${directionToString(user.direction)}, ${levelToString(user.level)}",
-                    style = TextStyle.bodySmall,
+                    style = TextStyle.BodySmall.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -443,36 +432,36 @@ fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit)
                     LeaderboardSortType.ACHIEVEMENTS -> {
                         Text(
                             text = "${user.achievementsCount}",
-                            style = TextStyle.titleMedium,
+                            style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Achievements",
-                            style = TextStyle.bodySmall,
+                            style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     LeaderboardSortType.CORRECT_ANSWERS -> {
                         Text(
                             text = "${user.totalCorrectAnswers}",
-                            style = TextStyle.titleMedium,
+                            style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Correct Answers",
-                            style = TextStyle.bodySmall,
+                            style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     LeaderboardSortType.COMPLETED_TESTS -> {
                         Text(
                             text = "${user.completedTestsCount}",
-                            style = TextStyle.titleMedium,
+                            style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Completed Tests",
-                            style = TextStyle.bodySmall,
+                            style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -508,12 +497,12 @@ fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = user.username,
-                    style = TextStyle.titleLarge,
+                    style = TextStyle.TitleLarge.value,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${directionToString(user.direction)}, ${levelToString(user.level)}",
-                    style = TextStyle.bodyMedium,
+                    style = TextStyle.BodyMedium.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
@@ -524,7 +513,7 @@ fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
                 
                 Text(
                     "Statistics",
-                    style = TextStyle.titleMedium,
+                    style = TextStyle.TitleMedium.value,
                     modifier = Modifier.align(Alignment.Start)
                 )
                 
@@ -536,15 +525,15 @@ fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
                 StatisticRow("Completed Tests", "${user.completedTestsCount}")
                 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
-                    Text("Close")
+                    Text("Close", color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
@@ -559,8 +548,8 @@ private fun StatisticRow(label: String, value: String) {
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, style = TextStyle.bodyMedium)
-        Text(value, style = TextStyle.bodyMedium, color = MaterialTheme.colorScheme.primary)
+        Text(label, style = TextStyle.BodyMedium.value)
+        Text(value, style = TextStyle.BodyMedium.value, color = MaterialTheme.colorScheme.primary)
     }
 }
 

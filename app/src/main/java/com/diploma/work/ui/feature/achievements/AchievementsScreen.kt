@@ -31,6 +31,8 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.diploma.work.data.models.Achievement
+import com.diploma.work.ui.theme.Text
+import com.diploma.work.ui.theme.TextStyle
 import com.orhanobut.logger.Logger
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,10 +69,9 @@ fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)
-            ) {
-                Text(
+            ) {                Text(
                     text = "Achievements",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = TextStyle.HeadlineMedium.value,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
@@ -338,13 +339,14 @@ fun AchievementDetailsDialog(
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                Button(
+                  Button(
+                      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
+                          contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                     onClick = onDismiss,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Close")
+                    Text(text = "Close", color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
@@ -382,10 +384,10 @@ fun ErrorView(
         Button(
             onClick = onRetry,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primaryContainer
             )
         ) {
-            Text(text = "Retry")
+            Text(text = "Retry", color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }
@@ -427,10 +429,10 @@ fun EmptyAchievementsView(onRefresh: () -> Unit) {
         Button(
             onClick = onRefresh,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primaryContainer
             )
         ) {
-            Text(text = "Refresh")
+            Text(text = "Refresh", color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }

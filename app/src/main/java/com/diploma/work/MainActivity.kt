@@ -21,9 +21,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DiplomaWorkTheme(themeManager = themeManager) {
-                AppNavigation(session = session, themeManager)
-            }
+            DiplomaWorkTheme(
+                themeManager = themeManager,
+                content = {
+                    AppNavigation(session = session, themeManager)
+                }
+            )
         }
     }
 }

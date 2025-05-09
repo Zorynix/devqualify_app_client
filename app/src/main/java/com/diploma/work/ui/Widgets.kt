@@ -28,9 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -56,6 +54,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import com.diploma.work.R
+import com.diploma.work.ui.theme.Theme
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -66,33 +65,32 @@ fun BasicDialog(
     description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
-) {
-    Surface(modifier = modifier) {
+) {    Surface(modifier = modifier, color = Theme.extendedColorScheme.backgroundBox) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
+        ) {        com.diploma.work.ui.theme.Text(
                 text = title,
-                fontWeight = FontWeight.Bold,
+                style = com.diploma.work.ui.theme.TextStyle.TitleMedium.value,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.size(8.dp))
-            Text(
+            com.diploma.work.ui.theme.Text(
                 text = description,
-                color = MaterialTheme.colorScheme.onSurface
+                style = com.diploma.work.ui.theme.TextStyle.BodyMedium.value,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.size(16.dp))
             Button(
                 onClick = onClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(containerColor = Theme.extendedColorScheme.primaryActive),
                 shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(
+            ) {                com.diploma.work.ui.theme.Text(
                     text = stringResource(id = R.string.ok),
+                    style = com.diploma.work.ui.theme.TextStyle.ButtonText.value,
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 32.dp),
                 )
@@ -116,12 +114,11 @@ fun DiplomTextField(
     singleLine: Boolean = false,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = RoundedCornerShape(10.dp),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },    shape: Shape = RoundedCornerShape(10.dp),
     colors: TextFieldColors = TextFieldDefaults.colors(
-        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+        focusedIndicatorColor = Theme.extendedColorScheme.outlineActive,
         unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-        errorIndicatorColor = MaterialTheme.colorScheme.error
+        errorIndicatorColor = Theme.extendedColorScheme.outlineDanger
     ),
     label: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
@@ -193,7 +190,7 @@ fun DiplomPasswordTextField(
                     ),
                     contentDescription = "Toggle password visibility",
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = Theme.extendedColorScheme.onBackgroundHint
                 )
             }
         },

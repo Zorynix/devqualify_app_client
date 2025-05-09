@@ -31,6 +31,7 @@ import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.diploma.work.ui.theme.Theme
 
 @Composable
 fun LoginScreen(
@@ -62,36 +63,34 @@ fun LoginScreen(
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
         }
-
-        Text("Войти", style = TextStyle.titleLarge)
-
+        Text("Войти", style = TextStyle.TitleLarge.value)
         DiplomTextField(
             value = username,
             onValueChange = { viewModel.onUsernameChanged(it) },
-            label = { Text("Email", style = TextStyle.bodySmall) },
+            label = { Text("Email", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 16.dp)
         )
-
         DiplomPasswordTextField(
             value = password,
             onValueChange = { viewModel.onPasswordChanged(it) },
-            label = { Text("Пароль", style = TextStyle.bodySmall) },
+            label = { Text("Пароль", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
-
         if (errorMessage != null) {
             Text(
                 text = errorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                style = TextStyle.bodySmall,
+                color = Theme.extendedColorScheme.outlineDanger,
+                style = TextStyle.BodySmall.value,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
         Button(
             onClick = { viewModel.onLoginClicked(session) },
             enabled = loginEnabled && !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.padding(top = 16.dp)
         ) {
@@ -101,16 +100,15 @@ fun LoginScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Войти", color = MaterialTheme.colorScheme.onPrimary)
+                Text("Войти", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
-
         Row(modifier = Modifier.padding(top = 16.dp)) {
-            Text("Нет аккаунта? ", style = TextStyle.bodySmall)
+            Text("Нет аккаунта? ", style = TextStyle.BodyMedium.value)
             Text(
                 "Зарегистрироваться",
-                style = TextStyle.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                style = TextStyle.Link.value,
+                color = Theme.extendedColorScheme.onBackgroundPositive,
                 modifier = Modifier.clickable {
                     navController.navigate(Register)
                 }

@@ -44,6 +44,7 @@ playServicesLocation = "21.3.0"
 retrofit = "2.11.0"
 composeMaterial = "1.4.1"
 uiVersion = "1.7.8"
+uiTextGoogleFontsVersion = "1.8.1"
 
 [libraries]
 accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanistSwiperefreshVersion" }
@@ -120,6 +121,7 @@ ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-material-icons-extended = {  group = "androidx.compose.material", name = "material-icons-extended"}
+androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFontsVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

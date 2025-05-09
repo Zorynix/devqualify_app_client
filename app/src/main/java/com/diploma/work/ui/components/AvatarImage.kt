@@ -20,6 +20,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.diploma.work.data.AppSession
+import com.diploma.work.ui.theme.Theme
 import javax.inject.Inject
 
 /**
@@ -43,8 +44,7 @@ fun AvatarImage(
     if (avatarUrl == "data:avatar") {
         val bitmap = remember { session.getAvatarBitmap() }
         
-        if (bitmap != null) {
-            Image(
+        if (bitmap != null) {            Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "User Avatar",
                 contentScale = ContentScale.Crop,
@@ -53,13 +53,12 @@ fun AvatarImage(
                     .clip(CircleShape)
                     .then(
                         if (borderWidth > 0.dp) 
-                            Modifier.border(borderWidth, MaterialTheme.colorScheme.primary, CircleShape)
+                            Modifier.border(borderWidth, Theme.extendedColorScheme.outlineActive, CircleShape)
                         else
                             Modifier
                     )
             )
-        } else {
-            // Fallback to default avatar if bitmap is null
+        } else {            // Fallback to default avatar if bitmap is null
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data("https://ui-avatars.com/api/?name=User&background=random&size=200")
@@ -72,15 +71,14 @@ fun AvatarImage(
                     .clip(CircleShape)
                     .then(
                         if (borderWidth > 0.dp) 
-                            Modifier.border(borderWidth, MaterialTheme.colorScheme.primary, CircleShape)
+                            Modifier.border(borderWidth, Theme.extendedColorScheme.outlineActive, CircleShape)
                         else
                             Modifier
                     ),
                 error = painterResource(android.R.drawable.ic_menu_gallery)
             )
         }
-    } else {
-        // Load regular URL avatar
+    } else {        // Load regular URL avatar
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(avatarUrl)
@@ -93,7 +91,7 @@ fun AvatarImage(
                 .clip(CircleShape)
                 .then(
                     if (borderWidth > 0.dp) 
-                        Modifier.border(borderWidth, MaterialTheme.colorScheme.primary, CircleShape)
+                        Modifier.border(borderWidth, Theme.extendedColorScheme.outlineActive, CircleShape)
                     else
                         Modifier
                 ),
