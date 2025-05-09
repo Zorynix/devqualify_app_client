@@ -21,6 +21,9 @@ object Profile : NavRoute
 object Achievements : NavRoute
 
 @Serializable
+object Leaderboard : NavRoute
+
+@Serializable
 object UserInfo : NavRoute
 
 @Serializable

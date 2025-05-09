@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
@@ -38,6 +39,7 @@ import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.home.HomeScreen
+import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
 import com.diploma.work.ui.feature.profile.AppDrawerContent
 import com.diploma.work.ui.feature.profile.ProfileScreen
 import com.diploma.work.ui.theme.AppThemeType
@@ -63,11 +65,11 @@ fun AppNavigation(
     )
     
     val theme by themeManager.currentTheme.collectAsState()
-
     val navItems = listOf(
         BottomNavItem.Home,
         BottomNavItem.Profile,
-        BottomNavItem.Achievements
+        BottomNavItem.Achievements,
+        BottomNavItem.Leaderboard
     )
 
     ModalNavigationDrawer(
@@ -197,6 +199,14 @@ fun AppNavigation(
                     }
                     AchievementsScreen()
                 }
+                composable<Leaderboard> {
+                    shouldShowBottomNav.value = true
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    LeaderboardScreen(navController)
+                }
                 composable(
                     route = "emailConfirmation/{email}",
                     arguments = listOf(navArgument("email") { type = NavType.StringType })
@@ -214,4 +224,5 @@ sealed class BottomNavItem(val route: NavRoute, val icon: ImageVector) {
     object Home : BottomNavItem(com.diploma.work.ui.navigation.Home, Icons.Default.Home)
     object Profile : BottomNavItem(com.diploma.work.ui.navigation.Profile, Icons.Default.Person)
     object Achievements : BottomNavItem(com.diploma.work.ui.navigation.Achievements, Icons.Default.Star)
+    object Leaderboard : BottomNavItem(com.diploma.work.ui.navigation.Leaderboard, Icons.Filled.Leaderboard)
 }

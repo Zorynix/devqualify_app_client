@@ -87,9 +87,19 @@ sealed interface TextStyle {
             get() =
                 androidx.compose.ui.text.TextStyle(
                     fontFamily = displayFontFamily,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight(400),
-                    lineHeight = 16.sp)
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight(800),
+                    lineHeight = 28.sp)
+    }
+    
+    data object headlineSmall : TextStyle {
+        override val value: androidx.compose.ui.text.TextStyle
+            get() =
+                androidx.compose.ui.text.TextStyle(
+                    fontFamily = displayFontFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight(500),
+                    lineHeight = 24.sp)
     }
 
 }
