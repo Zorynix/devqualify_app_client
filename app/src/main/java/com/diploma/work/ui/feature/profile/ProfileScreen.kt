@@ -62,6 +62,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.window.Dialog
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -301,9 +303,7 @@ private fun UserProfileContent(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? -> 
             if (uri != null) {
-                coroutineScope.launch {
-                    viewModel.saveAvatarImage(uri)
-                }
+                viewModel.uploadAvatar(uri)
                 onImagePickerClicked(uri)
             }
         }
@@ -473,76 +473,56 @@ private fun UserProfileContent(
         }
         
         if (showAvatarDialog) {
-            AvatarSelectionDialog(
-                currentAvatarUrl = avatarUrl,
-                onPickImageClicked = {
-                    imagePicker.launch("image/*")
-                    showAvatarDialog = false
-                },
-                onDismiss = { showAvatarDialog = false }
-            )
-        }
-    }
-}
-
-@Composable
-fun AvatarSelectionDialog(
-    currentAvatarUrl: String,
-    onPickImageClicked: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "Select Avatar",
-                style = TextStyle.TitleLarge.value,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(currentAvatarUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Current Avatar",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                error = painterResource(android.R.drawable.ic_menu_gallery)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = onPickImageClicked,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Choose from Device", color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancel")
+            Dialog(onDismissRequest = { showAvatarDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Change Avatar",
+                            style = TextStyle.TitleLarge.value,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        com.diploma.work.ui.components.AvatarImage(
+                            avatarUrl = avatarUrl,
+                            size = 120.dp,
+                            borderWidth = 2.dp,
+                            session = viewModel.session
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Button(
+                            onClick = { 
+                                imagePicker.launch("image/*")
+                                showAvatarDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ) {
+                            Text("Choose from Gallery", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextButton(
+                            onClick = { showAvatarDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                }
             }
         }
     }

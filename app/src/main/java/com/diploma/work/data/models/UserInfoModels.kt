@@ -21,7 +21,8 @@ data class User(
     val totalIncorrectAnswers: Int,
     val completedTestsCount: Int,
     val achievementsCount: Int,
-    val achievements: List<Achievement>
+    val achievements: List<Achievement>,
+    val avatarUrl: String = ""
 )
 
 data class Achievement(
@@ -93,5 +94,79 @@ data class UpdateUserAchievementsRequest(
 data class UpdateUserAchievementsResponse(
     val success: Boolean,
     val achievements: List<Achievement>,
+    val message: String
+)
+
+data class UploadUserAvatarRequest(
+    val userId: Long,
+    val avatarData: ByteArray,
+    val contentType: String
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UploadUserAvatarRequest
+
+        if (userId != other.userId) return false
+        if (!avatarData.contentEquals(other.avatarData)) return false
+        if (contentType != other.contentType) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = userId.hashCode()
+        result = 31 * result + avatarData.contentHashCode()
+        result = 31 * result + contentType.hashCode()
+        return result
+    }
+}
+
+data class UploadUserAvatarResponse(
+    val success: Boolean,
+    val avatarUrl: String,
+    val message: String
+)
+
+data class UpdateUserAvatarRequest(
+    val userId: Long,
+    val avatarData: ByteArray,
+    val contentType: String
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UpdateUserAvatarRequest
+
+        if (userId != other.userId) return false
+        if (!avatarData.contentEquals(other.avatarData)) return false
+        if (contentType != other.contentType) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = userId.hashCode()
+        result = 31 * result + avatarData.contentHashCode()
+        result = 31 * result + contentType.hashCode()
+        return result
+    }
+}
+
+data class UpdateUserAvatarResponse(
+    val success: Boolean,
+    val avatarUrl: String,
+    val message: String
+)
+
+data class GetUserAvatarRequest(
+    val userId: Long
+)
+
+data class GetUserAvatarResponse(
+    val success: Boolean,
+    val avatarUrl: String,
     val message: String
 )

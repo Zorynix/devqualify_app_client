@@ -40,7 +40,6 @@ fun AvatarImage(
 ) {
     val context = LocalContext.current
     
-    // If the special "data:avatar" marker is used, load from SharedPreferences
     if (avatarUrl == "data:avatar") {
         val bitmap = remember { session.getAvatarBitmap() }
         
@@ -58,7 +57,7 @@ fun AvatarImage(
                             Modifier
                     )
             )
-        } else {            // Fallback to default avatar if bitmap is null
+        } else {
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data("https://ui-avatars.com/api/?name=User&background=random&size=200")
@@ -78,7 +77,7 @@ fun AvatarImage(
                 error = painterResource(android.R.drawable.ic_menu_gallery)
             )
         }
-    } else {        // Load regular URL avatar
+    } else {
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(avatarUrl)

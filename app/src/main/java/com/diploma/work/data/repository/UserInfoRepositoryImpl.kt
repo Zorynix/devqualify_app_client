@@ -39,4 +39,19 @@ class UserInfoRepositoryImpl @Inject constructor(
         Logger.d("Updating achievements for userId: ${request.userId}")
         return userInfoGrpcClient.updateUserAchievements(request)
     }
+    
+    override suspend fun uploadUserAvatar(request: UploadUserAvatarRequest): Result<UploadUserAvatarResponse> {
+        Logger.d("Uploading avatar for userId: ${request.userId}")
+        return userInfoGrpcClient.uploadUserAvatar(request)
+    }
+    
+    override suspend fun updateUserAvatar(request: UpdateUserAvatarRequest): Result<UpdateUserAvatarResponse> {
+        Logger.d("Updating avatar for userId: ${request.userId}")
+        return userInfoGrpcClient.updateUserAvatar(request)
+    }
+    
+    override suspend fun getUserAvatar(request: GetUserAvatarRequest): Result<GetUserAvatarResponse> {
+        Logger.d("Getting avatar for userId: ${request.userId}")
+        return userInfoGrpcClient.getUserAvatar(request)
+    }
 }

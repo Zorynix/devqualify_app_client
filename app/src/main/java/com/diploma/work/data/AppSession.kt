@@ -84,20 +84,25 @@ class AppSession(private val context: Context) {
     suspend fun storeAvatarImage(uri: Uri) {
         try {
             withContext(Dispatchers.IO) {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                if (inputStream != null) {
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-                    inputStream.close()
-                    
-                    val outputStream = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-                    val byteArray = outputStream.toByteArray()
-                    val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
-                    
-                    sharedPrefs.edit { putString("avatar_data", base64String) }
-                    Logger.d("Avatar image stored as base64 string")
-                    
-                    _avatarUrlFlow.value = "data:avatar"
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    if (inputStream != null) {
+                        val bitmap = BitmapFactory.decodeStream(inputStream)
+                        inputStream.close()
+                        
+                        val outputStream = ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                        val byteArray = outputStream.toByteArray()
+                        val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
+                        
+                        sharedPrefs.edit { putString("avatar_data", base64String) }
+                        Logger.d("Avatar image stored as base64 string")
+                        
+                        _avatarUrlFlow.value = "data:avatar"
+                    }
+                } catch (e: Exception) {
+                    Logger.e("Error processing avatar image: ${e.message}")
+                    throw e
                 }
             }
         } catch (e: Exception) {

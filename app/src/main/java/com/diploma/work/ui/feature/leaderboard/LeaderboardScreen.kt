@@ -401,7 +401,8 @@ fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit)
             val viewModel = hiltViewModel<LeaderboardViewModel>()
             
             AvatarImage(
-                avatarUrl = "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
+                avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
+                           else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
                 size = 50.dp,
                 borderWidth = 2.dp,
                 session = viewModel.session
@@ -488,7 +489,8 @@ fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AvatarImage(
-                    avatarUrl = "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
+                    avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
+                               else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
                     size = 100.dp,
                     borderWidth = 2.dp,
                     session = viewModel.session

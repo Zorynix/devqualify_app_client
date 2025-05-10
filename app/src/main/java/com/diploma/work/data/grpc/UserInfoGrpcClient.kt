@@ -3,6 +3,7 @@ package com.diploma.work.data.grpc
 import com.diploma.work.data.models.*
 import com.diploma.work.grpc.UserServiceGrpc
 import com.diploma.work.grpc.Pagination as GrpcPagination
+import com.google.protobuf.ByteString
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
@@ -183,6 +184,91 @@ class UserInfoGrpcClient @Inject constructor(
             Result.failure(e)
         }
     }
+    
+    suspend fun uploadUserAvatar(request: UploadUserAvatarRequest): Result<UploadUserAvatarResponse> = withContext(Dispatchers.IO) {
+        try {
+            Logger.d("Uploading avatar for userId: ${request.userId}")
+            
+            val grpcRequest = com.diploma.work.grpc.UploadUserAvatarRequest.newBuilder()
+                .setUserId(request.userId)
+                .setAvatarData(ByteString.copyFrom(request.avatarData))
+                .setContentType(request.contentType)
+                .build()
+                
+            val grpcResponse = stub.uploadUserAvatar(grpcRequest)
+            
+            Logger.d("Successfully uploaded avatar: ${grpcResponse.avatarUrl}")
+            Result.success(
+                UploadUserAvatarResponse(
+                    success = grpcResponse.success,
+                    avatarUrl = grpcResponse.avatarUrl,
+                    message = grpcResponse.message
+                )
+            )
+        } catch (e: StatusRuntimeException) {
+            Logger.e("gRPC error while uploading avatar: ${e.status.code} - ${e.status.description}")
+            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+        } catch (e: Exception) {
+            Logger.e("Error while uploading avatar")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateUserAvatar(request: UpdateUserAvatarRequest): Result<UpdateUserAvatarResponse> = withContext(Dispatchers.IO) {
+        try {
+            Logger.d("Updating avatar for userId: ${request.userId}")
+            
+            val grpcRequest = com.diploma.work.grpc.UpdateUserAvatarRequest.newBuilder()
+                .setUserId(request.userId)
+                .setAvatarData(ByteString.copyFrom(request.avatarData))
+                .setContentType(request.contentType)
+                .build()
+                
+            val grpcResponse = stub.updateUserAvatar(grpcRequest)
+            
+            Logger.d("Successfully updated avatar: ${grpcResponse.avatarUrl}")
+            Result.success(
+                UpdateUserAvatarResponse(
+                    success = grpcResponse.success,
+                    avatarUrl = grpcResponse.avatarUrl,
+                    message = grpcResponse.message
+                )
+            )
+        } catch (e: StatusRuntimeException) {
+            Logger.e("gRPC error while updating avatar: ${e.status.code} - ${e.status.description}")
+            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+        } catch (e: Exception) {
+            Logger.e("Error while updating avatar")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getUserAvatar(request: GetUserAvatarRequest): Result<GetUserAvatarResponse> = withContext(Dispatchers.IO) {
+        try {
+            Logger.d("Getting avatar for userId: ${request.userId}")
+            
+            val grpcRequest = com.diploma.work.grpc.GetUserAvatarRequest.newBuilder()
+                .setUserId(request.userId)
+                .build()
+                
+            val grpcResponse = stub.getUserAvatar(grpcRequest)
+            
+            Logger.d("Successfully got avatar: ${grpcResponse.avatarUrl}")
+            Result.success(
+                GetUserAvatarResponse(
+                    success = grpcResponse.success,
+                    avatarUrl = grpcResponse.avatarUrl,
+                    message = grpcResponse.message
+                )
+            )
+        } catch (e: StatusRuntimeException) {
+            Logger.e("gRPC error while getting avatar: ${e.status.code} - ${e.status.description}")
+            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+        } catch (e: Exception) {
+            Logger.e("Error while getting avatar")
+            Result.failure(e)
+        }
+    }
 
     private fun com.diploma.work.grpc.User.toModel(): User {
         return User(
@@ -195,7 +281,8 @@ class UserInfoGrpcClient @Inject constructor(
             totalIncorrectAnswers = totalIncorrectAnswers,
             completedTestsCount = completedTestsCount,
             achievementsCount = achievementsCount9,
-            achievements = achievements10List.map { it.toModel() }
+            achievements = achievements10List.map { it.toModel() },
+            avatarUrl = avatarUrl
         )
     }
     

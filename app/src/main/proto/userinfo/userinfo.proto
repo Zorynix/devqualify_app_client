@@ -45,6 +45,7 @@ message User {
   int32 completed_tests_count = 8;
   int32 achievements_count = 9;
   repeated Achievement achievements = 10;
+  string avatar_url = 11;
 }
 
 message TestSummary {
@@ -62,6 +63,10 @@ service UserService {
   rpc GetUserAchievements(GetUserAchievementsRequest) returns (GetUserAchievementsResponse);
   rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse);
   rpc UpdateUserAchievements(UpdateUserAchievementsRequest) returns (UpdateUserAchievementsResponse);
+  
+  rpc UploadUserAvatar(UploadUserAvatarRequest) returns (UploadUserAvatarResponse);
+  rpc UpdateUserAvatar(UpdateUserAvatarRequest) returns (UpdateUserAvatarResponse);
+  rpc GetUserAvatar(GetUserAvatarRequest) returns (GetUserAvatarResponse);
 }
 
 message GetUserRequest {
@@ -120,5 +125,39 @@ message UpdateUserAchievementsRequest {
 message UpdateUserAchievementsResponse {
   bool success = 1;
   repeated Achievement achievements = 2;
+  string message = 3;
+}
+
+message UploadUserAvatarRequest {
+  int64 user_id = 1;
+  bytes avatar_data = 2;
+  string content_type = 3;
+}
+
+message UploadUserAvatarResponse {
+  bool success = 1;
+  string avatar_url = 2;
+  string message = 3;
+}
+
+message UpdateUserAvatarRequest {
+  int64 user_id = 1;
+  bytes avatar_data = 2;
+  string content_type = 3;
+}
+
+message UpdateUserAvatarResponse {
+  bool success = 1;
+  string avatar_url = 2;
+  string message = 3;
+}
+
+message GetUserAvatarRequest {
+  int64 user_id = 1;
+}
+
+message GetUserAvatarResponse {
+  bool success = 1;
+  string avatar_url = 2;
   string message = 3;
 }
