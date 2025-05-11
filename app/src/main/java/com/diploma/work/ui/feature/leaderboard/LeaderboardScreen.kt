@@ -59,8 +59,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.R
 import com.diploma.work.data.models.User
-import com.diploma.work.grpc.Direction
-import com.diploma.work.grpc.Level
+import com.diploma.work.grpc.userinfo.Direction
+import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.components.AvatarImage
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle

@@ -1,8 +1,8 @@
 package com.diploma.work.data.grpc
 
 import com.diploma.work.data.models.*
-import com.diploma.work.grpc.UserServiceGrpc
-import com.diploma.work.grpc.Pagination as GrpcPagination
+import com.diploma.work.grpc.userinfo.UserServiceGrpc
+import com.diploma.work.grpc.userinfo.Pagination as GrpcPagination
 import com.google.protobuf.ByteString
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
@@ -20,7 +20,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Getting user info for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.GetUserRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.GetUserRequest.newBuilder()
                 .setUserId(request.userId)
                 .build()
                 
@@ -42,7 +42,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Updating user profile for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.UpdateUserProfileRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.UpdateUserProfileRequest.newBuilder()
                 .setUserId(request.userId)
                 .setUsername(request.username)
                 .setDirection(request.direction)
@@ -72,7 +72,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setPageToken(request.pagination.pageToken)
                 .build()
                 
-            val grpcRequest = com.diploma.work.grpc.GetUserTestHistoryRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.GetUserTestHistoryRequest.newBuilder()
                 .setUserId(request.userId)
                 .setPagination(pagination)
                 .build()
@@ -100,7 +100,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Getting achievements for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.GetUserAchievementsRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.GetUserAchievementsRequest.newBuilder()
                 .setUserId(request.userId)
                 .build()
                 
@@ -131,7 +131,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setPageToken(request.pagination.pageToken)
                 .build()
                 
-            val grpcRequest = com.diploma.work.grpc.GetLeaderboardRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.GetLeaderboardRequest.newBuilder()
                 .setDirection(request.direction)
                 .setLevel(request.level)
                 .setPagination(pagination)
@@ -160,7 +160,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Updating achievements for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.UpdateUserAchievementsRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.UpdateUserAchievementsRequest.newBuilder()
                 .setUserId(request.userId)
                 .addAllAchievementIds(request.achievementIds)
                 .build()
@@ -189,7 +189,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Uploading avatar for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.UploadUserAvatarRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.UploadUserAvatarRequest.newBuilder()
                 .setUserId(request.userId)
                 .setAvatarData(ByteString.copyFrom(request.avatarData))
                 .setContentType(request.contentType)
@@ -218,7 +218,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Updating avatar for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.UpdateUserAvatarRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.UpdateUserAvatarRequest.newBuilder()
                 .setUserId(request.userId)
                 .setAvatarData(ByteString.copyFrom(request.avatarData))
                 .setContentType(request.contentType)
@@ -247,7 +247,7 @@ class UserInfoGrpcClient @Inject constructor(
         try {
             Logger.d("Getting avatar for userId: ${request.userId}")
             
-            val grpcRequest = com.diploma.work.grpc.GetUserAvatarRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.userinfo.GetUserAvatarRequest.newBuilder()
                 .setUserId(request.userId)
                 .build()
                 
@@ -270,7 +270,7 @@ class UserInfoGrpcClient @Inject constructor(
         }
     }
 
-    private fun com.diploma.work.grpc.User.toModel(): User {
+    private fun com.diploma.work.grpc.userinfo.User.toModel(): User {
         return User(
             id = id,
             username = username,
@@ -286,7 +286,7 @@ class UserInfoGrpcClient @Inject constructor(
         )
     }
     
-    private fun com.diploma.work.grpc.Achievement.toModel(): Achievement {
+    private fun com.diploma.work.grpc.userinfo.Achievement.toModel(): Achievement {
         return Achievement(
             id = id,
             name = name,
@@ -296,7 +296,7 @@ class UserInfoGrpcClient @Inject constructor(
         )
     }
     
-    private fun com.diploma.work.grpc.TestSummary.toModel(): TestSummary {
+    private fun com.diploma.work.grpc.userinfo.TestSummary.toModel(): TestSummary {
         return TestSummary(
             id = id,
             title = title,

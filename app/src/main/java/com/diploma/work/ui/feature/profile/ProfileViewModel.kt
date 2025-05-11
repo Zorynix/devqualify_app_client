@@ -13,8 +13,8 @@ import com.diploma.work.data.models.UploadUserAvatarRequest
 import com.diploma.work.data.models.UploadUserAvatarResponse
 import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
-import com.diploma.work.grpc.Direction
-import com.diploma.work.grpc.Level
+import com.diploma.work.grpc.userinfo.Direction
+import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager
 import com.orhanobut.logger.Logger

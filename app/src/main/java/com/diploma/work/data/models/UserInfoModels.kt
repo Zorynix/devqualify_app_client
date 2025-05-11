@@ -1,7 +1,7 @@
 package com.diploma.work.data.models
 
-import com.diploma.work.grpc.Direction
-import com.diploma.work.grpc.Level
+import com.diploma.work.grpc.userinfo.Direction
+import com.diploma.work.grpc.userinfo.Level
 
 data class GetUserRequest(
     val userId: Long
@@ -60,7 +60,7 @@ data class GetUserTestHistoryResponse(
 )
 
 data class TestSummary(
-    val id: Long,
+    val id: String,
     val title: String,
     val completionDate: String,
     val score: Int,

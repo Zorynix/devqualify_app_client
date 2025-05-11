@@ -4,9 +4,11 @@ import android.content.Context
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.grpc.AuthGrpcClient
 import com.diploma.work.data.grpc.GrpcClient
+import com.diploma.work.data.grpc.TestsGrpcClient
 import com.diploma.work.data.grpc.UserInfoGrpcClient
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.data.repository.AuthRepositoryImpl
+import com.diploma.work.data.repository.TestsRepository
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.data.repository.UserInfoRepositoryImpl
 import com.diploma.work.ui.theme.ThemeManager
@@ -28,6 +30,10 @@ annotation class AuthChannel
 @Retention(AnnotationRetention.BINARY)
 annotation class UserInfoChannel
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class TestsChannel
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -46,6 +52,15 @@ object AppModule {
     @Singleton
     fun provideUserInfoManagedChannel(): ManagedChannel {
         return ManagedChannelBuilder.forTarget("10.0.2.2:50052")
+            .usePlaintext()
+            .build()
+    }
+
+    @TestsChannel
+    @Provides
+    @Singleton
+    fun provideTestsManagedChannel(): ManagedChannel {
+        return ManagedChannelBuilder.forTarget("10.0.2.2:50053")
             .usePlaintext()
             .build()
     }
@@ -74,6 +89,12 @@ object AppModule {
         return UserInfoGrpcClient(channel)
     }
 
+//    @Provides
+//    @Singleton
+//    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel): TestsGrpcClient {
+//        return TestsGrpcClient(channel)
+//    }
+
     @Provides
     @Singleton
     fun provideAuthRepository(authGrpcClient: AuthGrpcClient): AuthRepository {
@@ -85,6 +106,12 @@ object AppModule {
     fun provideUserInfoRepository(userInfoGrpcClient: UserInfoGrpcClient): UserInfoRepository {
         return UserInfoRepositoryImpl(userInfoGrpcClient)
     }
+
+//    @Provides
+//    @Singleton
+//    fun provideTestsRepository(TestsGrpcClient: TestsGrpcClient): TestsRepository {
+//        return TestsRepositoryImpl(TestsGrpcClient)
+//    }
 
     @Provides
     @Singleton

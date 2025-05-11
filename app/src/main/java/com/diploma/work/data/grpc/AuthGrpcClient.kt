@@ -12,7 +12,7 @@ import com.diploma.work.data.models.RegisterRequest
 import com.diploma.work.data.models.RegisterResponse
 import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.models.SendConfirmationCodeResponse
-import com.diploma.work.grpc.AuthServiceGrpc
+import com.diploma.work.grpc.auth.AuthServiceGrpc
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +26,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun register(request: RegisterRequest): Result<RegisterResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.RegisterRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.RegisterRequest.newBuilder()
                 .setPassword(request.password)
                 .setEmail(request.email)
                 .build()
@@ -41,7 +41,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun login(request: LoginRequest): Result<LoginResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.LoginRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.LoginRequest.newBuilder()
                 .setPassword(request.password)
                 .setEmail(request.email)
                 .setAppId(request.appId)
@@ -62,7 +62,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun logout(request: LogoutRequest): Result<LogoutResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.LogoutRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.LogoutRequest.newBuilder()
                 .setAccessToken(request.accessToken)
                 .build()
             val grpcResponse = stub.logout(grpcRequest)
@@ -76,7 +76,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun isAdmin(request: IsAdminRequest): Result<IsAdminResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.IsAdminRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.IsAdminRequest.newBuilder()
                 .setUserId(request.userId)
                 .build()
             val grpcResponse = stub.isAdmin(grpcRequest)
@@ -90,7 +90,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun confirmEmail(request: ConfirmEmailRequest): Result<ConfirmEmailResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.ConfirmEmailRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.ConfirmEmailRequest.newBuilder()
                 .setConfirmationToken(request.confirmationToken)
                 .setEmail(request.email)
                 .build()
@@ -105,7 +105,7 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun sendConfirmationCode(request: SendConfirmationCodeRequest): Result<SendConfirmationCodeResponse> = withContext(Dispatchers.IO) {
         try {
-            val grpcRequest = com.diploma.work.grpc.SendConfirmationCodeRequest.newBuilder()
+            val grpcRequest = com.diploma.work.grpc.auth.SendConfirmationCodeRequest.newBuilder()
                 .setEmail(request.email)
                 .build()
             val grpcResponse = stub.sendConfirmationCode(grpcRequest)

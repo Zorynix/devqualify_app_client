@@ -10,8 +10,8 @@ import com.diploma.work.data.models.GetUserResponse
 import com.diploma.work.data.models.Pagination
 import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
-import com.diploma.work.grpc.Direction
-import com.diploma.work.grpc.Level
+import com.diploma.work.grpc.userinfo.Direction
+import com.diploma.work.grpc.userinfo.Level
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
