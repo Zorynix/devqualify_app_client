@@ -47,7 +47,7 @@ fun LoginScreen(
     val loginSuccess by viewModel.loginSuccess.collectAsState()
 
     if (loginSuccess) {
-        navController.navigate(Home) {
+        navController.navigate(Home::class.simpleName.toString()) {
             popUpTo(navController.graph.startDestinationId) { inclusive = true }
             launchSingleTop = true
         }
@@ -110,7 +110,7 @@ fun LoginScreen(
                 style = TextStyle.Link.value,
                 color = Theme.extendedColorScheme.onBackgroundPositive,
                 modifier = Modifier.clickable {
-                    navController.navigate(Register)
+                    navController.navigate(Register::class.simpleName.toString())
                 }
             )
         }

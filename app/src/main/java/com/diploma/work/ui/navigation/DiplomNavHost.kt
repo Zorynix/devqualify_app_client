@@ -26,14 +26,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavOptions
 import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.diploma.work.data.AppSession
-import com.diploma.work.ui.DiplomNavHost
 import com.diploma.work.ui.feature.achievements.AchievementsScreen
 import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
@@ -42,10 +45,42 @@ import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
 import com.diploma.work.ui.feature.profile.AppDrawerContent
 import com.diploma.work.ui.feature.profile.ProfileScreen
+import com.diploma.work.ui.feature.test.TestDetailsScreen
+import com.diploma.work.ui.feature.test.TestResultScreen
+import com.diploma.work.ui.feature.test.TestSessionScreen
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+fun NavController.navigate(
+    route: NavRoute,
+    builder: (NavOptions.Builder.() -> Unit)? = null
+) {
+
+    val routeName = when (route) {
+        is Login -> "Login"
+        is Register -> "Register"
+        is Home -> "Home"
+        is Profile -> "Profile"
+        is Achievements -> "Achievements"
+        is Leaderboard -> "Leaderboard"
+        is TestDetails -> "TestDetails/${route.testId}"
+        is TestSession -> "TestSession/${route.sessionId}"
+        is TestResult -> "TestResult/${route.sessionId}"
+        is EmailConfirmation -> "EmailConfirmation/${route.email}"
+        else -> route.javaClass.simpleName
+    }
+
+    android.util.Log.d("NavDebug", "Navigating to route: $routeName (raw: $route)")
+        
+    if (builder != null) {
+        val optionsBuilder = NavOptions.Builder().apply(builder)
+        navigate(routeName, optionsBuilder.build())
+    } else {
+        navigate(routeName)
+    }
+}
 
 @Composable
 fun AppNavigation(
@@ -89,7 +124,7 @@ fun AppNavigation(
                         shouldShowBottomNav.value = false
                         scope.launch {
                             drawerState.close()
-                            navController.navigate(Login) {
+                            navController.navigate("Login") {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 launchSingleTop = true
                             }
@@ -107,13 +142,26 @@ fun AppNavigation(
                         val currentRoute by navController.currentBackStackEntryAsState()
                         navItems.forEach { item ->
                             val selected = currentRoute?.destination?.hierarchy?.any {
-                                it.route == item.route::class.qualifiedName
+                                it.route == when (item.route) {
+                                    is Home -> "Home"
+                                    is Profile -> "Profile"
+                                    is Achievements -> "Achievements"
+                                    is Leaderboard -> "Leaderboard"
+                                    else -> ""
+                                }
                             } == true
 
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
-                                    navController.navigate(item.route) {
+                                    val route = when (item.route) {
+                                        is Home -> "Home" 
+                                        is Profile -> "Profile"
+                                        is Achievements -> "Achievements"
+                                        is Leaderboard -> "Leaderboard"
+                                        else -> ""
+                                    }
+                                    navController.navigate(route) {
                                         popUpTo(navController.graph.startDestinationId) {
                                             saveState = true
                                         }
@@ -124,7 +172,13 @@ fun AppNavigation(
                                 icon = {
                                     Icon(
                                         imageVector = item.icon,
-                                        contentDescription = item.route::class.simpleName
+                                        contentDescription = when (item.route) {
+                                            is Home -> "Home"
+                                            is Profile -> "Profile"
+                                            is Achievements -> "Achievements"
+                                            is Leaderboard -> "Leaderboard"
+                                            else -> ""
+                                        }
                                     )
                                 }
                             )
@@ -133,9 +187,9 @@ fun AppNavigation(
                 }
             }
         ) { innerPadding ->
-            DiplomNavHost(
+            NavHost(
                 navController = navController,
-                startDestination = if (session.getToken() != null) Home else Login,
+                startDestination = if (session.getToken() != null) "Home" else "Login",
                 modifier = Modifier.padding(innerPadding),
                 enterTransition = {
                     slideIntoContainer(
@@ -162,23 +216,23 @@ fun AppNavigation(
                     ) + fadeOut(animationSpec = tween(300))
                 }
             ) {
-                composable<Login> {
+                composable("Login") {
                     shouldShowBottomNav.value = false
                     LoginScreen(navController, session)
                 }
-                composable<Register> {
+                composable("Register") {
                     shouldShowBottomNav.value = false
                     RegistrationScreen(navController, session)
                 }
-                composable<Home> {
+                composable("Home") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
                         session.getUsername()
                         session.getAvatarUrl()
                     }
-                    HomeScreen()
+                    HomeScreen(navController)
                 }
-                composable<Profile> {
+                composable("Profile") {
                     shouldShowBottomNav.value = true
                     val profileScreen = ProfileScreen(
                         navController = navController,
@@ -191,7 +245,7 @@ fun AppNavigation(
                     }
                     profileScreen
                 }
-                composable<Achievements> {
+                composable("Achievements") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
                         session.getUsername()
@@ -199,7 +253,7 @@ fun AppNavigation(
                     }
                     AchievementsScreen()
                 }
-                composable<Leaderboard> {
+                composable("Leaderboard") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
                         session.getUsername()
@@ -208,12 +262,36 @@ fun AppNavigation(
                     LeaderboardScreen(navController)
                 }
                 composable(
-                    route = "emailConfirmation/{email}",
-                    arguments = listOf(navArgument("email") { type = NavType.StringType })
-                ) { backStackEntry ->
+                    route = "TestDetails/{testId}",
+                    arguments = listOf(navArgument("testId") { type = NavType.LongType })
+                ) {
+                    val testId = it.arguments?.getLong("testId") ?: 0L
                     shouldShowBottomNav.value = false
-                    val email = backStackEntry.arguments?.getString("email") ?: ""
-                    EmailConfirmationScreen(navController = navController, email = email)
+                    TestDetailsScreen(navController, testId)
+                }
+                composable(
+                    route = "TestSession/{sessionId}",
+                    arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+                ) {
+                    val sessionId = it.arguments?.getString("sessionId") ?: ""
+                    shouldShowBottomNav.value = false
+                    TestSessionScreen(navController, sessionId)
+                }
+                composable(
+                    route = "TestResult/{sessionId}",
+                    arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+                ) {
+                    val sessionId = it.arguments?.getString("sessionId") ?: ""
+                    shouldShowBottomNav.value = false
+                    TestResultScreen(navController, sessionId)
+                }
+                composable(
+                    route = "EmailConfirmation/{email}",
+                    arguments = listOf(navArgument("email") { type = NavType.StringType })
+                ) {
+                    val email = it.arguments?.getString("email") ?: ""
+                    shouldShowBottomNav.value = false
+                    EmailConfirmationScreen(navController, email)
                 }
             }
         }

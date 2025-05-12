@@ -9,6 +9,7 @@ import com.diploma.work.data.grpc.UserInfoGrpcClient
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.data.repository.AuthRepositoryImpl
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.data.repository.TestsRepositoryImpl
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.data.repository.UserInfoRepositoryImpl
 import com.diploma.work.ui.theme.ThemeManager
@@ -89,11 +90,11 @@ object AppModule {
         return UserInfoGrpcClient(channel)
     }
 
-//    @Provides
-//    @Singleton
-//    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel): TestsGrpcClient {
-//        return TestsGrpcClient(channel)
-//    }
+    @Provides
+    @Singleton
+    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel, session: AppSession): TestsGrpcClient {
+        return TestsGrpcClient(channel, session)
+    }
 
     @Provides
     @Singleton
@@ -107,11 +108,11 @@ object AppModule {
         return UserInfoRepositoryImpl(userInfoGrpcClient)
     }
 
-//    @Provides
-//    @Singleton
-//    fun provideTestsRepository(TestsGrpcClient: TestsGrpcClient): TestsRepository {
-//        return TestsRepositoryImpl(TestsGrpcClient)
-//    }
+    @Provides
+    @Singleton
+    fun provideTestsRepository(testsGrpcClient: TestsGrpcClient): TestsRepository {
+        return TestsRepositoryImpl(testsGrpcClient)
+    }
 
     @Provides
     @Singleton

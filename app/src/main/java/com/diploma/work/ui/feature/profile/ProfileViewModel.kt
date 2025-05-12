@@ -126,14 +126,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun toggleTheme() {
-        themeManager.toggleTheme()
-        _uiState.value = _uiState.value.copy(theme = themeManager.currentTheme.value)
-    }
-
-    fun logout() {
-        session.clearToken()
-    }
     
     fun onUsernameChanged(newValue: String) {
         _uiState.value = _uiState.value.copy(username = newValue)

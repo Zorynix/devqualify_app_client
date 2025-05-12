@@ -28,3 +28,12 @@ object UserInfo : NavRoute
 
 @Serializable
 data class EmailConfirmation(val email: String) : NavRoute
+
+@Serializable
+data class TestDetails(val testId: Long) : NavRoute
+
+@Serializable
+data class TestSession(val sessionId: String) : NavRoute
+
+@Serializable
+data class TestResult(val sessionId: String) : NavRoute
