@@ -62,6 +62,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.espresso.remote)
     val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
@@ -131,10 +132,16 @@ dependencies {
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.coil.compose.v310)
+
+    implementation(libs.compose.markdown)
+
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 }
 kapt {
     correctErrorTypes = true
 }
+
 
 protobuf {
     protoc {
@@ -143,7 +150,7 @@ protobuf {
     plugins {
         create("java")
         create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.71.0"
+            artifact = "io.grpc:protoc-gen-grpc-java:1.72.0"
         }
     }
     generateProtoTasks {

@@ -110,8 +110,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTestsRepository(testsGrpcClient: TestsGrpcClient): TestsRepository {
-        return TestsRepositoryImpl(testsGrpcClient)
+    fun provideTestsRepository(testsGrpcClient: TestsGrpcClient, @ApplicationContext context: Context): TestsRepository {
+        return TestsRepositoryImpl(testsGrpcClient, context)
     }
 
     @Provides

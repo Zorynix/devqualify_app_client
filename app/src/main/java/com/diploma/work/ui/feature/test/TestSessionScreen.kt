@@ -26,8 +26,10 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -44,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,13 +59,16 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.QuestionType
-import com.diploma.work.ui.navigation.TestResult
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.orhanobut.logger.Logger
+import dev.jeziellago.compose.markdowntext.MarkdownText
+import androidx.activity.compose.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,15 +79,53 @@ fun TestSessionScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var elapsedTime by remember { mutableStateOf(0L) }
+    var startTime by remember { mutableStateOf(0L) }
+
+    BackHandler {
+        Logger.d("Navigation: Back button pressed in TestSessionScreen")
+        showConfirmDialog = true
+    }
 
     LaunchedEffect(sessionId) {
-        viewModel.loadTestSession(sessionId)
+        Logger.d("TestSessionScreen: Loading session with ID: $sessionId")
+        viewModel.loadSavedTestSession(sessionId)
+    }
+    
+    LaunchedEffect(state.testSession) {
+        if (state.testSession != null) {
+            startTime = state.testSession!!.startedAt
+        }
+    }
+
+    LaunchedEffect(startTime) {
+        while (true) {
+            elapsedTime = System.currentTimeMillis() - startTime
+            delay(1000)
+        }
     }
 
     LaunchedEffect(state.testCompleted) {
         if (state.testCompleted && state.testResult != null) {
             navController.navigate("TestResult/$sessionId") {
                 popUpTo(navController.graph.startDestinationId)
+            }
+        }
+    }
+
+    LaunchedEffect(state.error) {
+        if (state.error?.contains("session already completed") == true) {
+            viewModel.loadTestSession(sessionId)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                is NavigationEvent.NavigateUp -> {
+                    Logger.d("Navigation: Handling NavigateUp event from TestSessionScreen")
+                    navController.popBackStack(navController.graph.startDestinationId, false)
+                }
             }
         }
     }
@@ -110,9 +155,7 @@ fun TestSessionScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = formatTime(
-                                System.currentTimeMillis() - (state.testSession?.startedAt ?: System.currentTimeMillis())
-                            ),
+                            text = formatTime(elapsedTime),
                             style = TextStyle.BodyMedium.value,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -129,6 +172,33 @@ fun TestSessionScreen(
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator()
+            } else if (state.isCompletingTest) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Finalizing your test...",
+                        style = TextStyle.TitleMedium.value,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Please wait while we calculate your results",
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else if (state.error != null) {
                 Column(
                     modifier = Modifier
@@ -172,14 +242,23 @@ fun TestSessionScreen(
                     totalQuestions = state.testSession?.questions?.size ?: 0,
                     selectedOptions = state.selectedOptions,
                     textAnswer = state.textAnswer,
-                    codeAnswer = state.codeAnswer,
                     onOptionSelected = { viewModel.toggleOption(it) },
                     onTextAnswerChanged = { viewModel.setTextAnswer(it) },
-                    onCodeAnswerChanged = { viewModel.setCodeAnswer(it) },
                     onPrevious = { viewModel.goToPreviousQuestion() },
                     onNext = { viewModel.saveAnswer() },
                     isSavingAnswer = state.isSavingAnswer,
-                    showPrevious = state.currentQuestionIndex > 0
+                    isCompletingTest = state.isCompletingTest,
+                    showPrevious = state.currentQuestionIndex > 0,
+                    isQuestionAnswered = state.isCurrentQuestionAnswered,
+                    isIncorrectlyAnswered = state.currentQuestionIndex >= 0 &&
+                                           viewModel.getCurrentQuestion()?.let {
+                                               state.incorrectlyAnsweredQuestions.contains(it.id)
+                                           } ?: false,
+                    isCorrectlyAnswered = state.currentQuestionIndex >= 0 &&
+                                          viewModel.getCurrentQuestion()?.let {
+                                              state.correctlyAnsweredQuestions.contains(it.id)
+                                          } ?: false,
+                    isLastQuestion = (state.currentQuestionIndex + 1) == (state.testSession?.questions?.size ?: 0)
                 )
             }
 
@@ -199,7 +278,7 @@ fun TestSessionScreen(
                         TextButton(
                             onClick = {
                                 showConfirmDialog = false
-                                navController.navigateUp()
+                                viewModel.handleLeaveTest()
                             }
                         ) {
                             Text("Leave", color = MaterialTheme.colorScheme.error)
@@ -223,14 +302,17 @@ fun QuestionScreen(
     totalQuestions: Int,
     selectedOptions: List<Int>,
     textAnswer: String,
-    codeAnswer: String,
     onOptionSelected: (Int) -> Unit,
     onTextAnswerChanged: (String) -> Unit,
-    onCodeAnswerChanged: (String) -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     isSavingAnswer: Boolean,
-    showPrevious: Boolean
+    isCompletingTest: Boolean,
+    showPrevious: Boolean,
+    isQuestionAnswered: Boolean,
+    isIncorrectlyAnswered: Boolean,
+    isCorrectlyAnswered: Boolean,
+    isLastQuestion: Boolean
 ) {
     if (question == null) {
         Column(
@@ -256,9 +338,9 @@ fun QuestionScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onNext,
-                enabled = !isSavingAnswer
+                enabled = !isSavingAnswer && !isCompletingTest
             ) {
-                if (isSavingAnswer) {
+                if (isSavingAnswer || isCompletingTest) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -304,6 +386,58 @@ fun QuestionScreen(
             )
         }
 
+        if (isIncorrectlyAnswered) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Error,
+                        contentDescription = "Incorrect",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "This question was answered incorrectly",
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        } else if (isCorrectlyAnswered) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Correct",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Great job! You answered this question correctly",
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Card(
@@ -331,22 +465,61 @@ fun QuestionScreen(
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(12.dp),
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Code,
-                                contentDescription = "Code",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = question.sampleCode,
-                                style = TextStyle.BodyMedium.value,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Code,
+                                    contentDescription = "Code",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Code Sample",
+                                    style = TextStyle.BodyMedium.value,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            val codeWithLanguage = if (question.type == QuestionType.CODE) {
+                                val codeText = question.sampleCode
+                                val language = when {
+                                    codeText.startsWith("// kotlin") -> "kotlin"
+                                    codeText.startsWith("// java") -> "java"
+                                    codeText.startsWith("// js") || codeText.startsWith("// javascript") -> "javascript"
+                                    codeText.startsWith("// python") -> "python"
+                                    codeText.startsWith("// c++") || codeText.startsWith("// cpp") -> "cpp"
+                                    codeText.startsWith("// c#") || codeText.startsWith("// csharp") -> "csharp"
+                                    codeText.startsWith("// html") -> "html"
+                                    codeText.startsWith("// css") -> "css"
+                                    else -> "kotlin"
+                                }
+
+                                """
+                                ```$language
+                                $codeText
+                                ```
+                                """.trimIndent()
+                            } else {
+                                val codeText = question.sampleCode
+                                """
+                                ```kotlin
+                                $codeText
+                                ```
+                                """.trimIndent()
+                            }
+
+                            MarkdownText(
+                                markdown = codeWithLanguage,
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp
                             )
                         }
                     }
@@ -355,59 +528,139 @@ fun QuestionScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 when (question.type) {
-                    QuestionType.MCQ -> {
+                    QuestionType.MULTIPLE_CHOICE -> {
                         question.options.forEachIndexed { index, option ->
                             val isSelected = selectedOptions.contains(index)
+                            val backgroundColor = when {
+                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                else -> MaterialTheme.colorScheme.surfaceVariant
+                            }
+                            val textColor = when {
+                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                                    )
+                                    .background(backgroundColor)
                                     .selectable(
                                         selected = isSelected,
-                                        onClick = { onOptionSelected(index) },
-                                        role = Role.Checkbox
+                                        onClick = { 
+                                            if (!isQuestionAnswered) {
+                                                onOptionSelected(index) 
+                                            }
+                                        },
+                                        role = Role.Checkbox,
+                                        enabled = !isQuestionAnswered
+                                    )
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = isSelected,
+                                    onCheckedChange = { 
+                                        if (!isQuestionAnswered) {
+                                            onOptionSelected(index)
+                                        }
+                                    },
+                                    enabled = !isQuestionAnswered
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = option,
+                                    style = TextStyle.BodyMedium.value,
+                                    color = textColor
+                                )
+                            }
+                        }
+                    }
+                    QuestionType.SINGLE_CHOICE, QuestionType.CODE -> {
+                        question.options.forEachIndexed { index, option ->
+                            val isSelected = selectedOptions.contains(index)
+                            val backgroundColor = when {
+                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                else -> MaterialTheme.colorScheme.surfaceVariant
+                            }
+                            val textColor = when {
+                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(backgroundColor)
+                                    .selectable(
+                                        selected = isSelected,
+                                        onClick = { 
+                                            if (!isQuestionAnswered) {
+                                                onOptionSelected(index)
+                                            }
+                                        },
+                                        role = Role.RadioButton,
+                                        enabled = !isQuestionAnswered
                                     )
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
                                     selected = isSelected,
-                                    onClick = { onOptionSelected(index) }
+                                    onClick = { 
+                                        if (!isQuestionAnswered) {
+                                            onOptionSelected(index)
+                                        }
+                                    },
+                                    enabled = !isQuestionAnswered
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = option,
                                     style = TextStyle.BodyMedium.value,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = textColor
                                 )
                             }
                         }
                     }
                     QuestionType.TEXT -> {
+                        val textFieldColors = if (isIncorrectlyAnswered) {
+                            OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.error,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        } else if (isCorrectlyAnswered) {
+                            OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        } else {
+                            OutlinedTextFieldDefaults.colors()
+                        }
+                        
                         OutlinedTextField(
                             value = textAnswer,
                             onValueChange = onTextAnswerChanged,
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Your Answer") },
-                            minLines = 3
+                            minLines = 3,
+                            enabled = !isQuestionAnswered,
+                            colors = textFieldColors
                         )
                     }
-//                    QuestionType.CODE -> {
-//                        OutlinedTextField(
-//                            value = codeAnswer,
-//                            onValueChange = onCodeAnswerChanged,
-//                            modifier = Modifier.fillMaxWidth(),
-//                            label = { Text("Your Code") },
-//                            minLines = 5,
-//                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-//                        )
-//                    }
                     else -> {
                         Text(
                             text = "Unsupported question type",
@@ -445,10 +698,10 @@ fun QuestionScreen(
             Button(
                 onClick = onNext,
                 modifier = Modifier.weight(1f),
-                enabled = !isSavingAnswer,
+                enabled = !isSavingAnswer && (!isLastQuestion || !isCompletingTest),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                if (isSavingAnswer) {
+                if (isSavingAnswer || isCompletingTest) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -456,7 +709,7 @@ fun QuestionScreen(
                     )
                 } else {
                     Text(
-                        text = if (questionNumber == totalQuestions) "Finish" else "Next",
+                        text = if (isLastQuestion) "Finish" else "Next",
                         style = TextStyle.LabelLarge.value,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -508,8 +761,11 @@ fun ExplanationDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Understand", color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = onDismiss, colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )) {
+                Text("Understand", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
     )
@@ -524,4 +780,4 @@ private fun formatTime(timeInMillis: Long): String {
     } else {
         String.format("%02d:%02d", minutes, seconds)
     }
-} 
+}

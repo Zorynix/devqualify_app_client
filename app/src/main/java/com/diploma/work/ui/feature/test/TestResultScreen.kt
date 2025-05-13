@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -181,14 +182,18 @@ fun TestResultScreen(
                                     inclusive = true
                                 }
                             } },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Home,
                                 contentDescription = "Home"
                             )
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Back to Home", style = TextStyle.LabelLarge.value)
+                            Text("Back to Home", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         Spacer(modifier = Modifier.height(24.dp))
                     }
@@ -224,9 +229,9 @@ fun ScoreSection(score: Int, totalPoints: Int) {
                 style = TextStyle.TitleMedium.value,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Surface(
                 modifier = Modifier.size(120.dp),
                 shape = CircleShape,
@@ -241,9 +246,9 @@ fun ScoreSection(score: Int, totalPoints: Int) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -266,9 +271,9 @@ fun QuestionResultItem(questionResult: QuestionResult) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (questionResult.isCorrect)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                MaterialTheme.colorScheme.primaryContainer
             else
-                MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                MaterialTheme.colorScheme.errorContainer
         )
     ) {
         Row(
@@ -279,11 +284,11 @@ fun QuestionResultItem(questionResult: QuestionResult) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(
                         if (questionResult.isCorrect)
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.primaryContainer
                         else
                             MaterialTheme.colorScheme.error
                     ),
@@ -295,13 +300,13 @@ fun QuestionResultItem(questionResult: QuestionResult) {
                     else
                         Icons.Default.Error,
                     contentDescription = if (questionResult.isCorrect) "Correct" else "Incorrect",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-            
+
             Spacer(modifier = Modifier.size(12.dp))
-            
+
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -313,35 +318,35 @@ fun QuestionResultItem(questionResult: QuestionResult) {
                         style = TextStyle.LabelLarge.value,
                         fontWeight = FontWeight.Bold,
                         color = if (questionResult.isCorrect)
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.error
                     )
-                    
+
                     Text(
                         text = "${questionResult.pointsEarned} point${if (questionResult.pointsEarned != 1) "s" else ""}",
                         style = TextStyle.LabelMedium.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 if (!questionResult.isCorrect) {
                     Text(
                         text = "Your answer: ${questionResult.userAnswer}",
                         style = TextStyle.BodySmall.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     Text(
                         text = "Correct answer: ${questionResult.correctAnswer}",
                         style = TextStyle.BodySmall.value,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     if (questionResult.feedback.isNotBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -354,4 +359,4 @@ fun QuestionResultItem(questionResult: QuestionResult) {
             }
         }
     }
-} 
+}

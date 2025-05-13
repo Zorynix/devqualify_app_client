@@ -50,6 +50,7 @@ import com.diploma.work.ui.feature.test.TestResultScreen
 import com.diploma.work.ui.feature.test.TestSessionScreen
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager
+import com.orhanobut.logger.Logger
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -72,6 +73,7 @@ fun NavController.navigate(
         else -> route.javaClass.simpleName
     }
 
+    Logger.d("Navigation: Navigating to $routeName")
     android.util.Log.d("NavDebug", "Navigating to route: $routeName (raw: $route)")
         
     if (builder != null) {
@@ -93,6 +95,7 @@ fun AppNavigation(
     val scope = rememberCoroutineScope()
     
     val isLoggedIn = session.getToken() != null
+    Logger.d("Navigation: AppNavigation setup, user logged in: $isLoggedIn")
     
     val username = session.observeUsername().collectAsState(initial = session.getUsername() ?: "User")
     val avatarUrl = session.observeAvatarUrl().collectAsState(
@@ -120,6 +123,7 @@ fun AppNavigation(
                         themeManager.toggleTheme()
                     },
                     onLogout = {
+                        Logger.d("Navigation: User logging out")
                         session.clearToken()
                         shouldShowBottomNav.value = false
                         scope.launch {
@@ -161,6 +165,7 @@ fun AppNavigation(
                                         is Leaderboard -> "Leaderboard"
                                         else -> ""
                                     }
+                                    Logger.d("Navigation: Bottom nav bar click - $route")
                                     navController.navigate(route) {
                                         popUpTo(navController.graph.startDestinationId) {
                                             saveState = true

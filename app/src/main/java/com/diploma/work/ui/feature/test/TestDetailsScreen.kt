@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -219,6 +220,58 @@ fun TestDetailsScreen(
                     Spacer(modifier = Modifier.weight(1f))
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    if (state.hasUnfinishedSession) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "Незавершенный тест",
+                                        style = TextStyle.TitleMedium.value,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    
+                                    Text(
+                                        text = "У вас есть начатый тест на вопросе ${state.lastSavedQuestionIndex + 1}",
+                                        style = TextStyle.BodyMedium.value,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Button(
+                                onClick = { viewModel.continueTest() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary,
+                                    contentColor = MaterialTheme.colorScheme.onTertiary
+                                )
+                            ) {
+                                Text(
+                                    "Продолжить тест", 
+                                    style = TextStyle.LabelLarge.value,
+                                    color = MaterialTheme.colorScheme.onTertiary
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+
                     Button(
                         onClick = { viewModel.startTest() },
                         modifier = Modifier.fillMaxWidth(),
@@ -231,7 +284,11 @@ fun TestDetailsScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Start Test", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(
+                                if (state.hasUnfinishedSession) "Начать заново" else "Начать тест", 
+                                style = TextStyle.LabelLarge.value, 
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
                 }
@@ -287,4 +344,4 @@ private fun getLevelIcon(level: Level?): ImageVector {
         Level.SENIOR -> Icons.Default.Computer
         else -> Icons.Default.Computer
     }
-} 
+}

@@ -101,14 +101,14 @@ fun HomeScreen(
                             ChipGroup(
                                 items = listOf(null) + Direction.entries.filter { it != Direction.UNSPECIFIED },
                                 selectedItem = state.selectedDirection?.toModelDirection(),
-                                onSelectedChanged = { direction -> 
-                                    viewModel.selectDirection(direction?.toProtoDirection()) 
+                                onSelectedChanged = { direction ->
+                                    viewModel.selectDirection(direction?.toProtoDirection())
                                 },
                                 chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
                             )
-                            
+
                             Spacer(modifier = Modifier.height(16.dp))
-                            
+
                             Text(
                                 text = "Filter by Level",
                                 style = TextStyle.LabelMedium.value,
@@ -119,15 +119,15 @@ fun HomeScreen(
                             ChipGroup(
                                 items = listOf(null) + Level.entries.filter { it != Level.UNSPECIFIED },
                                 selectedItem = state.selectedLevel?.toModelLevel(),
-                                onSelectedChanged = { level -> 
-                                    viewModel.selectLevel(level?.toProtoLevel()) 
+                                onSelectedChanged = { level ->
+                                    viewModel.selectLevel(level?.toProtoLevel())
                                 },
                                 chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
                             )
-                            
+
                             if (state.technologies.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(16.dp))
-                                
+
                                 Text(
                                     text = "Filter by Technology",
                                     style = TextStyle.LabelMedium.value,
@@ -138,8 +138,8 @@ fun HomeScreen(
                                 ChipGroup(
                                     items = listOf(null) + state.technologies,
                                     selectedItem = state.selectedTechnology,
-                                    onSelectedChanged = { technology -> 
-                                        viewModel.selectTechnology(technology) 
+                                    onSelectedChanged = { technology ->
+                                        viewModel.selectTechnology(technology)
                                     },
                                     chipLabel = { it?.name ?: "All" }
                                 )
@@ -269,9 +269,9 @@ fun TestCard(
                 style = TextStyle.HeadlineSmall.value,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = test.description,
                 style = TextStyle.BodyMedium.value,
@@ -279,9 +279,9 @@ fun TestCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -297,7 +297,7 @@ fun TestCard(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
-                
+
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(4.dp)

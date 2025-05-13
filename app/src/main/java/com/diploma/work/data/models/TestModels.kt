@@ -17,7 +17,8 @@ enum class Level {
 
 enum class QuestionType {
     UNSPECIFIED,
-    MCQ,
+    MULTIPLE_CHOICE,
+    SINGLE_CHOICE,
     TEXT,
     CODE
 }

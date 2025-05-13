@@ -40,17 +40,17 @@ class HomeViewModel @Inject constructor(
     fun loadTests() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
+
             val direction = _uiState.value.selectedDirection
             val level = _uiState.value.selectedLevel
             val technologyId = _uiState.value.selectedTechnology?.id
-            
+
             val testFlow = if (technologyId != null) {
                 testsRepository.getTestsByTechnology(technologyId, level)
             } else {
                 testsRepository.getTests(direction, level)
             }
-            
+
             testFlow
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(

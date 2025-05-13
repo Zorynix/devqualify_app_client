@@ -28,7 +28,7 @@ class TestResultViewModel @Inject constructor(
     fun loadTestResult(sessionId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            testsRepository.completeTestSession(sessionId)
+            testsRepository.getTestResults(sessionId)
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -54,4 +54,4 @@ class TestResultViewModel @Inject constructor(
                 }
         }
     }
-} 
+}
