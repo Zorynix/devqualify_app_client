@@ -4,13 +4,20 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
-import com.diploma.work.data.models.QuestionResult
 import com.diploma.work.data.models.Technology
 import com.diploma.work.data.models.TestSession
-import com.diploma.work.grpc.tests.*
-import com.diploma.work.grpc.tests.Answer
+import com.diploma.work.grpc.tests.CompleteTestSessionRequest
+import com.diploma.work.grpc.tests.GetTechnologiesRequest
+import com.diploma.work.grpc.tests.GetTestRequest
+import com.diploma.work.grpc.tests.GetTestResultsRequest
+import com.diploma.work.grpc.tests.GetTestSessionRequest
+import com.diploma.work.grpc.tests.GetTestsByTechnologyRequest
+import com.diploma.work.grpc.tests.GetTestsRequest
 import com.diploma.work.grpc.tests.Question
+import com.diploma.work.grpc.tests.SaveAnswerRequest
+import com.diploma.work.grpc.tests.StartTestSessionRequest
 import com.diploma.work.grpc.tests.TestInfo
+import com.diploma.work.grpc.tests.TestServiceGrpc
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
@@ -23,19 +30,19 @@ import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.runBlocking
 
 @Singleton
 class TestsGrpcClient @Inject constructor(
     private val channel: ManagedChannel,
-    private val session: AppSession
+    private val session: AppSession,
+    private val context: android.content.Context
 ) {
     private val stub: TestServiceGrpc.TestServiceBlockingStub = TestServiceGrpc.newBlockingStub(channel)
     private val tag = "grpc.tests"
-    
-    // Мьютекс для управления доступом к процессу завершения теста
+
     private val completeTestMutex = Mutex()
-    
-    // Кэш для хранения уже завершенных сессий тестов
+
     private val completedSessions = ConcurrentHashMap<String, Boolean>()
 
     fun getTechnologies(direction: Direction? = null): Flow<Result<List<Technology>>> = flow {
@@ -146,7 +153,7 @@ class TestsGrpcClient @Inject constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    fun getTest(testId: Long): Flow<Result<com.diploma.work.data.models.Test>> = flow {
+    fun getTest(testId: Long): Flow<Result<Test>> = flow {
         try {
             Logger.d("$tag: Getting test details for test ID: $testId")
             val request = GetTestRequest.newBuilder()
@@ -161,7 +168,7 @@ class TestsGrpcClient @Inject constructor(
                 mapProtoQuestionToModel(protoQuestion)
             }
 
-            val test = com.diploma.work.data.models.Test(
+            val test = Test(
                 info = testInfo,
                 questions = questions
             )
@@ -182,6 +189,13 @@ class TestsGrpcClient @Inject constructor(
             val userId = session.getUserId() ?: 0L
             Logger.d("$tag: Starting test session for test ID: $testId, user ID: $userId")
 
+            val testRequest = GetTestRequest.newBuilder()
+                .setTestId(testId)
+                .build()
+            
+            val testResponse = stub.getTest(testRequest)
+            val testInfo = mapProtoTestInfoToModel(testResponse.test)
+
             val request = StartTestSessionRequest.newBuilder()
                 .setTestId(testId)
                 .setUserId(userId)
@@ -192,7 +206,8 @@ class TestsGrpcClient @Inject constructor(
                 sessionId = response.sessionId,
                 testId = testId,
                 questions = emptyList(),
-                startedAt = System.currentTimeMillis()
+                startedAt = System.currentTimeMillis(),
+                testInfo = testInfo
             )
             Logger.d("$tag: Test session started successfully with session ID: ${response.sessionId}")
             emit(Result.success(testSession))
@@ -220,7 +235,7 @@ class TestsGrpcClient @Inject constructor(
                 mapProtoQuestionToModel(protoQuestion)
             }
 
-            val answers = HashMap<Long, com.diploma.work.data.models.Answer>()
+            val answers = HashMap<Long, Answer>()
 
             val startTime = System.currentTimeMillis()
 
@@ -229,7 +244,8 @@ class TestsGrpcClient @Inject constructor(
                 testId = response.test.id,
                 questions = questionsList,
                 startedAt = startTime,
-                answers = answers
+                answers = answers,
+                testInfo = testInfo
             )
             Logger.d("$tag: Retrieved test session for test '${testInfo.title}' with ${questionsList.size} questions")
             emit(Result.success(testSession))
@@ -244,22 +260,31 @@ class TestsGrpcClient @Inject constructor(
 
     fun saveAnswer(
         sessionId: String,
-        answer: com.diploma.work.data.models.Answer
+        answer: Answer
     ): Flow<Result<Boolean>> = flow {
         try {
             Logger.d("$tag: Saving answer for session ID: $sessionId, question ID: ${answer.questionId}")
+            
+            val answerType = when {
+                answer.selectedOptions.isNotEmpty() -> "selection"
+                !answer.textAnswer.isNullOrBlank() -> "text"
+                !answer.codeAnswer.isNullOrBlank() -> "code"
+                else -> "empty"
+            }
+            Logger.d("$tag: Answer type: $answerType")
+            
             val selectedOption = if (answer.selectedOptions.isNotEmpty()) {
                 answer.selectedOptions[0]
             } else {
                 0
             }
 
-            val request = SaveAnswerRequest.newBuilder()
+            val requestBuilder = SaveAnswerRequest.newBuilder()
                 .setSessionId(sessionId)
                 .setQuestionId(answer.questionId)
                 .setSelectedOption(selectedOption)
-                .build()
 
+            val request = requestBuilder.build()
             val response = stub.saveAnswer(request)
             Logger.d("$tag: Answer saved successfully for session ID: $sessionId, question ID: ${answer.questionId}")
 
@@ -278,8 +303,8 @@ class TestsGrpcClient @Inject constructor(
         selectedOptions: List<Int>,
         textAnswer: String?,
         codeAnswer: String?
-    ): com.diploma.work.data.models.Answer {
-        return com.diploma.work.data.models.Answer(
+    ): Answer {
+        return Answer(
             questionId = questionId,
             selectedOptions = selectedOptions,
             textAnswer = textAnswer,
@@ -289,27 +314,29 @@ class TestsGrpcClient @Inject constructor(
 
     fun completeTestSession(
         sessionId: String
-    ): Flow<Result<TestResult>> = flow {
-        // Проверяем, была ли сессия уже завершена ранее
+    ): Flow<Result<TestResult>> = flow<Result<TestResult>> {
         if (completedSessions.containsKey(sessionId)) {
             Logger.w("$tag: Session $sessionId already completed, getting test results instead")
-            // Вместо ошибки, получаем результаты теста
             try {
-                // Создаем запрос для получения результатов теста
                 val request = GetTestResultsRequest.newBuilder()
                     .setSubmissionId(sessionId)
                     .build()
                 
                 val response = stub.getTestResults(request)
+                
+                val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
+                val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+                
                 val result = TestResult(
                     score = response.score,
                     totalPoints = response.totalPoints,
                     feedback = response.feedback,
                     questionResults = response.questionResultsList.map { 
                         mapProtoQuestionResultToModel(it)
-                    }
+                    },
+                    durationMillis = elapsedTime
                 )
-                Logger.d("$tag: Retrieved test results for completed session ID: $sessionId")
+                Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTime ms")
                 emit(Result.success(result))
             } catch (e: Exception) {
                 Logger.e("$tag: Failed to get results for already completed session: $sessionId, error: ${e.message}")
@@ -327,15 +354,20 @@ class TestsGrpcClient @Inject constructor(
                         .build()
                     
                     val response = stub.getTestResults(request)
+                    
+                    val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
+                    val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+                    
                     val result = TestResult(
                         score = response.score,
                         totalPoints = response.totalPoints,
                         feedback = response.feedback,
                         questionResults = response.questionResultsList.map { 
                             mapProtoQuestionResultToModel(it)
-                        }
+                        },
+                        durationMillis = elapsedTime
                     )
-                    Logger.d("$tag: Retrieved test results for completed session ID: $sessionId")
+                    Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTime ms")
                     emit(Result.success(result))
                 } catch (e: Exception) {
                     Logger.e("$tag: Failed to get results for already completed session: $sessionId, error: ${e.message}")
@@ -371,7 +403,7 @@ class TestsGrpcClient @Inject constructor(
                 
                 Logger.d("$tag: Test session completed successfully for session ID: $sessionId")
                 Logger.d("$tag: Test result score: ${result.score}/${result.totalPoints}")
-                emit(Result.success(result))
+                emit(Result.success<TestResult>(result))
             } catch (e: StatusRuntimeException) {
                 if (e.status.description?.contains("session already completed") == true) {
                     completedSessions[sessionId] = true
@@ -421,15 +453,20 @@ class TestsGrpcClient @Inject constructor(
                 .build()
             
             val response = stub.getTestResults(request)
+            
+            val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
+            val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+            
             val result = TestResult(
                 score = response.score,
                 totalPoints = response.totalPoints,
                 feedback = response.feedback,
                 questionResults = response.questionResultsList.map { 
                     mapProtoQuestionResultToModel(it)
-                }
+                },
+                durationMillis = elapsedTime
             )
-            Logger.d("$tag: Retrieved test results successfully for session ID: $sessionId")
+            Logger.d("$tag: Retrieved test results successfully for session ID: $sessionId with duration: $elapsedTime ms")
             emit(Result.success(result))
         } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get test results for session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
@@ -440,19 +477,22 @@ class TestsGrpcClient @Inject constructor(
         }
     }.flowOn(Dispatchers.IO)
     
-    private fun mapProtoQuestionResultToModel(protoResult: com.diploma.work.grpc.tests.QuestionResult): com.diploma.work.data.models.QuestionResult {
-        return com.diploma.work.data.models.QuestionResult(
+    private fun mapProtoQuestionResultToModel(protoResult: com.diploma.work.grpc.tests.QuestionResult): QuestionResult {
+        // Логируем ответы для отладки
+        Logger.d("$tag: Mapping question result: correct='${protoResult.correctAnswer}', user='${protoResult.userAnswer}'")
+        
+        return QuestionResult(
             questionId = protoResult.questionId,
             isCorrect = protoResult.isCorrect,
             pointsEarned = protoResult.pointsEarned,
             feedback = protoResult.feedback,
-            correctAnswer = protoResult.correctAnswer,
-            userAnswer = protoResult.userAnswer
+            correctAnswer = protoResult.correctAnswer.trim(),
+            userAnswer = protoResult.userAnswer.trim()
         )
     }
 
     private fun mapProtoTestInfoToModel(protoTest: TestInfo): com.diploma.work.data.models.TestInfo {
-        return com.diploma.work.data.models.TestInfo(
+        return TestInfo(
             id = protoTest.id,
             title = protoTest.title,
             description = protoTest.description,
@@ -460,12 +500,13 @@ class TestsGrpcClient @Inject constructor(
             level = protoTest.level.toModelLevel(),
             technologyId = protoTest.technologyId,
             technologyName = protoTest.technologyName,
-            isPublished = protoTest.isPublished
+            isPublished = protoTest.isPublished,
+            questionsCount = protoTest.questionsCount
         )
     }
 
     private fun mapProtoQuestionToModel(protoQuestion: Question): com.diploma.work.data.models.Question {
-        return com.diploma.work.data.models.Question(
+        return Question(
             id = protoQuestion.id,
             text = protoQuestion.text,
             type = protoQuestion.type.toModelQuestionType(),
@@ -516,12 +557,12 @@ fun com.diploma.work.grpc.tests.Level.toModelLevel(): Level {
     }
 }
 
-fun com.diploma.work.grpc.tests.QuestionType.toModelQuestionType(): com.diploma.work.data.models.QuestionType {
+fun com.diploma.work.grpc.tests.QuestionType.toModelQuestionType(): QuestionType {
     return when (this) {
-        com.diploma.work.grpc.tests.QuestionType.MULTIPLE_CHOICE -> com.diploma.work.data.models.QuestionType.MULTIPLE_CHOICE
-        com.diploma.work.grpc.tests.QuestionType.SINGLE_CHOICE -> com.diploma.work.data.models.QuestionType.SINGLE_CHOICE
-        com.diploma.work.grpc.tests.QuestionType.TEXT -> com.diploma.work.data.models.QuestionType.TEXT
-        com.diploma.work.grpc.tests.QuestionType.CODE -> com.diploma.work.data.models.QuestionType.CODE
-        else -> com.diploma.work.data.models.QuestionType.UNSPECIFIED
+        com.diploma.work.grpc.tests.QuestionType.MULTIPLE_CHOICE -> QuestionType.MULTIPLE_CHOICE
+        com.diploma.work.grpc.tests.QuestionType.SINGLE_CHOICE -> QuestionType.SINGLE_CHOICE
+        com.diploma.work.grpc.tests.QuestionType.TEXT -> QuestionType.TEXT
+        com.diploma.work.grpc.tests.QuestionType.CODE -> QuestionType.CODE
+        else -> QuestionType.UNSPECIFIED
     }
 }

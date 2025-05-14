@@ -92,8 +92,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel, session: AppSession): TestsGrpcClient {
-        return TestsGrpcClient(channel, session)
+    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel, session: AppSession, @ApplicationContext context: Context): TestsGrpcClient {
+        return TestsGrpcClient(channel, session, context)
     }
 
     @Provides

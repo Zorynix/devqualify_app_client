@@ -40,7 +40,8 @@ data class TestSessionUiState(
     val incorrectlyAnsweredQuestions: Set<Long> = emptySet(),
     val correctlyAnsweredQuestions: Set<Long> = emptySet(),
     val isCurrentQuestionAnswered: Boolean = false,
-    val isTestCompletionInProgress: Boolean = false
+    val isTestCompletionInProgress: Boolean = false,
+    val elapsedTimeMillis: Long = 0
 )
 
 @HiltViewModel
@@ -394,7 +395,8 @@ class TestSessionViewModel @Inject constructor(
             return
         }
 
-        Logger.d("$tag: Completing test session: ${session.sessionId}")
+        val elapsedTime = _uiState.value.elapsedTimeMillis
+        Logger.d("$tag: Completing test session: ${session.sessionId} with elapsed time: $elapsedTime ms")
 
         completeTestDeferred = CompletableDeferred()
 
@@ -406,6 +408,8 @@ class TestSessionViewModel @Inject constructor(
             )
             
             try {
+                testsRepository.saveSessionProgress(session.sessionId, _uiState.value.currentQuestionIndex, elapsedTime)
+                
                 testsRepository.completeTestSession(session.sessionId)
                     .catch { e ->
                         Logger.e("$tag: Failed to complete test: ${e.message}")
@@ -467,6 +471,7 @@ class TestSessionViewModel @Inject constructor(
     fun handleLeaveTest() {
         val sessionId = _uiState.value.testSession?.sessionId ?: return
         val isCompletionInProgress = _uiState.value.isTestCompletionInProgress
+        val elapsedTime = _uiState.value.elapsedTimeMillis
         
         if (isLeavingTest || isCompletionInProgress) {
             Logger.d("$tag: Already leaving test or completion in progress, navigating up directly")
@@ -484,8 +489,8 @@ class TestSessionViewModel @Inject constructor(
                 val currentQuestion = getCurrentQuestion()
                 val currentIndex = _uiState.value.currentQuestionIndex
                 
-                Logger.d("$tag: Saving session progress at question index: $currentIndex")
-                testsRepository.saveSessionProgress(sessionId, currentIndex)
+                Logger.d("$tag: Saving session progress at question index: $currentIndex with elapsed time: $elapsedTime ms")
+                testsRepository.saveSessionProgress(sessionId, currentIndex, elapsedTime)
                 
                 if (currentQuestion != null && 
                     !_uiState.value.incorrectlyAnsweredQuestions.contains(currentQuestion.id) &&
@@ -528,6 +533,7 @@ class TestSessionViewModel @Inject constructor(
             
             try {
                 val savedProgress = testsRepository.getSessionProgress(sessionId)
+                val savedElapsedTime = testsRepository.getSessionElapsedTime(sessionId) ?: 0L
                 
                 testsRepository.getTestSession(sessionId)
                     .catch { e ->
@@ -541,13 +547,14 @@ class TestSessionViewModel @Inject constructor(
                         result.fold(
                             onSuccess = { session ->
                                 val savedIndex = savedProgress ?: 0
-                                Logger.d("$tag: Restored session progress to question index: $savedIndex")
+                                Logger.d("$tag: Restored session progress to question index: $savedIndex with elapsed time: $savedElapsedTime ms")
                                 
                                 _uiState.value = _uiState.value.copy(
                                     testSession = session,
                                     isLoading = false,
                                     error = null,
-                                    currentQuestionIndex = savedIndex
+                                    currentQuestionIndex = savedIndex,
+                                    elapsedTimeMillis = savedElapsedTime
                                 )
                                 
                                 val currentQuestion = session.questions.getOrNull(savedIndex)
@@ -578,5 +585,9 @@ class TestSessionViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun updateElapsedTime(timeMillis: Long) {
+        _uiState.value = _uiState.value.copy(elapsedTimeMillis = timeMillis)
     }
 }

@@ -64,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.QuestionType
+import com.diploma.work.ui.components.CodeHighlighterText
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.orhanobut.logger.Logger
@@ -94,13 +95,20 @@ fun TestSessionScreen(
     
     LaunchedEffect(state.testSession) {
         if (state.testSession != null) {
-            startTime = state.testSession!!.startedAt
+            startTime = if (state.elapsedTimeMillis > 0) {
+                System.currentTimeMillis() - state.elapsedTimeMillis
+            } else {
+                state.testSession!!.startedAt
+            }
+            elapsedTime = state.elapsedTimeMillis
         }
     }
 
     LaunchedEffect(startTime) {
         while (true) {
-            elapsedTime = System.currentTimeMillis() - startTime
+            val currentElapsedTime = System.currentTimeMillis() - startTime
+            elapsedTime = currentElapsedTime
+            viewModel.updateElapsedTime(currentElapsedTime)
             delay(1000)
         }
     }
@@ -239,7 +247,7 @@ fun TestSessionScreen(
                 QuestionScreen(
                     question = viewModel.getCurrentQuestion(),
                     questionNumber = state.currentQuestionIndex + 1,
-                    totalQuestions = state.testSession?.questions?.size ?: 0,
+                    totalQuestions = state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0,
                     selectedOptions = state.selectedOptions,
                     textAnswer = state.textAnswer,
                     onOptionSelected = { viewModel.toggleOption(it) },
@@ -258,7 +266,7 @@ fun TestSessionScreen(
                                           viewModel.getCurrentQuestion()?.let {
                                               state.correctlyAnsweredQuestions.contains(it.id)
                                           } ?: false,
-                    isLastQuestion = (state.currentQuestionIndex + 1) == (state.testSession?.questions?.size ?: 0)
+                    isLastQuestion = (state.currentQuestionIndex + 1) == (state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0)
                 )
             }
 
@@ -460,69 +468,10 @@ fun QuestionScreen(
 
                 if (question.sampleCode != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
+                    CodeHighlighterText(
+                        code = question.sampleCode,
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Code,
-                                    contentDescription = "Code",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Code Sample",
-                                    style = TextStyle.BodyMedium.value,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            val codeWithLanguage = if (question.type == QuestionType.CODE) {
-                                val codeText = question.sampleCode
-                                val language = when {
-                                    codeText.startsWith("// kotlin") -> "kotlin"
-                                    codeText.startsWith("// java") -> "java"
-                                    codeText.startsWith("// js") || codeText.startsWith("// javascript") -> "javascript"
-                                    codeText.startsWith("// python") -> "python"
-                                    codeText.startsWith("// c++") || codeText.startsWith("// cpp") -> "cpp"
-                                    codeText.startsWith("// c#") || codeText.startsWith("// csharp") -> "csharp"
-                                    codeText.startsWith("// html") -> "html"
-                                    codeText.startsWith("// css") -> "css"
-                                    else -> "kotlin"
-                                }
-
-                                """
-                                ```$language
-                                $codeText
-                                ```
-                                """.trimIndent()
-                            } else {
-                                val codeText = question.sampleCode
-                                """
-                                ```kotlin
-                                $codeText
-                                ```
-                                """.trimIndent()
-                            }
-
-                            MarkdownText(
-                                markdown = codeWithLanguage,
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -769,15 +718,4 @@ fun ExplanationDialog(
             }
         }
     )
-}
-
-private fun formatTime(timeInMillis: Long): String {
-    val seconds = (timeInMillis / 1000) % 60
-    val minutes = (timeInMillis / (1000 * 60)) % 60
-    val hours = (timeInMillis / (1000 * 60 * 60))
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
-    }
 }

@@ -75,7 +75,13 @@ class TestsRepositoryImpl @Inject constructor(
 
     override fun completeTestSession(sessionId: String): Flow<Result<TestResult>> {
         Logger.d("$tag: Completing test session for session ID: $sessionId")
-        sessionPrefs.edit().remove(getProgressKey(sessionId)).apply()
+        val elapsedTime = sessionPrefs.getLong(getElapsedTimeKey(sessionId), 0L)
+        Logger.d("$tag: Saving elapsed time before completion: $elapsedTime ms")
+        
+        sessionPrefs.edit()
+            .remove(getProgressKey(sessionId))
+            .apply()
+        
         return testsGrpcClient.completeTestSession(sessionId)
     }
 
@@ -84,11 +90,12 @@ class TestsRepositoryImpl @Inject constructor(
         return testsGrpcClient.getTestResults(sessionId)
     }
     
-    override suspend fun saveSessionProgress(sessionId: String, questionIndex: Int) {
-        Logger.d("$tag: Saving session progress for session ID: $sessionId, question index: $questionIndex")
+    override suspend fun saveSessionProgress(sessionId: String, questionIndex: Int, elapsedTimeMillis: Long) {
+        Logger.d("$tag: Saving session progress for session ID: $sessionId, question index: $questionIndex, elapsed time: $elapsedTimeMillis ms")
         sessionPrefs.edit()
             .putInt(getProgressKey(sessionId), questionIndex)
             .putLong(getTimestampKey(sessionId), System.currentTimeMillis())
+            .putLong(getElapsedTimeKey(sessionId), elapsedTimeMillis)
             .apply()
             
         val sessions = sessionPrefs.getStringSet(INCOMPLETE_SESSIONS_KEY, mutableSetOf<String>()) ?: mutableSetOf()
@@ -103,6 +110,17 @@ class TestsRepositoryImpl @Inject constructor(
             progress
         } else {
             Logger.d("$tag: No saved progress found for session ID: $sessionId")
+            null
+        }
+    }
+    
+    override suspend fun getSessionElapsedTime(sessionId: String): Long? {
+        val elapsedTime = sessionPrefs.getLong(getElapsedTimeKey(sessionId), -1)
+        return if (elapsedTime >= 0) {
+            Logger.d("$tag: Retrieved elapsed time for session ID: $sessionId: $elapsedTime ms")
+            elapsedTime
+        } else {
+            Logger.d("$tag: No saved elapsed time found for session ID: $sessionId")
             null
         }
     }
@@ -126,8 +144,15 @@ class TestsRepositoryImpl @Inject constructor(
         return result
     }
     
+    override suspend fun removeUncompletedSession(sessionId: String) {
+        Logger.d("$tag: Removing uncompleted session: $sessionId")
+        removeSession(sessionId)
+    }
+    
     private fun getProgressKey(sessionId: String) = "progress_$sessionId"
     private fun getTimestampKey(sessionId: String) = "timestamp_$sessionId"
+    private fun getElapsedTimeKey(sessionId: String) = "elapsed_time_$sessionId"
+    
     private fun removeSession(sessionId: String) {
         val sessions = sessionPrefs.getStringSet(INCOMPLETE_SESSIONS_KEY, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         sessions.remove(sessionId)
@@ -135,6 +160,7 @@ class TestsRepositoryImpl @Inject constructor(
             .putStringSet(INCOMPLETE_SESSIONS_KEY, sessions)
             .remove(getProgressKey(sessionId))
             .remove(getTimestampKey(sessionId))
+            // .remove(getElapsedTimeKey(sessionId))
             .apply()
     }
     

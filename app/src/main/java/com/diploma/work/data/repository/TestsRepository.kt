@@ -35,9 +35,13 @@ interface TestsRepository {
 
     fun getTestResults(sessionId: String): Flow<Result<TestResult>>
     
-    suspend fun saveSessionProgress(sessionId: String, questionIndex: Int)
+    suspend fun saveSessionProgress(sessionId: String, questionIndex: Int, elapsedTimeMillis: Long = 0)
     
     suspend fun getSessionProgress(sessionId: String): Int?
     
     suspend fun getUncompletedSessions(): List<TestSession>
+    
+    suspend fun removeUncompletedSession(sessionId: String)
+
+    suspend fun getSessionElapsedTime(sessionId: String): Long?
 }

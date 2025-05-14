@@ -50,6 +50,7 @@ message TestInfo {
   int64 technology_id = 6;
   string technology_name = 7;
   bool is_published = 8;
+  int32 questions_count = 9;
 }
 
 service TestService {

@@ -61,6 +61,13 @@ android {
 }
 
 dependencies {
+    configurations.all {
+        resolutionStrategy {
+            force("org.jetbrains:annotations:26.0.2")
+            exclude(group = "org.jetbrains", module = "annotations-java5")
+        }
+    }
+
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.espresso.remote)
     val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
@@ -134,6 +141,11 @@ dependencies {
     implementation(libs.coil.compose.v310)
 
     implementation(libs.compose.markdown)
+    implementation(libs.highlights)
+
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.syntax)
+    implementation(libs.markwon.editor)
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)

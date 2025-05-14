@@ -190,7 +190,7 @@ fun TestDetailsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "${state.test?.questions?.size ?: 0}",
+                                    text = "${state.test?.info?.questionsCount ?: 0}",
                                     style = TextStyle.BodyMedium.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -198,7 +198,13 @@ fun TestDetailsScreen(
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            val totalPoints = state.test?.questions?.sumOf { it.points } ?: 0
+                            val questionsCount = state.test?.info?.questionsCount ?: 0
+                            val test = state.test
+                            val avgPointsPerQuestion = if (test?.questions?.isNotEmpty() == true) {
+                                test.questions.sumOf { it.points }.toFloat() / test.questions.size
+                            } else 0f
+                            val totalPoints = (avgPointsPerQuestion * questionsCount).toInt()
+                            
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween

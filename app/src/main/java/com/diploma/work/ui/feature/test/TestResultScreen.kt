@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -18,8 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,9 +49,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.models.QuestionResult
+import com.diploma.work.ui.components.CodeHighlighterText
 import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.orhanobut.logger.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +136,8 @@ fun TestResultScreen(
                     item {
                         ScoreSection(
                             score = state.result?.score ?: 0,
-                            totalPoints = state.result?.totalPoints ?: 0
+                            totalPoints = state.result?.totalPoints ?: 0,
+                            durationMillis = state.result?.durationMillis ?: 0
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                     }
@@ -204,7 +210,7 @@ fun TestResultScreen(
 }
 
 @Composable
-fun ScoreSection(score: Int, totalPoints: Int) {
+fun ScoreSection(score: Int, totalPoints: Int, durationMillis: Long) {
     val percentage = if (totalPoints > 0) (score.toFloat() / totalPoints) * 100 else 0f
     val scoreColor = when {
         percentage >= 80 -> MaterialTheme.colorScheme.primary
@@ -260,8 +266,55 @@ fun ScoreSection(score: Int, totalPoints: Int) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Timer,
+                    contentDescription = "Time",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Time: ${formatTime(durationMillis)}",
+                    style = TextStyle.BodyMedium.value,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (durationMillis > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "(${durationMillis / 1000} seconds)",
+                    style = TextStyle.BodySmall.value,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
+}
+
+@Composable
+fun formatTime(millis: Long): String {
+    val seconds = (millis / 1000) % 60
+    val minutes = (millis / (1000 * 60)) % 60
+    val hours = (millis / (1000 * 60 * 60))
+    
+    val formatted = if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%02d:%02d", minutes, seconds)
+    }
+    
+    Logger.d("formatTime: millis=$millis, seconds=${millis/1000}s, formatted=$formatted")
+    
+    return formatted
 }
 
 @Composable

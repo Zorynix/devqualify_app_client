@@ -113,6 +113,12 @@ class TestDetailsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isStartingTest = true, error = null)
             Logger.d("$tag: Starting new test session for test ID: $testId")
             
+            val unfinishedSessionId = _uiState.value.unfinishedSessionId
+            if (unfinishedSessionId != null) {
+                Logger.d("$tag: Removing unfinished session: $unfinishedSessionId before starting a new one")
+                testsRepository.removeUncompletedSession(unfinishedSessionId)
+            }
+            
             testsRepository.startTestSession(testId)
                 .catch { e ->
                     Logger.e("$tag: Failed to start test session: ${e.message}")

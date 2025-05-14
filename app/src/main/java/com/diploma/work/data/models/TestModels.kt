@@ -38,7 +38,8 @@ data class TestInfo(
     val level: Level,
     val technologyId: Long,
     val technologyName: String,
-    val isPublished: Boolean
+    val isPublished: Boolean,
+    val questionsCount: Int = 0
 )
 
 data class Question(
@@ -78,12 +79,15 @@ data class TestSession(
     val testId: Long,
     val questions: List<Question>,
     val startedAt: Long,
-    val answers: Map<Long, Answer> = emptyMap()
+    val answers: Map<Long, Answer> = emptyMap(),
+    val testInfo: TestInfo? = null,
+    val elapsedTimeMillis: Long = 0
 )
 
 data class TestResult(
     val score: Int,
     val totalPoints: Int,
     val feedback: String,
-    val questionResults: List<QuestionResult>
+    val questionResults: List<QuestionResult>,
+    val durationMillis: Long = 0
 ) 
