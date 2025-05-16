@@ -472,11 +472,22 @@ class TestSessionViewModel @Inject constructor(
         val sessionId = _uiState.value.testSession?.sessionId ?: return
         val isCompletionInProgress = _uiState.value.isTestCompletionInProgress
         val elapsedTime = _uiState.value.elapsedTimeMillis
+        val testCompleted = _uiState.value.testCompleted
         
         if (isLeavingTest || isCompletionInProgress) {
             Logger.d("$tag: Already leaving test or completion in progress, navigating up directly")
             viewModelScope.launch {
                 sendNavigationEvent(NavigationEvent.NavigateUp)
+            }
+            return
+        }
+        
+        if (testCompleted) {
+            Logger.d("$tag: Test already completed, not saving progress")
+            isLeavingTest = true
+            viewModelScope.launch {
+                sendNavigationEvent(NavigationEvent.NavigateUp)
+                isLeavingTest = false
             }
             return
         }

@@ -78,9 +78,7 @@ class TestsRepositoryImpl @Inject constructor(
         val elapsedTime = sessionPrefs.getLong(getElapsedTimeKey(sessionId), 0L)
         Logger.d("$tag: Saving elapsed time before completion: $elapsedTime ms")
         
-        sessionPrefs.edit()
-            .remove(getProgressKey(sessionId))
-            .apply()
+        removeSession(sessionId)
         
         return testsGrpcClient.completeTestSession(sessionId)
     }
@@ -160,7 +158,7 @@ class TestsRepositoryImpl @Inject constructor(
             .putStringSet(INCOMPLETE_SESSIONS_KEY, sessions)
             .remove(getProgressKey(sessionId))
             .remove(getTimestampKey(sessionId))
-            // .remove(getElapsedTimeKey(sessionId))
+            .remove(getElapsedTimeKey(sessionId))
             .apply()
     }
     
