@@ -165,7 +165,7 @@ fun ProfileScreen(
                         ),
                         modifier = Modifier.padding(top = 16.dp)
                     ) {
-                        Text("Retry", style = TextStyle.ButtonText.value)
+                        Text("Retry", style = TextStyle.ButtonText.value, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

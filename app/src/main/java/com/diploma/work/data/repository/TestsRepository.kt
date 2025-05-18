@@ -31,7 +31,7 @@ interface TestsRepository {
         answer: Answer
     ): Flow<Result<Boolean>>
 
-    fun completeTestSession(sessionId: String): Flow<Result<TestResult>>
+    fun completeTestSession(sessionId: String, elapsedTimeMillis: Long): Flow<Result<TestResult>>
 
     fun getTestResults(sessionId: String): Flow<Result<TestResult>>
     

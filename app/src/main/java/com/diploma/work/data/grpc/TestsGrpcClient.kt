@@ -20,7 +20,9 @@ import com.diploma.work.grpc.tests.TestInfo
 import com.diploma.work.grpc.tests.TestServiceGrpc
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
+import io.grpc.Metadata
 import io.grpc.StatusRuntimeException
+import io.grpc.stub.MetadataUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -45,6 +47,18 @@ class TestsGrpcClient @Inject constructor(
 
     private val completedSessions = ConcurrentHashMap<String, Boolean>()
 
+    private fun withAuthStub(): TestServiceGrpc.TestServiceBlockingStub {
+        val token = session.getToken()
+        return if (!token.isNullOrEmpty()) {
+            val metadata = Metadata()
+            metadata.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer $token")
+            val interceptor = MetadataUtils.newAttachHeadersInterceptor(metadata)
+            TestServiceGrpc.newBlockingStub(channel).withInterceptors(interceptor)
+        } else {
+            TestServiceGrpc.newBlockingStub(channel)
+        }
+    }
+
     fun getTechnologies(direction: Direction? = null): Flow<Result<List<Technology>>> = flow {
         try {
             Logger.d("$tag: Getting technologies list" + (direction?.let { " for direction: $it" } ?: ""))
@@ -55,7 +69,7 @@ class TestsGrpcClient @Inject constructor(
             }
 
             val request = requestBuilder.build()
-            val response = stub.getTechnologies(request)
+            val response = withAuthStub().getTechnologies(request)
 
             val technologies = response.technologiesList.map { protoTech ->
                 Technology(
@@ -100,7 +114,7 @@ class TestsGrpcClient @Inject constructor(
             }
 
             val request = requestBuilder.build()
-            val response = stub.getTests(request)
+            val response = withAuthStub().getTests(request)
 
             val tests = response.testsList.map { protoTest ->
                 mapProtoTestInfoToModel(protoTest)
@@ -136,7 +150,7 @@ class TestsGrpcClient @Inject constructor(
             }
 
             val request = requestBuilder.build()
-            val response = stub.getTestsByTechnology(request)
+            val response = withAuthStub().getTestsByTechnology(request)
 
             val tests = response.testsList.map { protoTest ->
                 mapProtoTestInfoToModel(protoTest)
@@ -160,7 +174,7 @@ class TestsGrpcClient @Inject constructor(
                 .setTestId(testId)
                 .build()
 
-            val response = stub.getTest(request)
+            val response = withAuthStub().getTest(request)
 
             val testInfo = mapProtoTestInfoToModel(response.test)
 
@@ -193,7 +207,7 @@ class TestsGrpcClient @Inject constructor(
                 .setTestId(testId)
                 .build()
             
-            val testResponse = stub.getTest(testRequest)
+            val testResponse = withAuthStub().getTest(testRequest)
             val testInfo = mapProtoTestInfoToModel(testResponse.test)
 
             val request = StartTestSessionRequest.newBuilder()
@@ -201,7 +215,7 @@ class TestsGrpcClient @Inject constructor(
                 .setUserId(userId)
                 .build()
 
-            val response = stub.startTestSession(request)
+            val response = withAuthStub().startTestSession(request)
             val testSession = TestSession(
                 sessionId = response.sessionId,
                 testId = testId,
@@ -227,7 +241,7 @@ class TestsGrpcClient @Inject constructor(
                 .setSessionId(sessionId)
                 .build()
 
-            val response = stub.getTestSession(request)
+            val response = withAuthStub().getTestSession(request)
 
             val testInfo = mapProtoTestInfoToModel(response.test)
 
@@ -285,7 +299,7 @@ class TestsGrpcClient @Inject constructor(
                 .setSelectedOption(selectedOption)
 
             val request = requestBuilder.build()
-            val response = stub.saveAnswer(request)
+            val response = withAuthStub().saveAnswer(request)
             Logger.d("$tag: Answer saved successfully for session ID: $sessionId, question ID: ${answer.questionId}")
 
             emit(Result.success(true))
@@ -313,7 +327,8 @@ class TestsGrpcClient @Inject constructor(
     }
 
     fun completeTestSession(
-        sessionId: String
+        sessionId: String,
+        elapsedTimeMillis: Long
     ): Flow<Result<TestResult>> = flow<Result<TestResult>> {
         if (completedSessions.containsKey(sessionId)) {
             Logger.w("$tag: Session $sessionId already completed, getting test results instead")
@@ -322,10 +337,7 @@ class TestsGrpcClient @Inject constructor(
                     .setSubmissionId(sessionId)
                     .build()
                 
-                val response = stub.getTestResults(request)
-                
-                val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
-                val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+                val response = withAuthStub().getTestResults(request)
                 
                 val result = TestResult(
                     score = response.score,
@@ -334,9 +346,9 @@ class TestsGrpcClient @Inject constructor(
                     questionResults = response.questionResultsList.map { 
                         mapProtoQuestionResultToModel(it)
                     },
-                    durationMillis = elapsedTime
+                    durationMillis = elapsedTimeMillis
                 )
-                Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTime ms")
+                Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTimeMillis ms")
                 emit(Result.success(result))
             } catch (e: Exception) {
                 Logger.e("$tag: Failed to get results for already completed session: $sessionId, error: ${e.message}")
@@ -353,10 +365,7 @@ class TestsGrpcClient @Inject constructor(
                         .setSubmissionId(sessionId)
                         .build()
                     
-                    val response = stub.getTestResults(request)
-                    
-                    val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
-                    val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+                    val response = withAuthStub().getTestResults(request)
                     
                     val result = TestResult(
                         score = response.score,
@@ -365,9 +374,9 @@ class TestsGrpcClient @Inject constructor(
                         questionResults = response.questionResultsList.map { 
                             mapProtoQuestionResultToModel(it)
                         },
-                        durationMillis = elapsedTime
+                        durationMillis = elapsedTimeMillis
                     )
-                    Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTime ms")
+                    Logger.d("$tag: Retrieved test results for completed session ID: $sessionId with duration: $elapsedTimeMillis ms")
                     emit(Result.success(result))
                 } catch (e: Exception) {
                     Logger.e("$tag: Failed to get results for already completed session: $sessionId, error: ${e.message}")
@@ -382,13 +391,13 @@ class TestsGrpcClient @Inject constructor(
                     .setSessionId(sessionId)
                     .build()
 
-                val response = stub.completeTestSession(request)
+                val response = withAuthStub().completeTestSession(request)
                 
                 val testResultsRequest = GetTestResultsRequest.newBuilder()
                     .setSubmissionId(sessionId)
                     .build()
                     
-                val testResults = stub.getTestResults(testResultsRequest)
+                val testResults = withAuthStub().getTestResults(testResultsRequest)
                 
                 val result = TestResult(
                     score = testResults.score,
@@ -396,7 +405,8 @@ class TestsGrpcClient @Inject constructor(
                     feedback = testResults.feedback,
                     questionResults = testResults.questionResultsList.map { 
                         mapProtoQuestionResultToModel(it)
-                    }
+                    },
+                    durationMillis = elapsedTimeMillis
                 )
                 
                 completedSessions[sessionId] = true
@@ -413,7 +423,7 @@ class TestsGrpcClient @Inject constructor(
                             .setSubmissionId(sessionId)
                             .build()
                             
-                        val testResults = stub.getTestResults(testResultsRequest)
+                        val testResults = withAuthStub().getTestResults(testResultsRequest)
                         
                         val result = TestResult(
                             score = testResults.score,
@@ -421,7 +431,8 @@ class TestsGrpcClient @Inject constructor(
                             feedback = testResults.feedback,
                             questionResults = testResults.questionResultsList.map { 
                                 mapProtoQuestionResultToModel(it)
-                            }
+                            },
+                            durationMillis = elapsedTimeMillis
                         )
                         
                         Logger.d("$tag: Retrieved results for already completed session ID: $sessionId")
@@ -452,10 +463,7 @@ class TestsGrpcClient @Inject constructor(
                 .setSubmissionId(sessionId)
                 .build()
             
-            val response = stub.getTestResults(request)
-            
-            val sessionPrefs = context.getSharedPreferences("test_sessions_prefs", android.content.Context.MODE_PRIVATE)
-            val elapsedTime = sessionPrefs.getLong("elapsed_time_$sessionId", 0L)
+            val response = withAuthStub().getTestResults(request)
             
             val result = TestResult(
                 score = response.score,
@@ -464,9 +472,9 @@ class TestsGrpcClient @Inject constructor(
                 questionResults = response.questionResultsList.map { 
                     mapProtoQuestionResultToModel(it)
                 },
-                durationMillis = elapsedTime
+                durationMillis = 0L
             )
-            Logger.d("$tag: Retrieved test results successfully for session ID: $sessionId with duration: $elapsedTime ms")
+            Logger.d("$tag: Retrieved test results successfully for session ID: $sessionId")
             emit(Result.success(result))
         } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get test results for session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")

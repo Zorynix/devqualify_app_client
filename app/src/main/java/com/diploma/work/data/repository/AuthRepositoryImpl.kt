@@ -93,14 +93,14 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun sendConfirmationCode(request: SendConfirmationCodeRequest): Result<SendConfirmationCodeResponse> {
-        Logger.d("$tag: Sending confirmation code to email: ${request.email}")
+        Logger.d("[36m$tag: Sending confirmation code to email: ${request.email}")
         return authGrpcClient.sendConfirmationCode(request).also { result ->
             result.fold(
                 onSuccess = { response -> 
-                    Logger.d("$tag: Confirmation code ${if (response.success) "sent successfully" else "failed to send"} to: ${request.email}") 
+                    Logger.d("[36m$tag: Confirmation code ${if (response.success) "sent successfully" else "failed to send"} to: ${request.email}") 
                 },
                 onFailure = { error -> 
-                    Logger.e("$tag: Sending confirmation code failed: ${error.message}") 
+                    Logger.e("[36m$tag: Sending confirmation code failed: ${error.message}") 
                 }
             )
         }

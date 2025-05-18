@@ -149,6 +149,7 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.grpc.stub)
 }
 kapt {
     correctErrorTypes = true

@@ -409,8 +409,7 @@ class TestSessionViewModel @Inject constructor(
             
             try {
                 testsRepository.saveSessionProgress(session.sessionId, _uiState.value.currentQuestionIndex, elapsedTime)
-                
-                testsRepository.completeTestSession(session.sessionId)
+                testsRepository.completeTestSession(session.sessionId, elapsedTime)
                     .catch { e ->
                         Logger.e("$tag: Failed to complete test: ${e.message}")
                         

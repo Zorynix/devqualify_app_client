@@ -3,9 +3,9 @@ syntax = "proto3";
 package auth;
 
 option go_package = "diploma.sso.v1;ssov1";
-
 option java_package = "com.diploma.work.grpc.auth";
 option java_multiple_files = true;
+
 
 service AuthService {
     rpc Register (RegisterRequest) returns (RegisterResponse);
@@ -16,6 +16,7 @@ service AuthService {
     rpc IsAdmin (IsAdminRequest) returns (IsAdminResponse);
     rpc ConfirmEmail (ConfirmEmailRequest) returns (ConfirmEmailResponse);
     rpc SendConfirmationCode (SendConfirmationCodeRequest) returns (SendConfirmationCodeResponse);
+    rpc GetConfirmedUsers (GetConfirmedUsersRequest) returns (GetConfirmedUsersResponse);
 }
 
 message RegisterRequest {
@@ -87,4 +88,19 @@ message SendConfirmationCodeRequest {
 
 message SendConfirmationCodeResponse {
     bool success = 1;
+}
+
+message GetConfirmedUsersRequest {
+    bool without_profiles = 1;
+}
+
+message ConfirmedUser {
+    int64 user_id = 1;
+    string email = 2;
+    bool is_admin = 3;
+    string created_at = 4;
+}
+
+message GetConfirmedUsersResponse {
+    repeated ConfirmedUser users = 1;
 }

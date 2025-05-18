@@ -73,14 +73,10 @@ class TestsRepositoryImpl @Inject constructor(
         return testsGrpcClient.saveAnswer(sessionId, answer)
     }
 
-    override fun completeTestSession(sessionId: String): Flow<Result<TestResult>> {
-        Logger.d("$tag: Completing test session for session ID: $sessionId")
-        val elapsedTime = sessionPrefs.getLong(getElapsedTimeKey(sessionId), 0L)
-        Logger.d("$tag: Saving elapsed time before completion: $elapsedTime ms")
-        
+    override fun completeTestSession(sessionId: String, elapsedTimeMillis: Long): Flow<Result<TestResult>> {
+        Logger.d("[36m$tag: Completing test session for session ID: $sessionId with elapsed time: $elapsedTimeMillis ms")
         removeSession(sessionId)
-        
-        return testsGrpcClient.completeTestSession(sessionId)
+        return testsGrpcClient.completeTestSession(sessionId, elapsedTimeMillis)
     }
 
     override fun getTestResults(sessionId: String): Flow<Result<TestResult>> {
@@ -158,7 +154,6 @@ class TestsRepositoryImpl @Inject constructor(
             .putStringSet(INCOMPLETE_SESSIONS_KEY, sessions)
             .remove(getProgressKey(sessionId))
             .remove(getTimestampKey(sessionId))
-            .remove(getElapsedTimeKey(sessionId))
             .apply()
     }
     

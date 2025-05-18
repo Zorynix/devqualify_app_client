@@ -6,6 +6,7 @@ option go_package = "diploma.userinfo.v1;userinfov1";
 option java_package = "com.diploma.work.grpc.userinfo";
 option java_multiple_files = true;
 
+
 enum Direction {
   DIRECTION_UNSPECIFIED = 0;
   BACKEND = 1;
@@ -54,6 +55,24 @@ message TestSummary {
   string completion_date = 3;
   int32 score = 4;
   int32 total_points = 5;
+}
+
+message GetConfirmedUsersWithoutProfilesRequest {
+  string correlation_id = 1;
+  string requester_service = 2;
+  int64 timestamp = 3;
+}
+
+message ConfirmedUser {
+  int64 user_id = 1;
+  string email = 2;
+  bool is_admin = 3;
+  string created_at = 4;
+}
+
+message GetConfirmedUsersWithoutProfilesResponse {
+  string correlation_id = 1;
+  repeated ConfirmedUser users = 2;
 }
 
 service UserService {

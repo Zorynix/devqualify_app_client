@@ -10,11 +10,25 @@ import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import com.diploma.work.data.AppSession
+import io.grpc.Metadata
+import io.grpc.stub.MetadataUtils
 
 class UserInfoGrpcClient @Inject constructor(
-    private val channel: ManagedChannel
+    private val channel: ManagedChannel,
+    private val session: AppSession
 ) {
-    private val stub = UserServiceGrpc.newBlockingStub(channel)
+    private fun withAuthStub(): UserServiceGrpc.UserServiceBlockingStub {
+        val token = session.getToken()
+        return if (!token.isNullOrEmpty()) {
+            val metadata = Metadata()
+            metadata.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer $token")
+            val interceptor = MetadataUtils.newAttachHeadersInterceptor(metadata)
+            UserServiceGrpc.newBlockingStub(channel).withInterceptors(interceptor)
+        } else {
+            UserServiceGrpc.newBlockingStub(channel)
+        }
+    }
 
     suspend fun getUser(request: GetUserRequest): Result<GetUserResponse> = withContext(Dispatchers.IO) {
         try {
@@ -24,7 +38,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setUserId(request.userId)
                 .build()
                 
-            val grpcResponse = stub.getUser(grpcRequest)
+            val grpcResponse = withAuthStub().getUser(grpcRequest)
             val user = grpcResponse.user.toModel()
             
             Logger.d("Successfully got user info: ${user.id}")
@@ -49,7 +63,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setLevel(request.level)
                 .build()
                 
-            val grpcResponse = stub.updateUserProfile(grpcRequest)
+            val grpcResponse = withAuthStub().updateUserProfile(grpcRequest)
             val user = grpcResponse.user.toModel()
             
             Logger.d("Successfully updated user profile: ${user.id}")
@@ -77,7 +91,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setPagination(pagination)
                 .build()
                 
-            val grpcResponse = stub.getUserTestHistory(grpcRequest)
+            val grpcResponse = withAuthStub().getUserTestHistory(grpcRequest)
             val tests = grpcResponse.testsList.map { it.toModel() }
             
             Logger.d("Successfully got test history: ${tests.size} tests")
@@ -104,7 +118,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setUserId(request.userId)
                 .build()
                 
-            val grpcResponse = stub.getUserAchievements(grpcRequest)
+            val grpcResponse = withAuthStub().getUserAchievements(grpcRequest)
             val achievements = grpcResponse.achievementsList.map { it.toModel() }
             
             Logger.d("Successfully got achievements: ${achievements.size} achievements")
@@ -137,7 +151,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setPagination(pagination)
                 .build()
                 
-            val grpcResponse = stub.getLeaderboard(grpcRequest)
+            val grpcResponse = withAuthStub().getLeaderboard(grpcRequest)
             val users = grpcResponse.usersList.map { it.toModel() }
             
             Logger.d("Successfully got leaderboard: ${users.size} users")
@@ -165,7 +179,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .addAllAchievementIds(request.achievementIds)
                 .build()
                 
-            val grpcResponse = stub.updateUserAchievements(grpcRequest)
+            val grpcResponse = withAuthStub().updateUserAchievements(grpcRequest)
             val achievements = grpcResponse.achievementsList.map { it.toModel() }
             
             Logger.d("Successfully updated achievements: ${achievements.size} achievements")
@@ -195,7 +209,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setContentType(request.contentType)
                 .build()
                 
-            val grpcResponse = stub.uploadUserAvatar(grpcRequest)
+            val grpcResponse = withAuthStub().uploadUserAvatar(grpcRequest)
             
             Logger.d("Successfully uploaded avatar: ${grpcResponse.avatarUrl}")
             Result.success(
@@ -224,7 +238,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setContentType(request.contentType)
                 .build()
                 
-            val grpcResponse = stub.updateUserAvatar(grpcRequest)
+            val grpcResponse = withAuthStub().updateUserAvatar(grpcRequest)
             
             Logger.d("Successfully updated avatar: ${grpcResponse.avatarUrl}")
             Result.success(
@@ -251,7 +265,7 @@ class UserInfoGrpcClient @Inject constructor(
                 .setUserId(request.userId)
                 .build()
                 
-            val grpcResponse = stub.getUserAvatar(grpcRequest)
+            val grpcResponse = withAuthStub().getUserAvatar(grpcRequest)
             
             Logger.d("Successfully got avatar: ${grpcResponse.avatarUrl}")
             Result.success(

@@ -14,6 +14,7 @@ import com.diploma.work.data.models.ConfirmEmailResponse
 import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.models.SendConfirmationCodeResponse
 
+
 interface AuthRepository {
     suspend fun register(request: RegisterRequest): Result<RegisterResponse>
     suspend fun login(request: LoginRequest): Result<LoginResponse>

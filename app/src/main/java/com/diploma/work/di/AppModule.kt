@@ -86,8 +86,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUserInfoGrpcClient(@UserInfoChannel channel: ManagedChannel): UserInfoGrpcClient {
-        return UserInfoGrpcClient(channel)
+    fun provideUserInfoGrpcClient(@UserInfoChannel channel: ManagedChannel, session: AppSession): UserInfoGrpcClient {
+        return UserInfoGrpcClient(channel, session)
     }
 
     @Provides
