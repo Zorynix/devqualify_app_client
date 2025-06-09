@@ -24,8 +24,7 @@ class MyApplication : Application() {
             
         Logger.addLogAdapter(object : AndroidLogAdapter(formatStrategy) {
             override fun isLoggable(priority: Int, tag: String?): Boolean {
-                // Всегда логировать в debug-режиме и только в debug-режиме
-                return true // Всегда логировать для отладки
+                return true
             }
         })
         

@@ -37,3 +37,9 @@ data class TestSession(val sessionId: String) : NavRoute
 
 @Serializable
 data class TestResult(val sessionId: String) : NavRoute
+
+@Serializable
+object UserInterests : NavRoute
+
+@Serializable
+object Articles : NavRoute
