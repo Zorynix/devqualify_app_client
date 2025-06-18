@@ -2,10 +2,13 @@ package com.diploma.work.di
 
 import android.content.Context
 import com.diploma.work.data.AppSession
+import com.diploma.work.data.grpc.ArticlesGrpcClient
 import com.diploma.work.data.grpc.AuthGrpcClient
 import com.diploma.work.data.grpc.GrpcClient
 import com.diploma.work.data.grpc.TestsGrpcClient
 import com.diploma.work.data.grpc.UserInfoGrpcClient
+import com.diploma.work.data.repository.ArticlesRepository
+import com.diploma.work.data.repository.ArticlesRepositoryImpl
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.data.repository.AuthRepositoryImpl
 import com.diploma.work.data.repository.TestsRepository
@@ -35,6 +38,10 @@ annotation class UserInfoChannel
 @Retention(AnnotationRetention.BINARY)
 annotation class TestsChannel
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ArticlesChannel
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -62,6 +69,15 @@ object AppModule {
     @Singleton
     fun provideTestsManagedChannel(): ManagedChannel {
         return ManagedChannelBuilder.forTarget("10.0.2.2:50053")
+            .usePlaintext()
+            .build()
+    }
+
+    @ArticlesChannel
+    @Provides
+    @Singleton
+    fun provideArticlesManagedChannel(): ManagedChannel {
+        return ManagedChannelBuilder.forTarget("10.0.2.2:50054")
             .usePlaintext()
             .build()
     }
@@ -98,6 +114,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideArticlesGrpcClient(@ArticlesChannel channel: ManagedChannel, session: AppSession): ArticlesGrpcClient {
+        return ArticlesGrpcClient(channel, session)
+    }
+
+    @Provides
+    @Singleton
     fun provideAuthRepository(authGrpcClient: AuthGrpcClient): AuthRepository {
         return AuthRepositoryImpl(authGrpcClient)
     }
@@ -112,6 +134,12 @@ object AppModule {
     @Singleton
     fun provideTestsRepository(testsGrpcClient: TestsGrpcClient, @ApplicationContext context: Context): TestsRepository {
         return TestsRepositoryImpl(testsGrpcClient, context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideArticlesRepository(articlesGrpcClient: ArticlesGrpcClient): ArticlesRepository {
+        return ArticlesRepositoryImpl(articlesGrpcClient)
     }
 
     @Provides

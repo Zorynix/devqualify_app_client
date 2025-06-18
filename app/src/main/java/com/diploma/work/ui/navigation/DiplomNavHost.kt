@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
@@ -38,10 +39,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.feature.achievements.AchievementsScreen
+import com.diploma.work.ui.feature.articles.ArticlesScreen
 import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.home.HomeScreen
+import com.diploma.work.ui.feature.interests.UserInterestsScreen
 import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
 import com.diploma.work.ui.feature.profile.AppDrawerContent
 import com.diploma.work.ui.feature.profile.ProfileScreen
@@ -69,6 +72,8 @@ fun NavController.navigate(
         is TestDetails -> "TestDetails/${route.testId}"
         is TestSession -> "TestSession/${route.sessionId}"
         is TestResult -> "TestResult/${route.sessionId}"
+        is UserInterests -> "UserInterests"
+        is Articles -> "Articles"
         is EmailConfirmation -> "EmailConfirmation/${route.email}"
         else -> route.javaClass.simpleName
     }
@@ -107,20 +112,29 @@ fun AppNavigation(
         BottomNavItem.Home,
         BottomNavItem.Profile,
         BottomNavItem.Achievements,
-        BottomNavItem.Leaderboard
+        BottomNavItem.Leaderboard,
+        BottomNavItem.Articles
     )
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = isLoggedIn,
         drawerContent = {
-            if (isLoggedIn) {
-                AppDrawerContent(
+            if (isLoggedIn) {                AppDrawerContent(
                     username = username.value ?: "User",
                     avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
                     theme = theme,
                     onThemeToggle = { 
                         themeManager.toggleTheme()
+                    },
+                    onInterestsClick = {
+                        Logger.d("Navigation: Navigating to UserInterests")
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("UserInterests") {
+                                launchSingleTop = true
+                            }
+                        }
                     },
                     onLogout = {
                         Logger.d("Navigation: User logging out")
@@ -144,25 +158,25 @@ fun AppNavigation(
                 if (shouldShowBottomNav.value) {
                     NavigationBar {
                         val currentRoute by navController.currentBackStackEntryAsState()
-                        navItems.forEach { item ->
-                            val selected = currentRoute?.destination?.hierarchy?.any {
+                        navItems.forEach { item ->                            val selected = currentRoute?.destination?.hierarchy?.any {
                                 it.route == when (item.route) {
                                     is Home -> "Home"
                                     is Profile -> "Profile"
                                     is Achievements -> "Achievements"
                                     is Leaderboard -> "Leaderboard"
+                                    is Articles -> "Articles"
                                     else -> ""
                                 }
                             } == true
 
                             NavigationBarItem(
-                                selected = selected,
-                                onClick = {
+                                selected = selected,                                onClick = {
                                     val route = when (item.route) {
                                         is Home -> "Home" 
                                         is Profile -> "Profile"
                                         is Achievements -> "Achievements"
                                         is Leaderboard -> "Leaderboard"
+                                        is Articles -> "Articles"
                                         else -> ""
                                     }
                                     Logger.d("Navigation: Bottom nav bar click - $route")
@@ -176,12 +190,12 @@ fun AppNavigation(
                                 },
                                 icon = {
                                     Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = when (item.route) {
+                                        imageVector = item.icon,                                        contentDescription = when (item.route) {
                                             is Home -> "Home"
                                             is Profile -> "Profile"
                                             is Achievements -> "Achievements"
                                             is Leaderboard -> "Leaderboard"
+                                            is Articles -> "Articles"
                                             else -> ""
                                         }
                                     )
@@ -298,6 +312,26 @@ fun AppNavigation(
                     shouldShowBottomNav.value = false
                     EmailConfirmationScreen(navController, email)
                 }
+                composable("UserInterests") {
+                    shouldShowBottomNav.value = true
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    UserInterestsScreen(
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+                composable("Articles") {
+                    shouldShowBottomNav.value = true
+                    if (session.getUserId() != null) {
+                        session.getUsername()
+                        session.getAvatarUrl()
+                    }
+                    ArticlesScreen(
+                        onNavigateUp = { navController.navigateUp() }
+                    )
+                }
             }
         }
     }
@@ -308,4 +342,5 @@ sealed class BottomNavItem(val route: NavRoute, val icon: ImageVector) {
     object Profile : BottomNavItem(com.diploma.work.ui.navigation.Profile, Icons.Default.Person)
     object Achievements : BottomNavItem(com.diploma.work.ui.navigation.Achievements, Icons.Default.Star)
     object Leaderboard : BottomNavItem(com.diploma.work.ui.navigation.Leaderboard, Icons.Filled.Leaderboard)
+    object Articles : BottomNavItem(com.diploma.work.ui.navigation.Articles, Icons.Filled.Article)
 }

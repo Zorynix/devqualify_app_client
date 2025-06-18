@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import com.diploma.work.data.models.UserPreferences
+import com.diploma.work.data.models.ArticleDirection
+import com.diploma.work.data.models.DeliveryFrequency
 
 class AppSession(private val context: Context) {
     private val sharedPrefs: SharedPreferences =
@@ -34,9 +37,7 @@ class AppSession(private val context: Context) {
 
     fun getToken(): String? {
         return sharedPrefs.getString("access_token", null)
-    }
-
-    fun clearToken() {
+    }    fun clearToken() {
         sharedPrefs.edit() { 
             remove("access_token")
             remove("user_id")
@@ -44,6 +45,7 @@ class AppSession(private val context: Context) {
             remove("avatar_url")
             remove("avatar_data")
         }
+        clearUserPreferences()
         _avatarUrlFlow.value = null
         _usernameFlow.value = null
     }
@@ -140,5 +142,88 @@ class AppSession(private val context: Context) {
     
     fun observeUsername(): StateFlow<String?> {
         return _usernameFlow
+    }
+    
+    fun storeUserPreferences(preferences: UserPreferences) {
+        sharedPrefs.edit {
+            putString("user_preferences_technology_ids", preferences.technologyIds.joinToString(","))
+            putString("user_preferences_directions", preferences.directions.map { it.name }.joinToString(","))
+            putString("user_preferences_delivery_frequency", preferences.deliveryFrequency.name)
+            putBoolean("user_preferences_email_notifications", preferences.emailNotifications)
+            putBoolean("user_preferences_push_notifications", preferences.pushNotifications)
+            putInt("user_preferences_articles_per_day", preferences.articlesPerDay)
+            putString("user_preferences_excluded_sources", preferences.excludedSources.joinToString(","))
+        }
+    }
+    
+    fun getUserPreferences(): UserPreferences? {
+        if (!sharedPrefs.contains("user_preferences_technology_ids")) {
+            return null
+        }
+        
+        return try {
+            val technologyIdsString = sharedPrefs.getString("user_preferences_technology_ids", "") ?: ""
+            val directionsString = sharedPrefs.getString("user_preferences_directions", "") ?: ""
+            val deliveryFrequencyString = sharedPrefs.getString("user_preferences_delivery_frequency", "WEEKLY") ?: "WEEKLY"
+            val emailNotifications = sharedPrefs.getBoolean("user_preferences_email_notifications", true)
+            val pushNotifications = sharedPrefs.getBoolean("user_preferences_push_notifications", true)
+            val articlesPerDay = sharedPrefs.getInt("user_preferences_articles_per_day", 5)
+            val excludedSourcesString = sharedPrefs.getString("user_preferences_excluded_sources", "") ?: ""
+            
+            val technologyIds = if (technologyIdsString.isNotEmpty()) {
+                technologyIdsString.split(",").mapNotNull { it.toLongOrNull() }
+            } else {
+                emptyList()
+            }
+              val directions = if (directionsString.isNotEmpty()) {
+                directionsString.split(",").mapNotNull { directionName ->
+                    try {
+                        ArticleDirection.valueOf(directionName)
+                    } catch (e: IllegalArgumentException) {
+                        null
+                    }
+                }
+            } else {
+                emptyList()
+            }
+            
+            val deliveryFrequency = try {
+                DeliveryFrequency.valueOf(deliveryFrequencyString)
+            } catch (e: IllegalArgumentException) {
+                DeliveryFrequency.WEEKLY
+            }
+            
+            val excludedSources = if (excludedSourcesString.isNotEmpty()) {
+                excludedSourcesString.split(",")
+            } else {
+                emptyList()
+            }
+              UserPreferences(
+                userId = getUserId() ?: -1L,
+                technologyIds = technologyIds,
+                directions = directions,
+                deliveryFrequency = deliveryFrequency,
+                emailNotifications = emailNotifications,
+                pushNotifications = pushNotifications,
+                excludedSources = excludedSources,
+                articlesPerDay = articlesPerDay,
+                updatedAt = java.time.Instant.now()
+            )
+        } catch (e: Exception) {
+            Logger.e("Error parsing user preferences: ${e.message}")
+            null
+        }
+    }
+    
+    fun clearUserPreferences() {
+        sharedPrefs.edit {
+            remove("user_preferences_technology_ids")
+            remove("user_preferences_directions")
+            remove("user_preferences_delivery_frequency")
+            remove("user_preferences_email_notifications")
+            remove("user_preferences_push_notifications")
+            remove("user_preferences_articles_per_day")
+            remove("user_preferences_excluded_sources")
+        }
     }
 }

@@ -1,0 +1,350 @@
+syntax = "proto3";
+
+package articles.v1;
+
+option go_package = "diploma.articles.v1;articlesv1";
+option java_package = "com.diploma.work.grpc.articles";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  BACKEND = 1;
+  FRONTEND = 2;
+  DEVOPS = 3;
+  DATA_SCIENCE = 4;
+}
+
+enum ArticleStatus {
+  ARTICLE_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  PUBLISHED = 2;
+  ARCHIVED = 3;
+}
+
+enum DeliveryFrequency {
+  DELIVERY_FREQUENCY_UNSPECIFIED = 0;
+  DAILY = 1;
+  WEEKLY = 2;
+  MONTHLY = 3;
+}
+
+enum RssSourceStatus {
+  RSS_SOURCE_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  ERROR = 3;
+}
+
+message Pagination {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message Technology {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  Direction direction = 4;
+  string icon_url = 5;
+}
+
+message RssSource {
+  int64 id = 1;
+  string name = 2;
+  string url = 3;
+  string description = 4;
+  repeated int64 technology_ids = 5;
+  RssSourceStatus status = 6;
+  google.protobuf.Timestamp last_parsed = 7;
+  google.protobuf.Timestamp created_at = 8;
+  string error_message = 9;
+}
+
+message Article {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  string content = 4;
+  string url = 5;
+  string author = 6;
+  google.protobuf.Timestamp published_at = 7;
+  google.protobuf.Timestamp created_at = 8;
+  int64 rss_source_id = 9;
+  string rss_source_name = 10;
+  repeated int64 technology_ids = 11;
+  repeated string tags = 12;
+  ArticleStatus status = 13;
+  string image_url = 14;
+  int32 read_time_minutes = 15;
+}
+
+message UserPreferences {
+  int64 user_id = 1;
+  repeated int64 technology_ids = 2;
+  repeated Direction directions = 3;
+  DeliveryFrequency delivery_frequency = 4;
+  bool email_notifications = 5;
+  bool push_notifications = 6;
+  repeated string excluded_sources = 7;
+  int32 articles_per_day = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message ArticleRecommendation {
+  Article article = 1;
+  float relevance_score = 2;
+  string recommendation_reason = 3;
+  repeated string matched_technologies = 4;
+}
+
+service ArticlesService {
+  rpc CreateRssSource(CreateRssSourceRequest) returns (CreateRssSourceResponse);
+  rpc GetRssSources(GetRssSourcesRequest) returns (GetRssSourcesResponse);
+  rpc UpdateRssSource(UpdateRssSourceRequest) returns (UpdateRssSourceResponse);
+  rpc DeleteRssSource(DeleteRssSourceRequest) returns (DeleteRssSourceResponse);
+  rpc ParseRssSource(ParseRssSourceRequest) returns (ParseRssSourceResponse);
+  
+  rpc CreateTechnology(CreateTechnologyRequest) returns (CreateTechnologyResponse);
+  rpc GetTechnologies(GetTechnologiesRequest) returns (GetTechnologiesResponse);
+  rpc UpdateTechnology(UpdateTechnologyRequest) returns (UpdateTechnologyResponse);
+  rpc DeleteTechnology(DeleteTechnologyRequest) returns (DeleteTechnologyResponse);
+  
+  rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
+  rpc GetUserPreferences(GetUserPreferencesRequest) returns (GetUserPreferencesResponse);
+  
+  rpc GetArticles(GetArticlesRequest) returns (GetArticlesResponse);
+  rpc GetArticle(GetArticleRequest) returns (GetArticleResponse);
+  rpc GetRecommendedArticles(GetRecommendedArticlesRequest) returns (GetRecommendedArticlesResponse);
+  rpc SearchArticles(SearchArticlesRequest) returns (SearchArticlesResponse);
+  rpc MarkArticleAsRead(MarkArticleAsReadRequest) returns (MarkArticleAsReadResponse);
+  rpc GetUserReadingHistory(GetUserReadingHistoryRequest) returns (GetUserReadingHistoryResponse);
+  
+  rpc TriggerArticleParsing(TriggerArticleParsingRequest) returns (TriggerArticleParsingResponse);
+  rpc GetParsingStats(GetParsingStatsRequest) returns (GetParsingStatsResponse);
+}
+
+message CreateRssSourceRequest {
+  string name = 1;
+  string url = 2;
+  string description = 3;
+  repeated int64 technology_ids = 4;
+}
+
+message CreateRssSourceResponse {
+  int64 source_id = 1;
+  string message = 2;
+}
+
+message GetRssSourcesRequest {
+  RssSourceStatus status = 1;
+  Pagination pagination = 2;
+}
+
+message GetRssSourcesResponse {
+  repeated RssSource sources = 1;
+  string next_page_token = 2;
+}
+
+message UpdateRssSourceRequest {
+  int64 source_id = 1;
+  string name = 2;
+  string url = 3;
+  string description = 4;
+  repeated int64 technology_ids = 5;
+  RssSourceStatus status = 6;
+}
+
+message UpdateRssSourceResponse {
+  string message = 1;
+}
+
+message DeleteRssSourceRequest {
+  int64 source_id = 1;
+}
+
+message DeleteRssSourceResponse {
+  string message = 1;
+}
+
+message ParseRssSourceRequest {
+  int64 source_id = 1;
+}
+
+message ParseRssSourceResponse {
+  int32 articles_parsed = 1;
+  int32 articles_added = 2;
+  string message = 3;
+}
+
+message CreateTechnologyRequest {
+  string name = 1;
+  string description = 2;
+  Direction direction = 3;
+  string icon_url = 4;
+}
+
+message CreateTechnologyResponse {
+  int64 technology_id = 1;
+  string message = 2;
+}
+
+message GetTechnologiesRequest {
+  Direction direction = 1;
+  Pagination pagination = 2;
+}
+
+message GetTechnologiesResponse {
+  repeated Technology technologies = 1;
+  string next_page_token = 2;
+}
+
+message UpdateTechnologyRequest {
+  int64 technology_id = 1;
+  string name = 2;
+  string description = 3;
+  Direction direction = 4;
+  string icon_url = 5;
+}
+
+message UpdateTechnologyResponse {
+  string message = 1;
+}
+
+message DeleteTechnologyRequest {
+  int64 technology_id = 1;
+}
+
+message DeleteTechnologyResponse {
+  string message = 1;
+}
+
+message UpdateUserPreferencesRequest {
+  int64 user_id = 1;
+  repeated int64 technology_ids = 2;
+  repeated Direction directions = 3;
+  DeliveryFrequency delivery_frequency = 4;
+  bool email_notifications = 5;
+  bool push_notifications = 6;
+  repeated string excluded_sources = 7;
+  int32 articles_per_day = 8;
+}
+
+message UpdateUserPreferencesResponse {
+  string message = 1;
+}
+
+message GetUserPreferencesRequest {
+  int64 user_id = 1;
+}
+
+message GetUserPreferencesResponse {
+  UserPreferences preferences = 1;
+}
+
+message GetArticlesRequest {
+  repeated int64 technology_ids = 1;
+  repeated Direction directions = 2;
+  int64 rss_source_id = 3;
+  ArticleStatus status = 4;
+  google.protobuf.Timestamp from_date = 5;
+  google.protobuf.Timestamp to_date = 6;
+  Pagination pagination = 7;
+  string sort_by = 8; // "published_at", "relevance", "created_at"
+  string sort_order = 9; // "asc", "desc"
+}
+
+message GetArticlesResponse {
+  repeated Article articles = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message GetArticleRequest {
+  int64 article_id = 1;
+}
+
+message GetArticleResponse {
+  Article article = 1;
+}
+
+message GetRecommendedArticlesRequest {
+  int64 user_id = 1;
+  int32 limit = 2;
+  google.protobuf.Timestamp from_date = 3;
+}
+
+message GetRecommendedArticlesResponse {
+  repeated ArticleRecommendation recommendations = 1;
+}
+
+message SearchArticlesRequest {
+  string query = 1;
+  repeated int64 technology_ids = 2;
+  repeated Direction directions = 3;
+  google.protobuf.Timestamp from_date = 4;
+  google.protobuf.Timestamp to_date = 5;
+  Pagination pagination = 6;
+}
+
+message SearchArticlesResponse {
+  repeated Article articles = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message MarkArticleAsReadRequest {
+  int64 user_id = 1;
+  int64 article_id = 2;
+}
+
+message MarkArticleAsReadResponse {
+  string message = 1;
+}
+
+message ReadingHistoryEntry {
+  Article article = 1;
+  google.protobuf.Timestamp read_at = 2;
+  int32 reading_time_seconds = 3;
+}
+
+message GetUserReadingHistoryRequest {
+  int64 user_id = 1;
+  Pagination pagination = 2;
+  google.protobuf.Timestamp from_date = 3;
+  google.protobuf.Timestamp to_date = 4;
+}
+
+message GetUserReadingHistoryResponse {
+  repeated ReadingHistoryEntry entries = 1;
+  string next_page_token = 2;
+  int32 total_articles_read = 3;
+}
+
+message TriggerArticleParsingRequest {
+  repeated int64 source_ids = 1;
+}
+
+message TriggerArticleParsingResponse {
+  int32 sources_processed = 1;
+  int32 total_articles_parsed = 2;
+  int32 total_articles_added = 3;
+  string message = 4;
+}
+
+message ParsingStats {
+  int32 total_sources = 1;
+  int32 active_sources = 2;
+  int32 failed_sources = 3;
+  int32 total_articles = 4;
+  int32 articles_today = 5;
+  google.protobuf.Timestamp last_parsing = 6;
+}
+
+message GetParsingStatsRequest {
+}
+
+message GetParsingStatsResponse {
+  ParsingStats stats = 1;
+}

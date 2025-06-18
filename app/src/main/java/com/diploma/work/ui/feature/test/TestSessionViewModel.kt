@@ -2,6 +2,8 @@ package com.diploma.work.ui.feature.test
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.diploma.work.data.events.ProfileEvent
+import com.diploma.work.data.events.ProfileEventBus
 import com.diploma.work.data.models.Answer
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.TestResult
@@ -46,7 +48,8 @@ data class TestSessionUiState(
 
 @HiltViewModel
 class TestSessionViewModel @Inject constructor(
-    private val testsRepository: TestsRepository
+    private val testsRepository: TestsRepository,
+    private val profileEventBus: ProfileEventBus
 ) : ViewModel() {
     private val tag = "TestSessionVM"
     private val _uiState = MutableStateFlow(TestSessionUiState(isLoading = true))
@@ -432,8 +435,7 @@ class TestSessionViewModel @Inject constructor(
                         completeTestDeferred?.complete(false)
                     }
                     .collectLatest { result ->
-                        result.fold(
-                            onSuccess = { testResult ->
+                        result.fold(                            onSuccess = { testResult ->
                                 Logger.d("$tag: Test completed successfully, result score: ${testResult.score}/${testResult.totalPoints}")
                                 _uiState.value = _uiState.value.copy(
                                     isCompletingTest = false,
@@ -442,6 +444,17 @@ class TestSessionViewModel @Inject constructor(
                                     error = null,
                                     isTestCompletionInProgress = false
                                 )
+                                
+                                // Emit profile update event to refresh user statistics
+                                viewModelScope.launch {
+                                    try {
+                                        profileEventBus.emitEvent(ProfileEvent.TestCompleted)
+                                        Logger.d("$tag: ProfileEvent.TestCompleted emitted successfully")
+                                    } catch (e: Exception) {
+                                        Logger.e("$tag: Failed to emit ProfileEvent.TestCompleted: ${e.message}")
+                                    }
+                                }
+                                
                                 completeTestDeferred?.complete(true)
                             },
                             onFailure = { e ->

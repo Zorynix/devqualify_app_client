@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
+import com.diploma.work.data.events.ProfileEvent
+import com.diploma.work.data.events.ProfileEventBus
 import com.diploma.work.data.models.GetUserAvatarRequest
 import com.diploma.work.data.models.GetUserRequest
 import com.diploma.work.data.models.UpdateUserAvatarRequest
@@ -35,9 +37,10 @@ data class ProfileUiState(
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    private val userInfoRepository: UserInfoRepository,
     val session: AppSession,
     private val themeManager: ThemeManager,
-    private val userInfoRepository: UserInfoRepository,
+    private val profileEventBus: ProfileEventBus,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -66,6 +69,17 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadProfile()
+        viewModelScope.launch {
+            profileEventBus.events.collect { event ->
+                when (event) {
+                    is ProfileEvent.TestCompleted,
+                    is ProfileEvent.ProfileUpdated -> {
+                        Logger.d("ProfileViewModel: Received profile update event, refreshing profile")
+                        loadProfile()
+                    }
+                }
+            }
+        }
     }
 
     fun loadProfile() {
@@ -304,5 +318,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             saveAvatarImage(uri)
         }
+    }
+    
+    fun refreshProfile() {
+        loadProfile()
     }
 }

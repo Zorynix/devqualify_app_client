@@ -180,6 +180,7 @@ fun AppDrawerContent(
     avatarUrl: String,
     theme: AppThemeType,
     onThemeToggle: () -> Unit,
+    onInterestsClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     val session = hiltViewModel<ProfileViewModel>().session
@@ -219,8 +220,7 @@ fun AppDrawerContent(
                 }
                 
                 HorizontalDivider()
-                
-                Row(
+                  Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onThemeToggle() }
@@ -239,6 +239,27 @@ fun AppDrawerContent(
                     
                     Text(
                         text = if (theme == AppThemeType.Dark) "Light Mode" else "Dark Mode",
+                        style = TextStyle.BodyLarge.value,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onInterestsClick() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_interests),
+                        contentDescription = "Interests",
+                        modifier = Modifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
+                    )
+                    
+                    Text(
+                        text = "Interests",
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
