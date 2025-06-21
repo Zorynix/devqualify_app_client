@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.ui.navigation.Register
+import com.diploma.work.ui.navigation.navigate
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.diploma.work.ui.theme.Theme
@@ -57,7 +58,6 @@ fun EmailConfirmationScreen(
     val successMessage by viewModel.successMessage.collectAsState()
     val resendCooldownSeconds by viewModel.resendCooldownSeconds.collectAsState()
     val resendEnabled by viewModel.resendEnabled.collectAsState()
-
     LaunchedEffect(Unit) {
         viewModel.onSendCodeClicked()
         viewModel.navigationChannel.collect { destination ->

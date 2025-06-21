@@ -33,7 +33,7 @@ fun UserInterestsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Интересы", style = TextStyle.TitleLarge.value) },
+                title = { Text("Interests", style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -75,7 +75,7 @@ fun UserInterestsScreen(
                     val techs = viewModel.getTechnologiesByDirection(direction)
                     if (techs.isNotEmpty()) {
                         item {
-                            Text(direction.name, style = TextStyle.TitleMedium.value, modifier = Modifier.padding(top = 8.dp))
+                            Text(direction.displayName, style = TextStyle.TitleMedium.value, modifier = Modifier.padding(top = 8.dp))
                         }
                         items(techs) { tech ->
                             Row(
@@ -107,7 +107,7 @@ fun UserInterestsScreen(
                             FilterChip(
                                 selected = state.deliveryFrequency == freq,
                                 onClick = { viewModel.setDeliveryFrequency(freq) },
-                                label = { Text(freq.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                                label = { Text(freq.displayName) }
                             )
                         }
                     }

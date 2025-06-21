@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.LoginRequest
 import com.diploma.work.data.repository.AuthRepository
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,9 +88,8 @@ class LoginViewModel @Inject constructor(
                 }
                 
                 _loginSuccess.value = true
-                Logger.d("Login successful: Access Token = ${response.accessToken}")
-            }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Ошибка авторизации"
+                Logger.d("Login successful: Access Token = ${response.accessToken}")            }.onFailure { error ->
+                _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.LOGIN)
                 Logger.e("Login failed: ${error.message}")
             }
         }

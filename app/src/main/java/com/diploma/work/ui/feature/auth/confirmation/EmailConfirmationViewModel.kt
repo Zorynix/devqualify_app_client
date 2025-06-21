@@ -9,6 +9,8 @@ import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.NavRoute
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -80,9 +82,8 @@ class EmailConfirmationViewModel @Inject constructor(
                     startResendCooldown()
                 }
                 else _errorMessage.value = "Ошибка отправки"
-            }
-            .onFailure { error ->
-                _errorMessage.value = error.message ?: "Ошибка отправки кода"
+            }            .onFailure { error ->
+                _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.EMAIL_CONFIRMATION)
             }
             .also { _isLoading.value = false }
     }
@@ -105,12 +106,11 @@ class EmailConfirmationViewModel @Inject constructor(
             _isLoading.value = false
             confirmationResult.onSuccess { response ->
                 if (response.confirmed) {
-                    _navigationChannel.send(Login)
-                } else {
-                    _errorMessage.value = "Подтверждение не удалось"
+                    _navigationChannel.send(Login)                } else {
+                    _errorMessage.value = "Подтверждение не удалось. Проверьте правильность введенного кода."
                 }
             }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Неверный код"
+                _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.EMAIL_CONFIRMATION)
             }
         }
     }

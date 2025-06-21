@@ -9,6 +9,8 @@ import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.TestResult
 import com.diploma.work.data.models.TestSession
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CompletableDeferred
@@ -80,7 +82,7 @@ class TestSessionViewModel @Inject constructor(
                     Logger.e("$tag: Failed to load test session: ${e.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load test session"
+                        error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                     )
                 }
                 .collectLatest { result ->
@@ -99,12 +101,11 @@ class TestSessionViewModel @Inject constructor(
                                 codeAnswer = currentAnswer?.codeAnswer ?: "",
                                 isCurrentQuestionAnswered = isCurrentQuestionAnswered(session)
                             )
-                        },
-                        onFailure = { e ->
+                        },                        onFailure = { e ->
                             Logger.e("$tag: Failed to load test session: ${e.message}")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                error = e.message ?: "Failed to load test session"
+                                error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                             )
                         }
                     )
@@ -231,7 +232,7 @@ class TestSessionViewModel @Inject constructor(
                     Logger.e("$tag: Failed to save answer: ${e.message}")
                     _uiState.value = _uiState.value.copy(
                         isSavingAnswer = false,
-                        error = e.message ?: "Failed to save answer"
+                        error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                     )
                 }
                 .collectLatest { result ->
@@ -271,12 +272,11 @@ class TestSessionViewModel @Inject constructor(
                                     )
                                     
                                     moveToNextQuestion(updatedSession)
-                                }
-                            } else {
+                                }                            } else {
                                 Logger.e("$tag: Server reported failure saving answer")
                                 _uiState.value = _uiState.value.copy(
                                     isSavingAnswer = false,
-                                    error = "Failed to save answer"
+                                    error = "Не удалось сохранить ответ. Попробуйте еще раз."
                                 )
                             }
                         },
@@ -284,7 +284,7 @@ class TestSessionViewModel @Inject constructor(
                             Logger.e("$tag: Exception while saving answer: ${e.message}")
                             _uiState.value = _uiState.value.copy(
                                 isSavingAnswer = false,
-                                error = e.message ?: "Failed to save answer"
+                                error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                             )
                         }
                     )
@@ -424,11 +424,10 @@ class TestSessionViewModel @Inject constructor(
                                 isTestCompletionInProgress = true
                             )
                             
-                            loadTestSession(session.sessionId)
-                        } else {
+                            loadTestSession(session.sessionId)                        } else {
                             _uiState.value = _uiState.value.copy(
                                 isCompletingTest = false,
-                                error = e.message ?: "Failed to complete test",
+                                error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION),
                                 isTestCompletionInProgress = false
                             )
                         }
@@ -456,12 +455,11 @@ class TestSessionViewModel @Inject constructor(
                                 }
                                 
                                 completeTestDeferred?.complete(true)
-                            },
-                            onFailure = { e ->
+                            },                            onFailure = { e ->
                                 Logger.e("$tag: Exception while completing test: ${e.message}")
                                 _uiState.value = _uiState.value.copy(
                                     isCompletingTest = false,
-                                    error = e.message ?: "Failed to complete test",
+                                    error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION),
                                     isTestCompletionInProgress = false
                                 )
                                 completeTestDeferred?.complete(false)
@@ -472,7 +470,7 @@ class TestSessionViewModel @Inject constructor(
                 Logger.e("$tag: Unexpected exception completing test: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isCompletingTest = false,
-                    error = e.message ?: "Unexpected error completing test",
+                    error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION),
                     isTestCompletionInProgress = false
                 )
                 completeTestDeferred?.complete(false)
@@ -590,12 +588,11 @@ class TestSessionViewModel @Inject constructor(
                                         isCurrentQuestionAnswered = isCurrentQuestionAnswered(session)
                                     )
                                 }
-                            },
-                            onFailure = { e ->
+                            },                            onFailure = { e ->
                                 Logger.e("$tag: Failed to load test session: ${e.message}")
                                 _uiState.value = _uiState.value.copy(
                                     isLoading = false,
-                                    error = e.message ?: "Failed to load test session"
+                                    error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                                 )
                             }
                         )
@@ -604,7 +601,7 @@ class TestSessionViewModel @Inject constructor(
                 Logger.e("$tag: Error loading saved session: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
-                    error = e.message ?: "Error loading saved session"
+                    error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                 )
             }
         }

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.models.TestResult
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,11 +36,10 @@ class TestResultViewModel @Inject constructor(
             val elapsedTime = testsRepository.getSessionElapsedTime(sessionId) ?: 0L
             Logger.d("TestResultVM: Retrieved elapsed time for session ID: $sessionId - $elapsedTime ms")
             
-            testsRepository.getTestResults(sessionId)
-                .catch { e ->
+            testsRepository.getTestResults(sessionId)                .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load test result"
+                        error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                     )
                 }
                 .collectLatest { result ->
@@ -52,11 +53,10 @@ class TestResultViewModel @Inject constructor(
                                 isLoading = false,
                                 error = null
                             )
-                        },
-                        onFailure = { e ->
+                        },                        onFailure = { e ->
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                error = e.message ?: "Failed to load test result"
+                                error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
                             )
                         }
                     )

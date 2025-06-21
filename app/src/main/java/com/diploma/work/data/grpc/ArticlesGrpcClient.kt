@@ -3,8 +3,11 @@ package com.diploma.work.data.grpc
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.grpc.articles.ArticlesServiceGrpc
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,6 +23,21 @@ class ArticlesGrpcClient @Inject constructor(
 ) {
     private val stub = ArticlesServiceGrpc.newBlockingStub(channel)
     private val tag = "grpc.articles"
+
+    private fun getErrorContext(e: StatusRuntimeException, defaultContext: ErrorContext): ErrorContext {
+        return when (e.status.code) {
+            Status.Code.UNAVAILABLE, Status.Code.DEADLINE_EXCEEDED -> ErrorContext.NETWORK
+            else -> defaultContext
+        }
+    }
+
+    private fun getGenericErrorContext(e: Exception): ErrorContext {
+        return if (e is StatusRuntimeException) {
+            getErrorContext(e, ErrorContext.GENERIC)
+        } else {
+            ErrorContext.GENERIC
+        }
+    }
 
     suspend fun getTechnologies(request: GetTechnologiesRequest): Result<GetTechnologiesResponse> = withContext(Dispatchers.IO) {
         try {
@@ -50,13 +68,12 @@ class ArticlesGrpcClient @Inject constructor(
             Result.success(GetTechnologiesResponse(
                 technologies = technologies,
                 nextPageToken = grpcResponse.nextPageToken
-            ))
-        } catch (e: StatusRuntimeException) {
+            ))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Get technologies failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Get technologies failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -86,13 +103,12 @@ class ArticlesGrpcClient @Inject constructor(
             } else null
             
             Logger.d("$tag: Retrieved user preferences: ${preferences != null}")
-            Result.success(GetUserPreferencesResponse(preferences = preferences))
-        } catch (e: StatusRuntimeException) {
+            Result.success(GetUserPreferencesResponse(preferences = preferences))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Get user preferences failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Get user preferences failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -114,13 +130,11 @@ class ArticlesGrpcClient @Inject constructor(
             val grpcResponse = stub.updateUserPreferences(grpcRequest)
             
             Logger.d("$tag: User preferences updated successfully")
-            Result.success(UpdateUserPreferencesResponse(message = grpcResponse.message))
-        } catch (e: StatusRuntimeException) {
+            Result.success(UpdateUserPreferencesResponse(message = grpcResponse.message))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Update user preferences failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
-        } catch (e: Exception) {
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)))        } catch (e: Exception) {
             Logger.e("$tag: Update user preferences failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -175,13 +189,12 @@ class ArticlesGrpcClient @Inject constructor(
                 articles = articles,
                 nextPageToken = grpcResponse.nextPageToken,
                 totalCount = grpcResponse.totalCount
-            ))
-        } catch (e: StatusRuntimeException) {
+            ))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Get articles failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Get articles failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -228,13 +241,12 @@ class ArticlesGrpcClient @Inject constructor(
             }
             
             Logger.d("$tag: Retrieved ${recommendations.size} recommended articles")
-            Result.success(GetRecommendedArticlesResponse(recommendations = recommendations))
-        } catch (e: StatusRuntimeException) {
+            Result.success(GetRecommendedArticlesResponse(recommendations = recommendations))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Get recommended articles failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Get recommended articles failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -286,13 +298,12 @@ class ArticlesGrpcClient @Inject constructor(
                 articles = articles,
                 nextPageToken = grpcResponse.nextPageToken,
                 totalCount = grpcResponse.totalCount
-            ))
-        } catch (e: StatusRuntimeException) {
+            ))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Search articles failed with gRPC error: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING)))
         } catch (e: Exception) {
             Logger.e("$tag: Search articles failed with exception: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING)))
         }
     }
 

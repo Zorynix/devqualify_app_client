@@ -6,6 +6,8 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.Achievement
 import com.diploma.work.data.models.GetUserAchievementsRequest
 import com.diploma.work.data.repository.UserInfoRepository
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,14 +57,14 @@ class AchievementsViewModel @Inject constructor(
                     Logger.e("Failed to load achievements: ${error.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Failed to load achievements"
+                        errorMessage = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
                     )
                 }
             } else {
                 Logger.e("User ID not found in session")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "User ID not found in session"
+                    errorMessage = "Не удалось определить пользователя. Попробуйте войти в систему заново."
                 )
             }
         }

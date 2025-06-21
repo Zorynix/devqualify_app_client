@@ -39,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -46,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -95,17 +97,29 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-
     LaunchedEffect(updateSuccess) {
         if (updateSuccess) {
-            snackbarHostState.showSnackbar("Profile updated successfully!")
+            snackbarHostState.showSnackbar(
+                message = "Profile updated successfully!",
+                duration = SnackbarDuration.Short
+            )
             viewModel.resetUpdateStatus()
         }
     }
 
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
-            snackbarHostState.showSnackbar(errorMessage ?: "An error occurred")
+            snackbarHostState.showSnackbar(
+                message = errorMessage ?: "An error occurred",
+                duration = SnackbarDuration.Short
+            )
+            viewModel.resetUpdateStatus()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetUpdateStatus()
         }
     }
     

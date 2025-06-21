@@ -53,13 +53,11 @@ fun ArticlesScreen(
                 IconButton(onClick = onNavigateUp) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
-            },
-            actions = {                IconButton(onClick = { showFilters = !showFilters }) {
+            },            actions = {                IconButton(onClick = { showFilters = !showFilters }) {
                     Icon(
                         Icons.Default.Tune,
                         contentDescription = "Filters",
-                        tint = if (uiState.selectedDirections.isNotEmpty() || 
-                                  uiState.selectedTechnologyIds.isNotEmpty() ||
+                        tint = if (uiState.selectedTechnologyIds.isNotEmpty() ||
                                   uiState.searchQuery.isNotBlank() ||
                                   uiState.selectedTimePeriod != TimePeriod.WEEK ||
                                   uiState.selectedSortType != SortType.RELEVANCE) {
@@ -82,7 +80,6 @@ fun ArticlesScreen(
                 uiState = uiState,
                 onTimePeriodChange = viewModel::setTimePeriod,
                 onSortByChange = viewModel::setSortBy,
-                onDirectionChange = viewModel::toggleDirection,
                 onSourceChange = viewModel::toggleSource,
                 onClearFilters = viewModel::clearFilters
             )
@@ -147,7 +144,6 @@ private fun FiltersPanel(
     uiState: ArticlesUiState,
     onTimePeriodChange: (TimePeriod) -> Unit,
     onSortByChange: (SortType) -> Unit,
-    onDirectionChange: (ArticleDirection) -> Unit,
     onSourceChange: (String) -> Unit,
     onClearFilters: () -> Unit
 ){
@@ -201,25 +197,7 @@ private fun FiltersPanel(
                         FilterChip(
                             selected = uiState.selectedSortType == sortType,
                             onClick = { onSortByChange(sortType) },
-                            label = { Text(sortType.displayName) }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            FilterSection(title = "Categories") {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(ArticleDirection.entries) { direction ->
-                        if (direction != ArticleDirection.UNSPECIFIED) {
-                            FilterChip(
-                                selected = uiState.selectedDirections.contains(direction),
-                                onClick = { onDirectionChange(direction) },
-                                label = { Text(direction.displayName) }
-                            )
-                        }
+                            label = { Text(sortType.displayName) }                        )
                     }
                 }
             }
@@ -424,10 +402,4 @@ private val SortType.displayName: String
         SortType.RATING_ASC -> "Lowest Rated"
     }
 
-private val ArticleDirection.displayName: String
-    get() = when (this) {
-        ArticleDirection.BACKEND -> "Backend"
-        ArticleDirection.FRONTEND -> "Frontend"
-        ArticleDirection.DEVOPS -> "DevOps"
-        ArticleDirection.DATA_SCIENCE -> "Data Science"
-        ArticleDirection.UNSPECIFIED -> "All"    }
+

@@ -12,6 +12,8 @@ import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,11 +84,10 @@ class LeaderboardViewModel @Inject constructor(
                         nextPageToken = response.nextPageToken,
                         hasMoreData = response.nextPageToken.isNotEmpty()
                     )
-                }
-                .onFailure { error ->
+                }                .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.localizedMessage ?: "Failed to load leaderboard"
+                        errorMessage = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
                     )
                 }
         }
@@ -147,11 +148,10 @@ class LeaderboardViewModel @Inject constructor(
                         isLoading = false,
                         isUserDetailDialogVisible = true
                     )
-                }
-                .onFailure { error ->
+                }                .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.localizedMessage ?: "Failed to load user details"
+                        errorMessage = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
                     )
                 }
         }

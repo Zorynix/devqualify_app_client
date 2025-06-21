@@ -52,7 +52,16 @@ enum class ArticleDirection {
     BACKEND,
     FRONTEND,
     DEVOPS,
-    DATA_SCIENCE
+    DATA_SCIENCE;
+
+    val displayName: String
+        get() = when (this) {
+            UNSPECIFIED -> "All"
+            BACKEND -> "Backend"
+            FRONTEND -> "Frontend"
+            DEVOPS -> "DevOps"
+            DATA_SCIENCE -> "Data Science"
+        }
 }
 
 enum class ArticleStatus {
@@ -66,7 +75,15 @@ enum class DeliveryFrequency {
     UNSPECIFIED,
     DAILY,
     WEEKLY,
-    MONTHLY
+    MONTHLY;
+
+    val displayName: String
+        get() = when (this) {
+            UNSPECIFIED -> "Не указано"
+            DAILY -> "Ежедневно"
+            WEEKLY -> "Еженедельно"
+            MONTHLY -> "Ежемесячно"
+        }
 }
 
 data class GetTechnologiesRequest(

@@ -19,6 +19,8 @@ import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -117,13 +119,12 @@ class ProfileViewModel @Inject constructor(
                     
                     _direction.value = response.user.direction
                     _level.value = response.user.level
-                    Logger.d("Successfully loaded user info: ${response.user.id}")
-                }.onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to load user information"
+                    Logger.d("Successfully loaded user info: ${response.user.id}")                }.onFailure { error ->
+                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
                     Logger.e("Failed to load user info: ${error.message}")
                 }
             } else {
-                _errorMessage.value = "User ID not found in session"
+                _errorMessage.value = "Не удалось определить пользователя. Попробуйте войти в систему заново."
                 Logger.e("User ID not found in session")
                 
                 val defaultAvatarUrl = "https://ui-avatars.com/api/?name=User&background=random&size=200"
@@ -176,10 +177,9 @@ class ProfileViewModel @Inject constructor(
                 val inputStream = try {
                     withContext(Dispatchers.IO) {
                         context.contentResolver.openInputStream(uri)
-                    }
-                } catch (e: Exception) {
+                    }                } catch (e: Exception) {
                     Logger.e("Error opening avatar file: ${e.message}")
-                    _errorMessage.value = "Failed to read avatar image"
+                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)
                     _isLoading.value = false
                     return
                 }
@@ -195,9 +195,11 @@ class ProfileViewModel @Inject constructor(
                             null
                         }
                     }
-                    
-                    if (avatarBytes == null) {
-                        _errorMessage.value = "Failed to read avatar image data"
+                      if (avatarBytes == null) {
+                        _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(
+                            Exception("Failed to read avatar data"), 
+                            ErrorContext.PROFILE_UPDATE
+                        )
                         _isLoading.value = false
                         return
                     }
@@ -244,10 +246,12 @@ class ProfileViewModel @Inject constructor(
                         val localAvatarUrl = "data:avatar"
                         _avatarUrl.value = localAvatarUrl
                         _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
-                    }
-                } else {
+                    }                } else {
                     Logger.e("Failed to open avatar image stream")
-                    _errorMessage.value = "Failed to open avatar image"
+                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(
+                        Exception("Failed to open avatar image"), 
+                        ErrorContext.PROFILE_UPDATE
+                    )
                     val localAvatarUrl = "data:avatar"
                     _avatarUrl.value = localAvatarUrl
                     _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
@@ -256,10 +260,9 @@ class ProfileViewModel @Inject constructor(
                 _avatarUrl.value = "data:avatar"
                 _uiState.value = _uiState.value.copy(avatarUrl = "data:avatar")
                 Logger.d("Avatar image stored locally only (no user ID available)")
-            }
-        } catch (e: Exception) {
+            }        } catch (e: Exception) {
             Logger.e("Error saving avatar image: ${e.message}")
-            _errorMessage.value = "Failed to save avatar image"
+            _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)
             
             if (session.getAvatarUrl() == "data:avatar") {
                 _avatarUrl.value = "data:avatar"
@@ -296,12 +299,22 @@ class ProfileViewModel @Inject constructor(
                     
                     _updateSuccess.value = true
                     Logger.d("Successfully updated user profile: ${response.user.id}")
+                    
+                    viewModelScope.launch {
+                        kotlinx.coroutines.delay(3000)
+                        _updateSuccess.value = false
+                    }
                 }.onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to update user profile"
+                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.PROFILE_UPDATE)
                     Logger.e("Failed to update user profile: ${error.message}")
+                    
+                    viewModelScope.launch {
+                        kotlinx.coroutines.delay(5000)
+                        _errorMessage.value = null
+                    }
                 }
             } else {
-                _errorMessage.value = "User ID not found in session"
+                _errorMessage.value = "Не удалось определить пользователя. Попробуйте войти в систему заново."
                 Logger.e("User ID not found in session")
             }
             

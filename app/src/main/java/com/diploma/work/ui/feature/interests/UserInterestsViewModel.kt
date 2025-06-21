@@ -184,7 +184,7 @@ class UserInterestsViewModel @Inject constructor(
                 )
 
                 val result = articlesRepository.updateUserPreferences(request)
-                  if (result.isSuccess) {
+                if (result.isSuccess) {
                     Logger.d("$tag: User preferences saved successfully")
                       val savedPreferences = UserPreferences(
                         userId = userId,

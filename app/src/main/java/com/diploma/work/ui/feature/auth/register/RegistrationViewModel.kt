@@ -7,6 +7,8 @@ import com.diploma.work.data.models.RegisterRequest
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.navigation.EmailConfirmation
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -93,9 +95,8 @@ class RegistrationViewModel @Inject constructor(
 
             registerResult.onSuccess {
                 Logger.d("Registration successful")
-                _navigationChannel.send("emailConfirmation/${email.value}")
-            }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Ошибка регистрации"
+                _navigationChannel.send("emailConfirmation/${email.value}")            }.onFailure { error ->
+                _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.REGISTRATION)
                 Logger.e("Registration failed: ${error.message}")
             }
         }

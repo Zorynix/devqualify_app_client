@@ -18,9 +18,12 @@ import com.diploma.work.grpc.tests.SaveAnswerRequest
 import com.diploma.work.grpc.tests.StartTestSessionRequest
 import com.diploma.work.grpc.tests.TestInfo
 import com.diploma.work.grpc.tests.TestServiceGrpc
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
 import io.grpc.Metadata
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.MetadataUtils
 import kotlinx.coroutines.Dispatchers
@@ -81,13 +84,12 @@ class TestsGrpcClient @Inject constructor(
             }
             Logger.d("$tag: Retrieved ${technologies.size} technologies")
             Logger.v("$tag: Technologies: ${technologies.joinToString { it.name }}")
-            emit(Result.success(technologies))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(technologies))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get technologies with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING)))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to get technologies: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e)))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -121,13 +123,11 @@ class TestsGrpcClient @Inject constructor(
             }
             Logger.d("$tag: Retrieved ${tests.size} tests")
             Logger.v("$tag: Tests: ${tests.joinToString { it.title }}")
-            emit(Result.success(tests))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(tests))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get tests with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
-        } catch (e: Exception) {
-            Logger.e("$tag: Failed to get tests: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
+        } catch (e: Exception) {            Logger.e("$tag: Failed to get tests: ${e.message}")
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -157,13 +157,12 @@ class TestsGrpcClient @Inject constructor(
             }
             Logger.d("$tag: Retrieved ${tests.size} tests for technology ID: $technologyId")
             Logger.v("$tag: Tests: ${tests.joinToString { it.title }}")
-            emit(Result.success(tests))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(tests))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get tests for technology ID: $technologyId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to get tests for technology ID: $technologyId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -188,13 +187,12 @@ class TestsGrpcClient @Inject constructor(
             )
 
             Logger.d("$tag: Retrieved test '${testInfo.title}' with ${questions.size} questions")
-            emit(Result.success(test))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(test))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get test ID: $testId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to get test ID: $testId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.DATA_LOADING))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -224,13 +222,12 @@ class TestsGrpcClient @Inject constructor(
                 testInfo = testInfo
             )
             Logger.d("$tag: Test session started successfully with session ID: ${response.sessionId}")
-            emit(Result.success(testSession))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(testSession))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to start test session for test ID: $testId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to start test session for test ID: $testId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -262,13 +259,12 @@ class TestsGrpcClient @Inject constructor(
                 testInfo = testInfo
             )
             Logger.d("$tag: Retrieved test session for test '${testInfo.title}' with ${questionsList.size} questions")
-            emit(Result.success(testSession))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(testSession))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get test session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to get test session ID: $sessionId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -302,13 +298,12 @@ class TestsGrpcClient @Inject constructor(
             val response = withAuthStub().saveAnswer(request)
             Logger.d("$tag: Answer saved successfully for session ID: $sessionId, question ID: ${answer.questionId}")
 
-            emit(Result.success(true))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(true))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to save answer for session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to save answer for session ID: $sessionId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -444,12 +439,11 @@ class TestsGrpcClient @Inject constructor(
                         return@withLock
                     }
                 }
-                
-                Logger.e("$tag: Failed to complete test session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
-                emit(Result.failure(e))
+                  Logger.e("$tag: Failed to complete test session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
+                emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
             } catch (e: Exception) {
                 Logger.e("$tag: Failed to complete test session ID: $sessionId: ${e.message}")
-                emit(Result.failure(e))
+                emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
             }
         }
     }.flowOn(Dispatchers.IO)
@@ -475,18 +469,16 @@ class TestsGrpcClient @Inject constructor(
                 durationMillis = 0L
             )
             Logger.d("$tag: Retrieved test results successfully for session ID: $sessionId")
-            emit(Result.success(result))
-        } catch (e: StatusRuntimeException) {
+            emit(Result.success(result))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Failed to get test results for session ID: $sessionId with gRPC error: ${e.status.code} - ${e.status.description}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         } catch (e: Exception) {
             Logger.e("$tag: Failed to get test results for session ID: $sessionId: ${e.message}")
-            emit(Result.failure(e))
+            emit(Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION))))
         }
     }.flowOn(Dispatchers.IO)
     
     private fun mapProtoQuestionResultToModel(protoResult: com.diploma.work.grpc.tests.QuestionResult): QuestionResult {
-        // Логируем ответы для отладки
         Logger.d("$tag: Mapping question result: correct='${protoResult.correctAnswer}', user='${protoResult.userAnswer}'")
         
         return QuestionResult(
@@ -542,6 +534,21 @@ class TestsGrpcClient @Inject constructor(
             Level.JUNIOR -> com.diploma.work.grpc.tests.Level.JUNIOR
             Level.MIDDLE -> com.diploma.work.grpc.tests.Level.MIDDLE
             Level.SENIOR -> com.diploma.work.grpc.tests.Level.SENIOR
+        }
+    }
+
+    private fun getErrorContext(e: StatusRuntimeException, defaultContext: ErrorContext): ErrorContext {
+        return when (e.status.code) {
+            Status.Code.UNAVAILABLE, Status.Code.DEADLINE_EXCEEDED -> ErrorContext.NETWORK
+            else -> defaultContext
+        }
+    }
+
+    private fun getGenericErrorContext(e: Exception): ErrorContext {
+        return if (e is StatusRuntimeException) {
+            getErrorContext(e, ErrorContext.GENERIC)
+        } else {
+            ErrorContext.GENERIC
         }
     }
 }
