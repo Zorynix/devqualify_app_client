@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -57,11 +58,63 @@ import com.orhanobut.logger.Logger
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-fun NavController.navigate(
-    route: NavRoute,
-    builder: (NavOptions.Builder.() -> Unit)? = null
+fun NavController.safeNavigate(
+    route: String,
+    singleTop: Boolean = true,
+    clearStack: Boolean = false,
+    popUpToRoute: String? = null,
+    inclusive: Boolean = false
 ) {
+    try {
+        val currentRoute = currentDestination?.route
+        
+        if (currentRoute == route) {
+            Logger.d("Navigation: Already on route $route, skipping navigation")
+            return
+        }
+        
+        Logger.d("Navigation: Navigating from $currentRoute to $route")
+        
+        navigate(route) {
+            launchSingleTop = singleTop
+            
+            if (clearStack || route == "Home") {
+                popUpTo(graph.startDestinationId) {
+                    this.inclusive = true
+                }
+            } else if (popUpToRoute != null) {
+                popUpTo(popUpToRoute) {
+                    this.inclusive = inclusive
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Logger.e("Navigation error: ${e.message}", e)
+    }
+}
 
+fun NavController.safeNavigateBack(): Boolean {
+    return try {
+        if (previousBackStackEntry != null) {
+            popBackStack()
+            true
+        } else {
+            Logger.w("Navigation: No previous destination to navigate back to")
+            false
+        }
+    } catch (e: Exception) {
+        Logger.e("Navigation back error: ${e.message}", e)
+        false
+    }
+}
+
+fun NavController.safeNavigate(
+    route: NavRoute,
+    singleTop: Boolean = true,
+    clearStack: Boolean = false,
+    popUpToRoute: String? = null,
+    inclusive: Boolean = false
+) {
     val routeName = when (route) {
         is Login -> "Login"
         is Register -> "Register"
@@ -78,21 +131,22 @@ fun NavController.navigate(
         else -> route.javaClass.simpleName
     }
 
-    Logger.d("Navigation: Navigating to $routeName")
-    android.util.Log.d("NavDebug", "Navigating to route: $routeName (raw: $route)")
-        
-    if (builder != null) {
-        val optionsBuilder = NavOptions.Builder().apply(builder)
-        navigate(routeName, optionsBuilder.build())
-    } else {
-        navigate(routeName)
-    }
+    Logger.d("Navigation: Converting NavRoute $route to string $routeName")
+    
+    safeNavigate(
+        route = routeName,
+        singleTop = singleTop,
+        clearStack = clearStack || routeName == "Home" || routeName == "Login",
+        popUpToRoute = popUpToRoute,
+        inclusive = inclusive
+    )
 }
 
 @Composable
 fun AppNavigation(
     session: AppSession,
-    themeManager: ThemeManager
+    themeManager: ThemeManager,
+    modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val shouldShowBottomNav = remember { mutableStateOf(session.getToken() != null) }
@@ -115,25 +169,22 @@ fun AppNavigation(
         BottomNavItem.Leaderboard,
         BottomNavItem.Articles
     )
-
     ModalNavigationDrawer(
+        modifier = modifier,
         drawerState = drawerState,
         gesturesEnabled = isLoggedIn,
-        drawerContent = {
-            if (isLoggedIn) {                AppDrawerContent(
+        drawerContent = {            if (isLoggedIn) {                AppDrawerContent(
                     username = username.value ?: "User",
                     avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
                     theme = theme,
+                    session = session,
                     onThemeToggle = { 
                         themeManager.toggleTheme()
-                    },
-                    onInterestsClick = {
+                    },                    onInterestsClick = {
                         Logger.d("Navigation: Navigating to UserInterests")
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("UserInterests") {
-                                launchSingleTop = true
-                            }
+                            navController.safeNavigate("UserInterests")
                         }
                     },
                     onLogout = {
@@ -142,10 +193,7 @@ fun AppNavigation(
                         shouldShowBottomNav.value = false
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("Login") {
-                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                launchSingleTop = true
-                            }
+                            navController.safeNavigate("Login", clearStack = true)
                         }
                     }
                 )
@@ -170,27 +218,28 @@ fun AppNavigation(
                             } == true
 
                             NavigationBarItem(
-                                selected = selected,                                onClick = {
+                                selected = selected,
+                                onClick = {
                                     val route = when (item.route) {
                                         is Home -> "Home" 
                                         is Profile -> "Profile"
                                         is Achievements -> "Achievements"
                                         is Leaderboard -> "Leaderboard"
                                         is Articles -> "Articles"
-                                        else -> ""
-                                    }
+                                        else -> ""                                    }
                                     Logger.d("Navigation: Bottom nav bar click - $route")
-                                    navController.navigate(route) {
-                                        popUpTo(navController.graph.startDestinationId) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
+                                    Logger.d("Navigation: Current destination: ${navController.currentDestination?.route}")
+                                    val currentRoute = navController.currentDestination?.route
+                                    if (currentRoute == "UserInterests") {
+                                        navController.safeNavigate(route, popUpToRoute = "UserInterests", inclusive = true)
+                                    } else {
+                                        navController.safeNavigate(route)
                                     }
                                 },
                                 icon = {
                                     Icon(
-                                        imageVector = item.icon,                                        contentDescription = when (item.route) {
+                                        imageVector = item.icon,                                        
+                                        contentDescription = when (item.route) {
                                             is Home -> "Home"
                                             is Profile -> "Profile"
                                             is Achievements -> "Achievements"
@@ -319,7 +368,13 @@ fun AppNavigation(
                         session.getAvatarUrl()
                     }
                     UserInterestsScreen(
-                        onBack = { navController.navigateUp() }
+                        onBack = { 
+                            Logger.d("Navigation: Going back from UserInterests")
+                            Logger.d("Navigation: Current destination: ${navController.currentDestination?.route}")
+                            if (!navController.safeNavigateBack()) {
+                                navController.safeNavigate("Home", clearStack = true)
+                            }
+                        }
                     )
                 }
                 composable("Articles") {
@@ -329,7 +384,10 @@ fun AppNavigation(
                         session.getAvatarUrl()
                     }
                     ArticlesScreen(
-                        onNavigateUp = { navController.navigateUp() }
+                        onNavigateUp = { 
+                            Logger.d("Navigation: Going back from Articles")
+                            navController.popBackStack()
+                        }
                     )
                 }
             }
@@ -342,5 +400,7 @@ sealed class BottomNavItem(val route: NavRoute, val icon: ImageVector) {
     object Profile : BottomNavItem(com.diploma.work.ui.navigation.Profile, Icons.Default.Person)
     object Achievements : BottomNavItem(com.diploma.work.ui.navigation.Achievements, Icons.Default.Star)
     object Leaderboard : BottomNavItem(com.diploma.work.ui.navigation.Leaderboard, Icons.Filled.Leaderboard)
-    object Articles : BottomNavItem(com.diploma.work.ui.navigation.Articles, Icons.Filled.Article)
+    object Articles : BottomNavItem(com.diploma.work.ui.navigation.Articles,
+        Icons.AutoMirrored.Filled.Article
+    )
 }

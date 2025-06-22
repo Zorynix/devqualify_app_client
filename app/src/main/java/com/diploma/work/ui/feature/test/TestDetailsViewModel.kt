@@ -1,10 +1,12 @@
 package com.diploma.work.ui.feature.test
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.models.Test
 import com.diploma.work.data.models.TestSession
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +30,9 @@ data class TestDetailsUiState(
 
 @HiltViewModel
 class TestDetailsViewModel @Inject constructor(
-    private val testsRepository: TestsRepository
-) : ViewModel() {
+    private val testsRepository: TestsRepository,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
     private val _uiState = MutableStateFlow(TestDetailsUiState(isLoading = true))
     val uiState: StateFlow<TestDetailsUiState> = _uiState
 

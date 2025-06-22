@@ -1,7 +1,6 @@
 package com.diploma.work.ui.feature.profile
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.events.ProfileEvent
@@ -17,10 +16,11 @@ import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
+import com.diploma.work.ui.base.BaseViewModel
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager
-import com.diploma.work.utils.ErrorContext
-import com.diploma.work.utils.ErrorMessageUtils
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,19 +43,14 @@ class ProfileViewModel @Inject constructor(
     val session: AppSession,
     private val themeManager: ThemeManager,
     private val profileEventBus: ProfileEventBus,
+    override val errorHandler: ErrorHandler,
     @ApplicationContext private val context: Context
-) : ViewModel() {
+) : BaseViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
 
     private val _user = MutableStateFlow<User?>(null)
     val user: StateFlow<User?> = _user
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage
 
     private val _updateSuccess = MutableStateFlow(false)
     val updateSuccess: StateFlow<Boolean> = _updateSuccess
@@ -82,15 +77,14 @@ class ProfileViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun loadProfile() {
+    }    fun loadProfile() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            setLoading(true)
+            clearGlobalError()
             
             val userId = session.getUserId()
             if (userId != null) {
+                try {
                 val request = GetUserRequest(userId = userId)
                 val result = userInfoRepository.getUser(request)
                 
@@ -102,9 +96,8 @@ class ProfileViewModel @Inject constructor(
                     } else {
                         val localAvatar = session.getAvatarUrl()
                         if (localAvatar != null) {
-                            _avatarUrl.value = localAvatar
-                        } else {
-                            val generatedAvatarUrl = "https://ui-avatars.com/api/?name=${response.user.username}&background=random&size=200"
+                            _avatarUrl.value = localAvatar                        } else {
+                            val generatedAvatarUrl = "https://ui-avatars.com/api/?name=${response.user.username}&background=random&size=${Constants.Business.GENERATED_AVATAR_SIZE}"
                             _avatarUrl.value = generatedAvatarUrl
                         }
                     }
@@ -119,25 +112,29 @@ class ProfileViewModel @Inject constructor(
                     
                     _direction.value = response.user.direction
                     _level.value = response.user.level
-                    Logger.d("Successfully loaded user info: ${response.user.id}")                }.onFailure { error ->
-                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
-                    Logger.e("Failed to load user info: ${error.message}")
-                }
-            } else {
-                _errorMessage.value = "Не удалось определить пользователя. Попробуйте войти в систему заново."
-                Logger.e("User ID not found in session")
-                
-                val defaultAvatarUrl = "https://ui-avatars.com/api/?name=User&background=random&size=200"
+                    Logger.d("Successfully loaded user info: ${response.user.id}")                        }.onFailure { error ->
+                            val errorMessage = errorHandler.handleError(error, Constants.ErrorMessages.NETWORK_ERROR)
+                            setError(errorMessage)
+                            Logger.e("Failed to load user info: ${error.message}")
+                        }
+                    } catch (e: Exception) {
+                        val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+                        setError(errorMessage)
+                        Logger.e("Exception loading user info: ${e.message}")
+                    }
+                } else {
+                    setError("Не удалось определить пользователя. Попробуйте войти в систему заново.")
+                    Logger.e("User ID not found in session")                
+                val defaultAvatarUrl = "https://ui-avatars.com/api/?name=User&background=random&size=${Constants.Business.GENERATED_AVATAR_SIZE}"
                 _avatarUrl.value = session.getAvatarUrl() ?: defaultAvatarUrl
                 
                 _uiState.value = _uiState.value.copy(
                     username = "User",
-                    theme = themeManager.currentTheme.value,
-                    avatarUrl = _avatarUrl.value
+                    theme = themeManager.currentTheme.value,                    avatarUrl = _avatarUrl.value
                 )
             }
             
-            _isLoading.value = false
+            setLoading(false)
         }
     }
 
@@ -164,10 +161,9 @@ class ProfileViewModel @Inject constructor(
         session.storeAvatarUrl(newAvatarUrl)
         Logger.d("Avatar changed to: $newAvatarUrl")
     }
-    
-    suspend fun saveAvatarImage(uri: android.net.Uri) {
-        _isLoading.value = true
-        _errorMessage.value = null
+      suspend fun saveAvatarImage(uri: android.net.Uri) {
+        setLoading(true)
+        clearGlobalError()
         
         try {
             session.storeAvatarImage(uri)
@@ -177,10 +173,12 @@ class ProfileViewModel @Inject constructor(
                 val inputStream = try {
                     withContext(Dispatchers.IO) {
                         context.contentResolver.openInputStream(uri)
-                    }                } catch (e: Exception) {
+                    }
+                } catch (e: Exception) {
                     Logger.e("Error opening avatar file: ${e.message}")
-                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)
-                    _isLoading.value = false
+                    val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+                    setError(errorMessage)
+                    setLoading(false)
                     return
                 }
                 
@@ -195,12 +193,13 @@ class ProfileViewModel @Inject constructor(
                             null
                         }
                     }
-                      if (avatarBytes == null) {
-                        _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(
+                    if (avatarBytes == null) {
+                        val errorMessage = errorHandler.handleError(
                             Exception("Failed to read avatar data"), 
-                            ErrorContext.PROFILE_UPDATE
+                            Constants.ErrorMessages.GENERIC_ERROR
                         )
-                        _isLoading.value = false
+                        setError(errorMessage)
+                        setLoading(false)
                         return
                     }
                     
@@ -248,10 +247,11 @@ class ProfileViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
                     }                } else {
                     Logger.e("Failed to open avatar image stream")
-                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(
+                    val errorMessage = errorHandler.handleError(
                         Exception("Failed to open avatar image"), 
-                        ErrorContext.PROFILE_UPDATE
+                        Constants.ErrorMessages.GENERIC_ERROR
                     )
+                    setError(errorMessage)
                     val localAvatarUrl = "data:avatar"
                     _avatarUrl.value = localAvatarUrl
                     _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
@@ -262,69 +262,75 @@ class ProfileViewModel @Inject constructor(
                 Logger.d("Avatar image stored locally only (no user ID available)")
             }        } catch (e: Exception) {
             Logger.e("Error saving avatar image: ${e.message}")
-            _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)
+            val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+            setError(errorMessage)
             
             if (session.getAvatarUrl() == "data:avatar") {
                 _avatarUrl.value = "data:avatar"
                 _uiState.value = _uiState.value.copy(avatarUrl = "data:avatar")
             }
         } finally {
-            _isLoading.value = false
+            setLoading(false)
         }
-    }
-
-    fun updateUserProfile() {
+    }    fun updateUserProfile() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            setLoading(true)
+            clearGlobalError()
             _updateSuccess.value = false
             
             val userId = session.getUserId()
             if (userId != null) {
-                Logger.d("Updating user profile for userId: $userId")
-                
-                val request = UpdateUserProfileRequest(
-                    userId = userId,
-                    username = _uiState.value.username,
-                    direction = direction.value,
-                    level = level.value
-                )
-                
-                val result = userInfoRepository.updateUserProfile(request)
-                result.onSuccess { response ->
-                    _user.value = response.user
+                try {
+                    Logger.d("Updating user profile for userId: $userId")
                     
-                    session.storeAvatarUrl(_avatarUrl.value)
-                    session.storeUsername(_uiState.value.username)
+                    val request = UpdateUserProfileRequest(
+                        userId = userId,
+                        username = _uiState.value.username,
+                        direction = direction.value,
+                        level = level.value
+                    )
                     
-                    _updateSuccess.value = true
-                    Logger.d("Successfully updated user profile: ${response.user.id}")
-                    
-                    viewModelScope.launch {
-                        kotlinx.coroutines.delay(3000)
-                        _updateSuccess.value = false
+                    val result = userInfoRepository.updateUserProfile(request)
+                    result.onSuccess { response ->
+                        _user.value = response.user
+                        
+                        session.storeAvatarUrl(_avatarUrl.value)
+                        session.storeUsername(_uiState.value.username)
+                        
+                        _updateSuccess.value = true
+                        Logger.d("Successfully updated user profile: ${response.user.id}")
+                        
+                        viewModelScope.launch {
+                            kotlinx.coroutines.delay(Constants.UI.ANIMATION_DURATION_MS.toLong())
+                            _updateSuccess.value = false
+                        }
+                    }.onFailure { error ->
+                        val errorMessage = errorHandler.handleError(error, Constants.ErrorMessages.GENERIC_ERROR)
+                        setError(errorMessage)
+                        Logger.e("Failed to update user profile: ${error.message}")
+                        
+                        viewModelScope.launch {
+                            kotlinx.coroutines.delay(5000)
+                            clearGlobalError()
+                        }
                     }
-                }.onFailure { error ->
-                    _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.PROFILE_UPDATE)
-                    Logger.e("Failed to update user profile: ${error.message}")
-                    
-                    viewModelScope.launch {
-                        kotlinx.coroutines.delay(5000)
-                        _errorMessage.value = null
-                    }
+                } catch (e: Exception) {
+                    val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+                    setError(errorMessage)
+                    Logger.e("Exception updating user profile: ${e.message}")
                 }
             } else {
-                _errorMessage.value = "Не удалось определить пользователя. Попробуйте войти в систему заново."
+                setError("Не удалось определить пользователя. Попробуйте войти в систему заново.")
                 Logger.e("User ID not found in session")
             }
             
-            _isLoading.value = false
+            setLoading(false)
         }
     }
 
     fun resetUpdateStatus() {
         _updateSuccess.value = false
-        _errorMessage.value = null
+        clearGlobalError()
     }
 
     fun uploadAvatar(uri: android.net.Uri) {

@@ -23,20 +23,14 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.ui.theme.Theme
 import javax.inject.Inject
 
-/**
- * A composable that displays an avatar image, handling both remote URLs and local saved images.
- * 
- * @param avatarUrl The URL or special marker for the avatar image
- * @param size The size of the avatar image
- * @param borderWidth The width of the border around the avatar (0dp for no border)
- * @param session The AppSession instance to retrieve stored avatar data
- */
+
 @Composable
 fun AvatarImage(
     avatarUrl: String,
+    session: AppSession,
+    modifier: Modifier = Modifier,
     size: Dp = 60.dp,
-    borderWidth: Dp = 2.dp,
-    session: AppSession
+    borderWidth: Dp = 2.dp
 ) {
     val context = LocalContext.current
     

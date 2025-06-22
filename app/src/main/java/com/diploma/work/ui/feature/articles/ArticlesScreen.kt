@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
@@ -15,35 +14,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.diploma.work.R
 import com.diploma.work.data.models.*
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticlesScreen(
+    modifier: Modifier = Modifier,
     onNavigateUp: () -> Unit = {},
     viewModel: ArticlesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showFilters by remember { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
-        viewModel.loadArticles()
+        viewModel.refreshUserPreferences()
     }
-
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
@@ -53,12 +49,12 @@ fun ArticlesScreen(
                 IconButton(onClick = onNavigateUp) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
-            },            actions = {                IconButton(onClick = { showFilters = !showFilters }) {
+            },
+            actions = {                IconButton(onClick = { showFilters = !showFilters }) {
                     Icon(
                         Icons.Default.Tune,
                         contentDescription = "Filters",
-                        tint = if (uiState.selectedTechnologyIds.isNotEmpty() ||
-                                  uiState.searchQuery.isNotBlank() ||
+                        tint = if (uiState.searchQuery.isNotBlank() ||
                                   uiState.selectedTimePeriod != TimePeriod.WEEK ||
                                   uiState.selectedSortType != SortType.RELEVANCE) {
                             MaterialTheme.colorScheme.primary
@@ -81,25 +77,22 @@ fun ArticlesScreen(
                 onTimePeriodChange = viewModel::setTimePeriod,
                 onSortByChange = viewModel::setSortBy,
                 onSourceChange = viewModel::toggleSource,
-                onClearFilters = viewModel::clearFilters
+                onClearFilters = viewModel::clearFilters,
+                onApplyUserPreferences = viewModel::applyUserPreferencesToFilters
             )
         }
-
         when {
             uiState.isLoading && uiState.articles.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            uiState.error != null -> {
+                LoadingCard(
+                    message = "Loading articles...",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }            uiState.error != null -> {
                 ErrorCard(
                     error = uiState.error!!,
                     onRetry = { viewModel.loadArticles() }
                 )
-            }            uiState.articles.isEmpty() -> {
+            }uiState.articles.isEmpty() -> {
                 EmptyStateCard()
             }            else -> {
                 ArticlesList(
@@ -145,7 +138,8 @@ private fun FiltersPanel(
     onTimePeriodChange: (TimePeriod) -> Unit,
     onSortByChange: (SortType) -> Unit,
     onSourceChange: (String) -> Unit,
-    onClearFilters: () -> Unit
+    onClearFilters: () -> Unit,
+    onApplyUserPreferences: () -> Unit
 ){
     Card(
         modifier = Modifier
@@ -157,8 +151,7 @@ private fun FiltersPanel(
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
+        ) {            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -168,8 +161,12 @@ private fun FiltersPanel(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                TextButton(onClick = onClearFilters) {
-                    Text("Clear All")
+                Row {                    TextButton(onClick = onApplyUserPreferences) {
+                        Text("My Interests")
+                    }
+                    TextButton(onClick = onClearFilters) {
+                        Text("Clear All")
+                    }
                 }
             }
 
@@ -187,7 +184,6 @@ private fun FiltersPanel(
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
             FilterSection(title = "Sort By") {
                 LazyRow(
@@ -197,7 +193,8 @@ private fun FiltersPanel(
                         FilterChip(
                             selected = uiState.selectedSortType == sortType,
                             onClick = { onSortByChange(sortType) },
-                            label = { Text(sortType.displayName) }                        )
+                            label = { Text(sortType.displayName) }
+                        )
                     }
                 }
             }
@@ -315,42 +312,6 @@ private fun ArticleCard(
 }
 
 @Composable
-private fun ErrorCard(
-    error: String,
-    onRetry: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                Icons.Default.Error,
-                contentDescription = "Error",
-                tint = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
-
-@Composable
 private fun EmptyStateCard() {
     Card(
         modifier = Modifier
@@ -400,6 +361,15 @@ private val SortType.displayName: String
         SortType.DATE_ASC -> "Oldest First"
         SortType.RATING_DESC -> "Highest Rated"
         SortType.RATING_ASC -> "Lowest Rated"
+    }
+
+private val ArticleDirection.displayName: String
+    get() = when (this) {
+        ArticleDirection.BACKEND -> "Backend"
+        ArticleDirection.FRONTEND -> "Frontend"
+        ArticleDirection.DEVOPS -> "DevOps"
+        ArticleDirection.DATA_SCIENCE -> "Data Science"
+        ArticleDirection.UNSPECIFIED -> "All"
     }
 
 

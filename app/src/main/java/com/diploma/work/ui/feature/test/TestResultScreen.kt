@@ -27,7 +27,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,8 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.models.QuestionResult
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.components.CodeHighlighterText
 import com.diploma.work.ui.navigation.Home
+import com.diploma.work.ui.navigation.safeNavigate
+import com.diploma.work.ui.navigation.safeNavigateBack
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.orhanobut.logger.Logger
@@ -60,6 +63,7 @@ import com.orhanobut.logger.Logger
 fun TestResultScreen(
     navController: NavController,
     sessionId: String,
+    modifier: Modifier = Modifier,
     viewModel: TestResultViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -67,13 +71,13 @@ fun TestResultScreen(
     LaunchedEffect(sessionId) {
         viewModel.loadTestResult(sessionId)
     }
-
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Test Results", style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { navController.safeNavigateBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -87,38 +91,16 @@ fun TestResultScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
+            contentAlignment = Alignment.Center        ) {
             if (state.isLoading) {
-                CircularProgressIndicator()
-            } else if (state.error != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Error,
-                        contentDescription = "Error",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = state.error ?: "An error occurred",
-                        style = TextStyle.BodyLarge.value,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { viewModel.loadTestResult(sessionId) }
-                    ) {
-                        Text("Try Again", color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-                }
+                LoadingCard(
+                    message = "Loading test results..."
+                )            }
+            else if (state.error != null) {
+                ErrorCard(
+                    error = state.error!!,
+                    onRetry = { viewModel.loadTestResult(sessionId) }
+                )
             } else if (state.result == null) {
                 Text(
                     text = "No results found for this test session",
@@ -183,11 +165,7 @@ fun TestResultScreen(
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { navController.navigate(Home::class.simpleName.toString()) {
-                                popUpTo(Home::class.simpleName.toString()) {
-                                    inclusive = true
-                                }
-                            } },
+                            onClick = { navController.safeNavigate("Home", clearStack = true) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -210,16 +188,20 @@ fun TestResultScreen(
 }
 
 @Composable
-fun ScoreSection(score: Int, totalPoints: Int, durationMillis: Long) {
+fun ScoreSection(
+    score: Int, 
+    totalPoints: Int, 
+    durationMillis: Long,
+    modifier: Modifier = Modifier
+) {
     val percentage = if (totalPoints > 0) (score.toFloat() / totalPoints) * 100 else 0f
     val scoreColor = when {
         percentage >= 80 -> MaterialTheme.colorScheme.primary
         percentage >= 60 -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.error
-    }
+        else -> MaterialTheme.colorScheme.error    }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -318,9 +300,11 @@ fun formatTime(millis: Long): String {
 }
 
 @Composable
-fun QuestionResultItem(questionResult: QuestionResult) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
+fun QuestionResultItem(
+    questionResult: QuestionResult,
+    modifier: Modifier = Modifier
+) {    Card(
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (questionResult.isCorrect)

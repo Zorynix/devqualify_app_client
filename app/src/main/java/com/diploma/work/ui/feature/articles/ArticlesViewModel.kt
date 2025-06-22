@@ -1,10 +1,12 @@
 package com.diploma.work.ui.feature.articles
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.ArticlesRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,8 +56,9 @@ enum class SortType(val displayName: String) {
 @HiltViewModel
 class ArticlesViewModel @Inject constructor(
     private val articlesRepository: ArticlesRepository,
-    private val session: AppSession
-) : ViewModel() {
+    private val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(ArticlesUiState())
     val uiState: StateFlow<ArticlesUiState> = _uiState.asStateFlow()
@@ -95,12 +98,16 @@ class ArticlesViewModel @Inject constructor(
                 }
                 
                 val technologies = technologiesResult.getOrNull()?.technologies ?: emptyList()
-                
-                _uiState.value = _uiState.value.copy(
+                  _uiState.value = _uiState.value.copy(
                     technologies = technologies,
                     userPreferences = userPreferences,
-                    selectedTechnologyIds = userPreferences?.technologyIds?.toSet() ?: emptySet()
+                    selectedTechnologyIds = userPreferences?.technologyIds?.toSet() ?: emptySet(),
+                    selectedDirections = userPreferences?.directions?.toSet() ?: emptySet()
                 )
+                
+                Logger.d("$tag: Initial load - User preferences: ${userPreferences != null}")
+                Logger.d("$tag: Initial load - Selected technology IDs: ${userPreferences?.technologyIds}")
+                Logger.d("$tag: Initial load - Selected directions: ${userPreferences?.directions}")
                 
                 loadArticles(reset = true)
                 
@@ -143,6 +150,10 @@ class ArticlesViewModel @Inject constructor(
                     pageToken = if (reset) "" else generatePageToken(page)
                 )
                 
+                Logger.d("$tag: Loading articles with ${request.technologyIds.size} technologies and ${request.directions.size} directions")
+                Logger.d("$tag: Technology IDs: ${request.technologyIds}")
+                Logger.d("$tag: Directions: ${request.directions}")
+                
                 val result = articlesRepository.getArticles(request)
                 if (result.isSuccess) {
                     val response = result.getOrNull()
@@ -184,6 +195,72 @@ class ArticlesViewModel @Inject constructor(
             }
         }
     }
+      fun refreshUserPreferences() {
+        viewModelScope.launch {
+            Logger.d("$tag: ===== REFRESH USER PREFERENCES START =====")
+            try {
+                val userId = session.getUserId()
+                Logger.d("$tag: User ID: $userId")
+                
+                if (userId != null) {
+                    // Сначала проверим кэшированные предпочтения
+                    val cachedPreferences = session.getUserPreferences()
+                    Logger.d("$tag: Cached preferences: ${cachedPreferences?.technologyIds}")
+                    Logger.d("$tag: Cached directions: ${cachedPreferences?.directions}")
+                    
+                    val preferencesResult = articlesRepository.getUserPreferences(
+                        GetUserPreferencesRequest(userId)
+                    )
+                    val serverPreferences = preferencesResult.getOrNull()?.preferences
+                    
+                    Logger.d("$tag: Server preferences: ${serverPreferences?.technologyIds}")
+                    Logger.d("$tag: Server directions: ${serverPreferences?.directions}")
+                    
+                    if (serverPreferences != null) {
+                        session.storeUserPreferences(serverPreferences)
+                        Logger.d("$tag: Refreshed user preferences from server")
+                        
+                        _uiState.value = _uiState.value.copy(
+                            userPreferences = serverPreferences,
+                            selectedTechnologyIds = serverPreferences.technologyIds.toSet(),
+                            selectedDirections = serverPreferences.directions.toSet()
+                        )
+                        
+                        Logger.d("$tag: Applied server preferences to UI state")
+                        loadArticles(reset = true)
+                    } else {
+                        if (cachedPreferences != null) {
+                            _uiState.value = _uiState.value.copy(
+                                userPreferences = cachedPreferences,
+                                selectedTechnologyIds = cachedPreferences.technologyIds.toSet(),
+                                selectedDirections = cachedPreferences.directions.toSet()
+                            )
+                            
+                            Logger.d("$tag: Applied cached preferences to UI state")
+                            loadArticles(reset = true)
+                        } else {
+                            Logger.w("$tag: No preferences found - neither server nor cache")
+                        }
+                    }
+                } else {
+                    Logger.w("$tag: No user ID found")
+                }
+            } catch (e: Exception) {
+                Logger.e("$tag: Exception during preferences refresh: ${e.message}")
+                val cachedPreferences = session.getUserPreferences()
+                if (cachedPreferences != null) {
+                    _uiState.value = _uiState.value.copy(
+                        userPreferences = cachedPreferences,
+                        selectedTechnologyIds = cachedPreferences.technologyIds.toSet(),
+                        selectedDirections = cachedPreferences.directions.toSet()
+                    )
+                    Logger.d("$tag: Used cached preferences after exception")
+                    loadArticles(reset = true)
+                }
+            }
+            Logger.d("$tag: ===== REFRESH USER PREFERENCES END =====")
+        }
+    }
 
     fun refreshArticles() {
         viewModelScope.launch {
@@ -202,24 +279,8 @@ class ArticlesViewModel @Inject constructor(
     fun setTimePeriod(timePeriod: TimePeriod) {
         _uiState.value = _uiState.value.copy(selectedTimePeriod = timePeriod)
         loadArticles(reset = true)
-    }
-
-    fun setSortType(sortType: SortType) {
+    }    fun setSortType(sortType: SortType) {
         _uiState.value = _uiState.value.copy(selectedSortType = sortType)
-        loadArticles(reset = true)
-    }    fun setDirection(direction: ArticleDirection?) {
-        _uiState.value = _uiState.value.copy(selectedDirection = direction)
-        loadArticles(reset = true)
-    }
-    
-    fun toggleDirection(direction: ArticleDirection) {
-        val currentDirections = _uiState.value.selectedDirections.toMutableSet()
-        if (currentDirections.contains(direction)) {
-            currentDirections.remove(direction)
-        } else {
-            currentDirections.add(direction)
-        }
-        _uiState.value = _uiState.value.copy(selectedDirections = currentDirections)
         loadArticles(reset = true)
     }
     
@@ -230,93 +291,35 @@ class ArticlesViewModel @Inject constructor(
     
     fun toggleSource(source: String) {
         loadArticles(reset = true)
-    }
-    
-    fun clearFilters() {
+    }    fun clearFilters() {
         _uiState.value = _uiState.value.copy(
             selectedDirection = null,
-            selectedDirections = emptySet(),
-            selectedTechnologyIds = emptySet(),
             searchQuery = "",
             selectedTimePeriod = TimePeriod.WEEK,
             selectedSortType = SortType.RELEVANCE
         )
         loadArticles(reset = true)
-    }
-    
-    fun hasActiveFilters(): Boolean {
-        val state = _uiState.value
-        return state.selectedDirection != null ||
-                state.selectedDirections.isNotEmpty() ||
-                state.selectedTechnologyIds.isNotEmpty() ||
-                state.searchQuery.isNotBlank() ||
-                state.selectedTimePeriod != TimePeriod.WEEK ||
-                state.selectedSortType != SortType.RELEVANCE
-    }
-      fun toggleTechnology(technologyId: Long) {
-        val currentSelected = _uiState.value.selectedTechnologyIds.toMutableSet()
-        if (currentSelected.contains(technologyId)) {
-            currentSelected.remove(technologyId)
-        } else {
-            currentSelected.add(technologyId)
-        }
-        _uiState.value = _uiState.value.copy(selectedTechnologyIds = currentSelected)
-        loadArticles(reset = true)
-    }
-
-    fun setSearchQuery(query: String) {
+    }    fun setSearchQuery(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
         if (query.isBlank()) {
             loadArticles(reset = true)
         }
     }
 
-    fun performSearch() {
-        loadArticles(reset = true)
-    }
-
-    fun clearSearch() {
-        _uiState.value = _uiState.value.copy(searchQuery = "")
-        loadArticles(reset = true)
-    }
-
-    fun toggleFiltersExpanded() {
-        _uiState.value = _uiState.value.copy(
-            isFiltersExpanded = !_uiState.value.isFiltersExpanded
-        )
-    }
-
-    fun clearAllFilters() {
-        _uiState.value = _uiState.value.copy(
-            selectedDirection = null,
-            selectedTechnologyIds = emptySet(),
-            searchQuery = "",
-            selectedTimePeriod = TimePeriod.WEEK,
-            selectedSortType = SortType.RELEVANCE
-        )
-        loadArticles(reset = true)
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun getTechnologiesByDirection(direction: ArticleDirection): List<ArticleTechnology> {
-        return _uiState.value.technologies.filter { it.direction == direction }
-    }    fun getDirections(): List<ArticleDirection> {
-        return ArticleDirection.entries.filter { it != ArticleDirection.UNSPECIFIED }
-    }
-
-    private fun mapTimePeriodToProto(timePeriod: TimePeriod): Int {
-        return when (timePeriod) {
-            TimePeriod.DAY -> 1
-            TimePeriod.WEEK -> 7
-            TimePeriod.MONTH -> 30
-            TimePeriod.QUARTER -> 90
-            TimePeriod.YEAR -> 365
-            TimePeriod.ALL -> -1
-        }
-    }
+    fun applyUserPreferencesToFilters() {
+        val preferences = _uiState.value.userPreferences
+        if (preferences != null) {
+            _uiState.value = _uiState.value.copy(
+                selectedTechnologyIds = preferences.technologyIds.toSet(),
+                selectedDirections = preferences.directions.toSet()
+            )
+            loadArticles(reset = true)
+            Logger.d("$tag: Applied user preferences to filters")
+            Logger.d("$tag: Applied technology IDs: ${preferences.technologyIds}")
+            Logger.d("$tag: Applied directions: ${preferences.directions}")
+        } else {
+            Logger.w("$tag: No user preferences found to apply")
+        }    }
 
     private fun calculateDateRange(timePeriod: TimePeriod): Pair<Instant?, Instant?> {
         val now = Instant.now()

@@ -1,12 +1,12 @@
 package com.diploma.work.ui.feature.test
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.models.TestResult
 import com.diploma.work.data.repository.TestsRepository
-import com.diploma.work.utils.ErrorContext
-import com.diploma.work.utils.ErrorMessageUtils
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +24,9 @@ data class TestResultUiState(
 
 @HiltViewModel
 class TestResultViewModel @Inject constructor(
-    private val testsRepository: TestsRepository
-) : ViewModel() {
+    private val testsRepository: TestsRepository,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
     private val _uiState = MutableStateFlow(TestResultUiState(isLoading = true))
     val uiState: StateFlow<TestResultUiState> = _uiState
 
@@ -39,7 +40,7 @@ class TestResultViewModel @Inject constructor(
             testsRepository.getTestResults(sessionId)                .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
+                        error = errorHandler.getContextualErrorMessage(e, ErrorHandler.ErrorContext.TEST_SESSION)
                     )
                 }
                 .collectLatest { result ->
@@ -56,7 +57,7 @@ class TestResultViewModel @Inject constructor(
                         },                        onFailure = { e ->
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                error = ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.TEST_SESSION)
+                                error = errorHandler.getContextualErrorMessage(e, ErrorHandler.ErrorContext.TEST_SESSION)
                             )
                         }
                     )

@@ -1,12 +1,12 @@
 package com.diploma.work.ui.feature.auth.login
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.LoginRequest
 import com.diploma.work.data.repository.AuthRepository
-import com.diploma.work.utils.ErrorContext
-import com.diploma.work.utils.ErrorMessageUtils
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.ErrorHandler
+import com.diploma.work.utils.ValidationUtils
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,59 +25,76 @@ import kotlin.math.absoluteValue
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val session: AppSession
-) : ViewModel() {
-    private val _username = MutableStateFlow("")
+    private val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username
 
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
     private val _loginSuccess = MutableStateFlow(false)
     val loginSuccess: StateFlow<Boolean> = _loginSuccess
+    
+    private val _emailError = MutableStateFlow<String?>(null)
+    val emailError: StateFlow<String?> = _emailError
+    
+    private val _passwordError = MutableStateFlow<String?>(null)
+    val passwordError: StateFlow<String?> = _passwordError
 
     val loginEnabled: StateFlow<Boolean> = combine(username, password) { u, p ->
-        u.isNotEmpty() && p.isNotEmpty()
+        ValidationUtils.validateEmail(u).isValid && ValidationUtils.validateStrongPassword(p).isValid
     }.stateIn(viewModelScope, SharingStarted.Lazily, false)
-
     fun onUsernameChanged(newValue: String) {
         _username.value = newValue
-        _errorMessage.value = null
+        
+        val emailValidation = ValidationUtils.validateEmail(newValue)
+        _emailError.value = if (!emailValidation.isValid && newValue.isNotBlank()) 
+            emailValidation.errorMessage else null
+        clearError()
         Logger.d("Username changed to: $newValue")
     }
 
     fun onPasswordChanged(newValue: String) {
         _password.value = newValue
-        _errorMessage.value = null
+        
+        val passwordValidation = ValidationUtils.validateStrongPassword(newValue)
+        _passwordError.value = if (!passwordValidation.isValid && newValue.isNotBlank()) 
+            passwordValidation.errorMessage else null
+        clearError()
         Logger.d("Password changed")
-    }
-
-    fun onLoginClicked(session: AppSession) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-            Logger.d("Login attempt with username: ${username.value}")
+    }    fun onLoginClicked(session: AppSession) {
+        safeLaunch(showLoading = true) {
+            val email = username.value
+            val password = password.value
+            
+            val emailValidation = ValidationUtils.validateEmail(email)
+            val passwordValidation = ValidationUtils.validateStrongPassword(password)
+            
+            if (!emailValidation.isValid) {
+                _emailError.value = emailValidation.errorMessage
+                return@safeLaunch
+            }
+            
+            if (!passwordValidation.isValid) {
+                _passwordError.value = passwordValidation.errorMessage
+                return@safeLaunch
+            }
+            
+            Logger.d("Login attempt with email: $email")
 
             val request = LoginRequest(
-                email = username.value,
-                password = password.value,
+                email = email,
+                password = password,
                 appId = 1
             )
 
             val result = authRepository.login(request)
-            _isLoading.value = false
 
             result.onSuccess { response ->
                 session.storeToken(response.accessToken)
 
                 val userId = extractUserIdFromToken(response.accessToken)
-
                 if (userId != null) {
                     session.storeUserId(userId)
                     Logger.d("User ID extracted and stored: $userId")
@@ -88,9 +105,11 @@ class LoginViewModel @Inject constructor(
                 }
                 
                 _loginSuccess.value = true
-                Logger.d("Login successful: Access Token = ${response.accessToken}")            }.onFailure { error ->
-                _errorMessage.value = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.LOGIN)
+                Logger.d("Login successful: Access Token = ${response.accessToken}")
+            }.onFailure { error ->
                 Logger.e("Login failed: ${error.message}")
+                showError(errorHandler.handleAuthError(error))
+                _loginSuccess.value = false
             }
         }
     }

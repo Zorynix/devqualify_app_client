@@ -18,10 +18,11 @@ import java.io.InputStream
 import com.diploma.work.data.models.UserPreferences
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.DeliveryFrequency
+import com.diploma.work.utils.Constants
 
 class AppSession(private val context: Context) {
     private val sharedPrefs: SharedPreferences =
-        context.getSharedPreferences("app_session", Context.MODE_PRIVATE)
+        context.getSharedPreferences(Constants.PrefsKeys.APP_SESSION, Context.MODE_PRIVATE)
         
     private val _avatarUrlFlow = MutableStateFlow<String?>(null)
     private val _usernameFlow = MutableStateFlow<String?>(null)
@@ -29,21 +30,21 @@ class AppSession(private val context: Context) {
     init {
         _avatarUrlFlow.value = getAvatarUrl()
         _usernameFlow.value = getUsername()
-    }
-
-    fun storeToken(token: String) {
-        sharedPrefs.edit() { putString("access_token", token) }
+    }    fun storeToken(token: String) {
+        sharedPrefs.edit() { putString(Constants.PrefsKeys.ACCESS_TOKEN, token) }
     }
 
     fun getToken(): String? {
-        return sharedPrefs.getString("access_token", null)
-    }    fun clearToken() {
+        return sharedPrefs.getString(Constants.PrefsKeys.ACCESS_TOKEN, null)
+    }
+
+    fun clearToken() {
         sharedPrefs.edit() { 
-            remove("access_token")
-            remove("user_id")
-            remove("username") 
-            remove("avatar_url")
-            remove("avatar_data")
+            remove(Constants.PrefsKeys.ACCESS_TOKEN)
+            remove(Constants.PrefsKeys.USER_ID)
+            remove(Constants.PrefsKeys.USERNAME) 
+            remove(Constants.PrefsKeys.AVATAR_URL)
+            remove(Constants.PrefsKeys.AVATAR_DATA)
         }
         clearUserPreferences()
         _avatarUrlFlow.value = null

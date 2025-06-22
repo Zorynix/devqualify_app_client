@@ -1,6 +1,5 @@
 package com.diploma.work.ui.feature.leaderboard
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.GetLeaderboardRequest
@@ -12,8 +11,9 @@ import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
-import com.diploma.work.utils.ErrorContext
-import com.diploma.work.utils.ErrorMessageUtils
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,8 +43,9 @@ enum class LeaderboardSortType(val displayName: String) {
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val userInfoRepository: UserInfoRepository,
-    val session: AppSession
-) : ViewModel() {
+    val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(LeaderboardUIState())
     val uiState: StateFlow<LeaderboardUIState> = _uiState.asStateFlow()
@@ -80,14 +81,13 @@ class LeaderboardViewModel @Inject constructor(
                     
                     _uiState.value = _uiState.value.copy(
                         users = sortedUsers,
-                        isLoading = false,
-                        nextPageToken = response.nextPageToken,
+                        isLoading = false,                        nextPageToken = response.nextPageToken,
                         hasMoreData = response.nextPageToken.isNotEmpty()
                     )
                 }                .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
+                        errorMessage = errorHandler.getContextualErrorMessage(error, ErrorHandler.ErrorContext.DATA_LOADING)
                     )
                 }
         }
@@ -143,15 +143,14 @@ class LeaderboardViewModel @Inject constructor(
             
             userInfoRepository.getUser(GetUserRequest(userId))
                 .onSuccess { response ->
-                    _uiState.value = _uiState.value.copy(
-                        selectedUser = response.user,
+                    _uiState.value = _uiState.value.copy(                        selectedUser = response.user,
                         isLoading = false,
                         isUserDetailDialogVisible = true
                     )
                 }                .onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = ErrorMessageUtils.getContextualErrorMessage(error, ErrorContext.DATA_LOADING)
+                        errorMessage = errorHandler.getContextualErrorMessage(error, ErrorHandler.ErrorContext.DATA_LOADING)
                     )
                 }
         }

@@ -20,17 +20,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.DeliveryFrequency
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInterestsScreen(
+    modifier: Modifier = Modifier,
     viewModel: UserInterestsViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null
-) {
-    val state by viewModel.uiState.collectAsState()
-
+) {val state by viewModel.uiState.collectAsState()
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Interests", style = TextStyle.TitleLarge.value) },
@@ -54,12 +55,12 @@ fun UserInterestsScreen(
                     modifier = Modifier.padding(8.dp)
                 ) { Text(state.error ?: "Ошибка") }
             }
-        }
-    ) { padding ->
+        }    ) { padding ->
         if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingCard(
+                message = "Loading user interests...",
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             LazyColumn(
                 modifier = Modifier

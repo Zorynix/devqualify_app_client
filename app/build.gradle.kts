@@ -78,7 +78,7 @@ dependencies {
     androidTestImplementation(composeBom)
     androidTestImplementation(libs.ui.test.junit4)
     implementation(libs.androidx.material.icons.core)
-    debugImplementation(libs.ui.test.manifest)
+    implementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.adaptive)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.runtime.livedata)
@@ -94,7 +94,14 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material)
+    
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -40,7 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.ui.navigation.Register
-import com.diploma.work.ui.navigation.navigate
+import com.diploma.work.ui.navigation.safeNavigate
+import com.diploma.work.ui.navigation.safeNavigateBack
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.diploma.work.ui.theme.Theme
@@ -49,6 +50,7 @@ import com.diploma.work.ui.theme.Theme
 fun EmailConfirmationScreen(
     navController: NavController,
     email: String,
+    modifier: Modifier = Modifier,
     viewModel: EmailConfirmationViewModel = hiltViewModel()
 ) {
     val code by viewModel.code.collectAsState()
@@ -61,24 +63,20 @@ fun EmailConfirmationScreen(
     LaunchedEffect(Unit) {
         viewModel.onSendCodeClicked()
         viewModel.navigationChannel.collect { destination ->
-            navController.navigate(destination) {
-                popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                launchSingleTop = true
-            }
+            navController.safeNavigate(destination, clearStack = true)
         }
     }
-
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
-    ) {
-
-        IconButton(
-            onClick = { if (!navController.popBackStack()) {
-                navController.navigate(Register) }
+    ) {        IconButton(
+            onClick = { 
+                if (!navController.safeNavigateBack()) {
+                    navController.safeNavigate("Register")
+                }
             },
             modifier = Modifier.padding(vertical = 16.dp)
         ) {

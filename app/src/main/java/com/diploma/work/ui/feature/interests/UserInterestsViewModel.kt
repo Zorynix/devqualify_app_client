@@ -1,10 +1,12 @@
 package com.diploma.work.ui.feature.interests
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.ArticlesRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,17 +31,18 @@ data class UserInterestsUiState(
 @HiltViewModel
 class UserInterestsViewModel @Inject constructor(
     private val articlesRepository: ArticlesRepository,
-    private val session: AppSession
-) : ViewModel() {
+    private val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(UserInterestsUiState())
     val uiState: StateFlow<UserInterestsUiState> = _uiState.asStateFlow()
 
     private val tag = "UserInterestsViewModel"
-
     init {
+        Logger.d("$tag: UserInterestsViewModel initialized")
         loadData()
-    }    private fun loadData() {
+    }private fun loadData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
@@ -55,6 +58,8 @@ class UserInterestsViewModel @Inject constructor(
                     
                     if (cachedPreferences != null) {
                         Logger.d("$tag: Loaded preferences from cache")
+                        Logger.d("$tag: Cached technology IDs: ${cachedPreferences.technologyIds}")
+                        Logger.d("$tag: Cached directions: ${cachedPreferences.directions}")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             technologies = technologies,
@@ -220,8 +225,7 @@ class UserInterestsViewModel @Inject constructor(
             }
         }
     }
-
-    fun clearError() {
+    override fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
 

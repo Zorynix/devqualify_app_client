@@ -62,13 +62,16 @@ import com.diploma.work.data.models.User
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.components.AvatarImage
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.diploma.work.data.AppSession
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
     navController: NavController,
+    modifier: Modifier = Modifier,
     viewModel: LeaderboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -94,8 +97,8 @@ fun LeaderboardScreen(
             }
         }
     }
-    
-    Scaffold(
+      Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -139,9 +142,9 @@ fun LeaderboardScreen(
                         selectedDirection = uiState.direction,
                         selectedLevel = uiState.level,
                         selectedSortType = uiState.sortType,
-                        onDirectionSelected = { viewModel.setDirection(it) },
-                        onLevelSelected = { viewModel.setLevel(it) },
-                        onSortTypeSelected = { viewModel.setSortType(it) }
+                        onDirectionSelect = { viewModel.setDirection(it) },
+                        onLevelSelect = { viewModel.setLevel(it) },
+                        onSortTypeSelect = { viewModel.setSortType(it) }
                     )
                     
                     Spacer(modifier = Modifier.height(12.dp))
@@ -165,10 +168,10 @@ fun LeaderboardScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.users) { user ->
-                                UserListItem(
+                            items(uiState.users) { user ->                                UserListItem(
                                     user = user,
                                     sortType = uiState.sortType,
+                                    session = viewModel.session,
                                     onClick = { viewModel.selectUser(user) }
                                 )
                             }
@@ -194,21 +197,19 @@ fun LeaderboardScreen(
                     }
                 }
             }
-            
-            if (isRefreshing && uiState.users.isEmpty()) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .align(Alignment.Center)
+              if (isRefreshing && uiState.users.isEmpty()) {
+                LoadingCard(
+                    message = "Loading leaderboard...",
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
         }
     }
     
-    if (uiState.isUserDetailDialogVisible && uiState.selectedUser != null) {
-        UserDetailDialog(
+    if (uiState.isUserDetailDialogVisible && uiState.selectedUser != null) {        UserDetailDialog(
             user = uiState.selectedUser!!,
-            onDismiss = { viewModel.dismissUserDetailDialog() }
+            onDismiss = { viewModel.dismissUserDetailDialog() },
+            session = viewModel.session
         )
     }
 }
@@ -219,9 +220,10 @@ fun CompactFilterSortSection(
     selectedDirection: Direction,
     selectedLevel: Level,
     selectedSortType: LeaderboardSortType,
-    onDirectionSelected: (Direction) -> Unit,
-    onLevelSelected: (Level) -> Unit,
-    onSortTypeSelected: (LeaderboardSortType) -> Unit
+    onDirectionSelect: (Direction) -> Unit,
+    onLevelSelect: (Level) -> Unit,
+    onSortTypeSelect: (LeaderboardSortType) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var showFilterDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
@@ -236,11 +238,10 @@ fun CompactFilterSortSection(
         else -> "Filter"
     }
     
-    val hasActiveFilters = selectedDirection != Direction.DIRECTION_UNSPECIFIED || 
+    val hasActiveFilters = selectedDirection != Direction.DIRECTION_UNSPECIFIED ||
                           selectedLevel != Level.LEVEL_UNSPECIFIED
-    
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+      Row(
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
@@ -287,12 +288,11 @@ fun CompactFilterSortSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-
                     ChipGroup(
                         items = listOf(Direction.DIRECTION_UNSPECIFIED) + 
                                 Direction.entries.filter { it != Direction.UNRECOGNIZED && it != Direction.DIRECTION_UNSPECIFIED },
                         selectedItem = selectedDirection,
-                        onSelectedChanged = { onDirectionSelected(it) },
+                        onSelectChange = { onDirectionSelect(it) },
                         chipLabel = { directionToString(it) }
                     )
                     
@@ -304,12 +304,11 @@ fun CompactFilterSortSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-
                     ChipGroup(
                         items = listOf(Level.LEVEL_UNSPECIFIED) + 
                                 Level.entries.filter { it != Level.UNRECOGNIZED && it != Level.LEVEL_UNSPECIFIED },
                         selectedItem = selectedLevel,
-                        onSelectedChanged = { onLevelSelected(it) },
+                        onSelectChange = { onLevelSelect(it) },
                         chipLabel = { levelToString(it) }
                     )
                 }
@@ -329,12 +328,11 @@ fun CompactFilterSortSection(
             onDismissRequest = { showSortDialog = false },
             title = { Text("Sort by", style = TextStyle.TitleLarge.value) },
             text = {
-                Column {
-                    ChipGroup(
+                Column {                    ChipGroup(
                         items = LeaderboardSortType.entries.toList(),
                         selectedItem = selectedSortType,
-                        onSelectedChanged = { 
-                            onSortTypeSelected(it)
+                        onSelectChange = { 
+                            onSortTypeSelect(it)
                             showSortDialog = false
                         },
                         chipLabel = { it.displayName }
@@ -357,7 +355,7 @@ fun CompactFilterSortSection(
 private fun <T> ChipGroup(
     items: List<T>,
     selectedItem: T,
-    onSelectedChanged: (T) -> Unit,
+    onSelectChange: (T) -> Unit,
     chipLabel: (T) -> String
 ) {
     LazyRow(
@@ -366,7 +364,7 @@ private fun <T> ChipGroup(
         items(items) { item ->
             FilterChip(
                 selected = item == selectedItem,
-                onClick = { onSelectedChanged(item) },
+                onClick = { onSelectChange(item) },
                 label = { Text(chipLabel(item)) },
                 leadingIcon = if (item == selectedItem) {
                     {
@@ -385,9 +383,14 @@ private fun <T> ChipGroup(
 
 
 @Composable
-fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit) {
-    ElevatedCard(
-        modifier = Modifier
+fun UserListItem(
+    user: User, 
+    sortType: LeaderboardSortType,
+    session: AppSession,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {    ElevatedCard(
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.elevatedCardColors()
@@ -396,16 +399,13 @@ fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit)
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val viewModel = hiltViewModel<LeaderboardViewModel>()
-            
+            verticalAlignment = Alignment.CenterVertically        ) {
             AvatarImage(
                 avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
                            else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
+                session = session,
                 size = 50.dp,
-                borderWidth = 2.dp,
-                session = viewModel.session
+                borderWidth = 2.dp
             )
 
             Column(
@@ -473,8 +473,11 @@ fun UserListItem(user: User, sortType: LeaderboardSortType, onClick: () -> Unit)
 }
 
 @Composable
-fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
-    val viewModel = hiltViewModel<LeaderboardViewModel>()
+fun UserDetailDialog(
+    user: User, 
+    onDismiss: () -> Unit,
+    session: AppSession
+) {
     
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -487,13 +490,12 @@ fun UserDetailDialog(user: User, onDismiss: () -> Unit) {
                     .padding(24.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AvatarImage(
+            ) {                AvatarImage(
                     avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
                                else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
+                    session = session,
                     size = 100.dp,
-                    borderWidth = 2.dp,
-                    session = viewModel.session
+                    borderWidth = 2.dp
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
