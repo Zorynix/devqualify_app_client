@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,6 +73,7 @@ import com.diploma.work.data.AppSession
 fun LeaderboardScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
     viewModel: LeaderboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -103,6 +105,11 @@ fun LeaderboardScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Leaderboard", style = TextStyle.HeadlineMedium.value) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { viewModel.loadLeaderboard(true) }) {
                         Icon(
@@ -168,7 +175,8 @@ fun LeaderboardScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.users) { user ->                                UserListItem(
+                            items(uiState.users) { user ->                                
+                                UserListItem(
                                     user = user,
                                     sortType = uiState.sortType,
                                     session = viewModel.session,

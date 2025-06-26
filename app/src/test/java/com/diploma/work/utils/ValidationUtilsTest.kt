@@ -136,7 +136,7 @@ class ValidationUtilsTest {
     
     @Test
     fun validateArticlesPerDay_aboveMaximum_returnsInvalid() {
-        val result = ValidationUtils.validateArticlesPerDay(25)
+        val result = ValidationUtils.validateArticlesPerDay(150)
         assertFalse(result.isValid)
         assertTrue(result.errorMessage!!.contains("Максимальное"))
     }

@@ -11,8 +11,7 @@ data class RegisterResponse(
 
 data class LoginRequest(
     val password: String,
-    val email: String,
-    val appId: Int
+    val email: String
 )
 
 data class LoginResponse(

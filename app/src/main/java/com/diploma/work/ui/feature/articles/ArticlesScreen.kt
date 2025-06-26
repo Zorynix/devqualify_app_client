@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -30,7 +34,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ArticlesScreen(
     modifier: Modifier = Modifier,
-    onNavigateUp: () -> Unit = {},
+    onOpenDrawer: () -> Unit = {},
     viewModel: ArticlesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -46,8 +50,8 @@ fun ArticlesScreen(
         TopAppBar(
             title = { Text("Articles") },
             navigationIcon = {
-                IconButton(onClick = onNavigateUp) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                IconButton(onClick = onOpenDrawer) {
+                    Icon(Icons.Default.Menu, contentDescription = "Open menu")
                 }
             },
             actions = {                IconButton(onClick = { showFilters = !showFilters }) {
@@ -81,24 +85,34 @@ fun ArticlesScreen(
                 onApplyUserPreferences = viewModel::applyUserPreferencesToFilters
             )
         }
-        when {
-            uiState.isLoading && uiState.articles.isEmpty() -> {
-                LoadingCard(
-                    message = "Loading articles...",
-                    modifier = Modifier.fillMaxSize()
-                )
-            }            uiState.error != null -> {
-                ErrorCard(
-                    error = uiState.error!!,
-                    onRetry = { viewModel.loadArticles() }
-                )
-            }uiState.articles.isEmpty() -> {
-                EmptyStateCard()
-            }            else -> {
-                ArticlesList(
-                    articles = uiState.articles,
-                    onArticleClick = { /* TODO: Navigate to article detail */ }
-                )
+        
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refreshArticles() },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when {
+                uiState.isLoading && uiState.articles.isEmpty() -> {
+                    LoadingCard(
+                        message = "Loading articles...",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }            uiState.error != null -> {
+                    ErrorCard(
+                        error = uiState.error!!,
+                        onRetry = { viewModel.loadArticles() }
+                    )
+                }uiState.articles.isEmpty() -> {
+                    EmptyStateCard()
+                }            else -> {
+                    ArticlesList(
+                        articles = uiState.articles,
+                        onArticleClick = { /* TODO: Navigate to article detail */ },
+                        onLoadMore = { viewModel.loadMoreArticles() },
+                        isLoading = uiState.isLoading,
+                        hasMore = uiState.hasMore
+                    )
+                }
             }
         }
     }
@@ -221,10 +235,29 @@ private fun FilterSection(
 @Composable
 private fun ArticlesList(
     articles: List<Article>,
-    onArticleClick: (Article) -> Unit
+    onArticleClick: (Article) -> Unit,
+    onLoadMore: () -> Unit = {},
+    isLoading: Boolean = false,
+    hasMore: Boolean = true
 ) {
+    val listState = rememberLazyListState()
+    
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                val lastVisibleItem = visibleItems.lastOrNull()
+                if (lastVisibleItem != null && 
+                    lastVisibleItem.index >= articles.size - 5 &&
+                    hasMore && 
+                    !isLoading) {
+                    onLoadMore()
+                }
+            }
+    }
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -233,6 +266,22 @@ private fun ArticlesList(
                 article = article,
                 onClick = { onArticleClick(article) }
             )
+        }
+        
+        if (isLoading && articles.isNotEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }

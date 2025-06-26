@@ -85,8 +85,7 @@ class LoginViewModel @Inject constructor(
 
             val request = LoginRequest(
                 email = email,
-                password = password,
-                appId = 1
+                password = password
             )
 
             val result = authRepository.login(request)

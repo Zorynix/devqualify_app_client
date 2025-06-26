@@ -298,7 +298,15 @@ fun AppNavigation(
                         session.getUsername()
                         session.getAvatarUrl()
                     }
-                    HomeScreen(navController)
+                    HomeScreen(
+                        navController = navController,
+                        onOpenDrawer = {
+                            Logger.d("Navigation: Opening drawer from Home")
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
                 }
                 composable("Profile") {
                     shouldShowBottomNav.value = true
@@ -319,7 +327,14 @@ fun AppNavigation(
                         session.getUsername()
                         session.getAvatarUrl()
                     }
-                    AchievementsScreen()
+                    AchievementsScreen(
+                        onOpenDrawer = {
+                            Logger.d("Navigation: Opening drawer from Achievements")
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
                 }
                 composable("Leaderboard") {
                     shouldShowBottomNav.value = true
@@ -327,7 +342,15 @@ fun AppNavigation(
                         session.getUsername()
                         session.getAvatarUrl()
                     }
-                    LeaderboardScreen(navController)
+                    LeaderboardScreen(
+                        navController = navController,
+                        onOpenDrawer = {
+                            Logger.d("Navigation: Opening drawer from Leaderboard")
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
                 }
                 composable(
                     route = "TestDetails/{testId}",
@@ -384,9 +407,11 @@ fun AppNavigation(
                         session.getAvatarUrl()
                     }
                     ArticlesScreen(
-                        onNavigateUp = { 
-                            Logger.d("Navigation: Going back from Articles")
-                            navController.popBackStack()
+                        onOpenDrawer = { 
+                            Logger.d("Navigation: Opening drawer from Articles")
+                            scope.launch {
+                                drawerState.open()
+                            }
                         }
                     )
                 }

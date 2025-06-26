@@ -6,7 +6,6 @@ option go_package = "diploma.sso.v1;ssov1";
 option java_package = "com.diploma.work.grpc.auth";
 option java_multiple_files = true;
 
-
 service AuthService {
     rpc Register (RegisterRequest) returns (RegisterResponse);
     rpc Login (LoginRequest) returns (LoginResponse);
@@ -31,7 +30,6 @@ message RegisterResponse {
 message LoginRequest {
     string password = 1;
     string email = 2;
-    int32 app_id = 3;
 }
 
 message LoginResponse {

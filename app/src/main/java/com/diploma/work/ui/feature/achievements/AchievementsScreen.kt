@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -44,6 +45,7 @@ import java.util.Locale
 @Composable
 fun AchievementsScreen(
     modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
     viewModel: AchievementsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,30 +58,39 @@ fun AchievementsScreen(
         }
     }
     
-    Box(modifier = modifier.fillMaxSize()) {
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = { viewModel.loadAchievements() },
-            modifier = Modifier.fillMaxSize(),
-            state = state,
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    isRefreshing = isRefreshing,
-                    state = state
-                )
-            }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {                Text(
-                    text = "Achievements",
-                    style = TextStyle.HeadlineMedium.value,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                  when {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Achievements", style = TextStyle.HeadlineMedium.value) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.loadAchievements() },
+                modifier = Modifier.fillMaxSize(),
+                state = state,
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = isRefreshing,
+                        state = state
+                    )
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    when {
                     isRefreshing && uiState.achievements.isEmpty() -> {
                         LoadingCard(
                             message = "Loading achievements...",
@@ -111,6 +122,7 @@ fun AchievementsScreen(
             )
         }
     }
+}
 }
 
 @Composable

@@ -23,7 +23,7 @@ data class UserInterestsUiState(
     val deliveryFrequency: DeliveryFrequency = DeliveryFrequency.WEEKLY,
     val emailNotifications: Boolean = true,
     val pushNotifications: Boolean = true,
-    val articlesPerDay: Int = 5,
+    val articlesPerDay: Int = 20,
     val error: String? = null,
     val saveSuccess: Boolean = false
 )
@@ -93,7 +93,7 @@ class UserInterestsViewModel @Inject constructor(
                                     deliveryFrequency = preferences?.deliveryFrequency ?: DeliveryFrequency.WEEKLY,
                                     emailNotifications = preferences?.emailNotifications ?: true,
                                     pushNotifications = preferences?.pushNotifications ?: true,
-                                    articlesPerDay = preferences?.articlesPerDay ?: 5
+                                    articlesPerDay = preferences?.articlesPerDay ?: 20
                                 )
                             } else {
                                 _uiState.value = _uiState.value.copy(

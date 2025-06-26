@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -63,6 +64,7 @@ import com.diploma.work.ui.theme.TextStyle
 fun HomeScreen(
     navController: NavController,
     modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -72,6 +74,11 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Available Tests", style = TextStyle.TitleLarge.value) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showFilterDialog = !showFilterDialog }) {
                         Icon(

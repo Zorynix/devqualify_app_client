@@ -36,8 +36,8 @@ object Constants {
     
     object Business {
         const val MIN_ARTICLES_PER_DAY = 1
-        const val MAX_ARTICLES_PER_DAY = 20
-        const val DEFAULT_PAGE_SIZE = 20
+        const val MAX_ARTICLES_PER_DAY = 100
+        const val DEFAULT_PAGE_SIZE = 50
         const val AVATAR_COMPRESSION_QUALITY = 80
         const val GENERATED_AVATAR_SIZE = 200
     }

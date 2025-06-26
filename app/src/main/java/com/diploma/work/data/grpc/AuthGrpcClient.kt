@@ -64,11 +64,10 @@ class AuthGrpcClient @Inject constructor(
 
     suspend fun login(request: LoginRequest): Result<LoginResponse> = withContext(Dispatchers.IO) {
         try {
-            Logger.d("$tag: User login attempt with email: ${request.email}, appId: ${request.appId}")
+            Logger.d("$tag: User login attempt with email: ${request.email}")
             val grpcRequest = com.diploma.work.grpc.auth.LoginRequest.newBuilder()
                 .setPassword(request.password)
                 .setEmail(request.email)
-                .setAppId(request.appId)
                 .build()
             val grpcResponse = stub.login(grpcRequest)
             Logger.d("$tag: Login successful for email: ${request.email}")

@@ -64,7 +64,7 @@ class ArticlesViewModel @Inject constructor(
     val uiState: StateFlow<ArticlesUiState> = _uiState.asStateFlow()
 
     private val tag = "ArticlesViewModel"
-    private val pageSize = 20
+    private val pageSize = 50
 
     init {
         loadInitialData()
@@ -203,7 +203,6 @@ class ArticlesViewModel @Inject constructor(
                 Logger.d("$tag: User ID: $userId")
                 
                 if (userId != null) {
-                    // Сначала проверим кэшированные предпочтения
                     val cachedPreferences = session.getUserPreferences()
                     Logger.d("$tag: Cached preferences: ${cachedPreferences?.technologyIds}")
                     Logger.d("$tag: Cached directions: ${cachedPreferences?.directions}")
