@@ -164,3 +164,8 @@ data class SearchArticlesResponse(
     val nextPageToken: String,
     val totalCount: Int
 )
+
+data class ArticlePagination(
+    val pageSize: Int = 20,
+    val pageToken: String = ""
+)
