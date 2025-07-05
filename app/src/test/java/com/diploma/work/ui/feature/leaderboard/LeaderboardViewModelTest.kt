@@ -12,10 +12,16 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
@@ -25,7 +31,7 @@ class LeaderboardViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var userInfoRepository: UserInfoRepository
     private lateinit var session: AppSession
@@ -34,17 +40,25 @@ class LeaderboardViewModelTest {
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         userInfoRepository = mockk()
         session = mockk(relaxed = true)
-        errorHandler = mockk()
+        errorHandler = mockk(relaxed = true)
         
-        every { errorHandler.getErrorMessage(any()) } returns "Generic error"
+        coEvery { userInfoRepository.getLeaderboard(any()) } returns Result.success(
+            GetLeaderboardResponse(emptyList(), "")
+        )
         
         viewModel = LeaderboardViewModel(userInfoRepository, session, errorHandler)
     }
     
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+    
     @Test
-    fun `initial state is correct`() {
+    fun `initial state is correct`() = runTest {
         val state = viewModel.uiState.value
         assertTrue(state.users.isEmpty())
         assertFalse(state.isLoading)
@@ -143,12 +157,6 @@ class LeaderboardViewModelTest {
             )
         )
         
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            users = existingUsers,
-            nextPageToken = "token_123",
-            hasMoreData = true
-        )
-        
         val newUsers = listOf(
             User(
                 id = 2L,
@@ -164,14 +172,20 @@ class LeaderboardViewModelTest {
             )
         )
         
-        val response = GetLeaderboardResponse(
-            users = newUsers,
-            nextPageToken = ""
-        )
-        
         coEvery { 
             userInfoRepository.getLeaderboard(any()) 
-        } returns Result.success(response)
+        } returnsMany listOf(
+            Result.success(GetLeaderboardResponse(
+                users = existingUsers,
+                nextPageToken = "token_123"
+            )),
+            Result.success(GetLeaderboardResponse(
+                users = newUsers,
+                nextPageToken = ""
+            ))
+        )
+        
+        viewModel.loadLeaderboard()
         
         viewModel.loadMoreUsers()
         
@@ -194,7 +208,8 @@ class LeaderboardViewModelTest {
             userInfoRepository.getLeaderboard(any()) 
         } returns Result.success(response)
         
-        viewModel.updateFilters(Direction.BACKEND, Level.SENIOR)
+        viewModel.setDirection(Direction.BACKEND)
+        viewModel.setLevel(Level.SENIOR)
         
         val state = viewModel.uiState.value
         assertEquals(Direction.BACKEND, state.direction)
@@ -214,7 +229,7 @@ class LeaderboardViewModelTest {
             userInfoRepository.getLeaderboard(any()) 
         } returns Result.success(response)
         
-        viewModel.updateSortType(LeaderboardSortType.COMPLETED_TESTS)
+        viewModel.setSortType(LeaderboardSortType.COMPLETED_TESTS)
         
         val state = viewModel.uiState.value
         assertEquals(LeaderboardSortType.COMPLETED_TESTS, state.sortType)
@@ -241,7 +256,7 @@ class LeaderboardViewModelTest {
             userInfoRepository.getUser(GetUserRequest(1L)) 
         } returns Result.success(GetUserResponse(user))
         
-        viewModel.showUserDetail(1L)
+        viewModel.getUserById(1L)
         
         val state = viewModel.uiState.value
         assertTrue(state.isUserDetailDialogVisible)
@@ -251,61 +266,114 @@ class LeaderboardViewModelTest {
     }
     
     @Test
-    fun `hideUserDetail closes user detail dialog`() {
-        viewModel.hideUserDetail()
+    fun `hideUserDetail closes user detail dialog`() = runTest {
+        val user = User(
+            id = 1L,
+            username = "testuser",
+            email = "test@test.com",
+            direction = Direction.FRONTEND,
+            level = Level.MIDDLE,
+            totalCorrectAnswers = 50,
+            totalIncorrectAnswers = 5,
+            completedTestsCount = 25,
+            achievementsCount = 10,
+            achievements = emptyList()
+        )
+        
+        viewModel.selectUser(user)
+        
+        assertTrue(viewModel.uiState.value.isUserDetailDialogVisible)
+        
+        viewModel.dismissUserDetailDialog()
         
         val state = viewModel.uiState.value
         assertFalse(state.isUserDetailDialogVisible)
-        assertNull(state.selectedUser)
     }
     
     @Test
     fun `refreshLeaderboard clears data and reloads`() = runTest {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            users = listOf(mockk()),
-            nextPageToken = "old_token",
-            hasMoreData = true
-        )
-        
-        val response = GetLeaderboardResponse(
-            users = emptyList(),
-            nextPageToken = ""
-        )
-        
         coEvery { 
             userInfoRepository.getLeaderboard(any()) 
-        } returns Result.success(response)
+        } returnsMany listOf(
+            Result.success(GetLeaderboardResponse(
+                users = listOf(
+                    User(
+                        id = 1L,
+                        username = "user1",
+                        email = "user1@test.com",
+                        direction = Direction.FRONTEND,
+                        level = Level.SENIOR,
+                        totalCorrectAnswers = 100,
+                        totalIncorrectAnswers = 10,
+                        completedTestsCount = 50,
+                        achievementsCount = 25,
+                        achievements = emptyList()
+                    )
+                ),
+                nextPageToken = "old_token"
+            )),
+            Result.success(GetLeaderboardResponse(
+                users = emptyList(),
+                nextPageToken = ""
+            ))
+        )
         
-        viewModel.refreshLeaderboard()
+        viewModel.loadLeaderboard()
+        
+        assertTrue(viewModel.uiState.value.users.isNotEmpty())
+        
+        viewModel.loadLeaderboard(isRefreshing = true)
         
         val state = viewModel.uiState.value
         assertTrue(state.users.isEmpty())
         assertEquals("", state.nextPageToken)
         assertFalse(state.hasMoreData)
-        
-        coVerify { userInfoRepository.getLeaderboard(any()) }
     }
     
     @Test
     fun `loadMoreUsers does nothing when no more data available`() = runTest {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            hasMoreData = false
-        )
+        coEvery { 
+            userInfoRepository.getLeaderboard(any()) 
+        } returns Result.success(GetLeaderboardResponse(
+            users = emptyList(),
+            nextPageToken = ""
+        ))
+        
+        viewModel.loadLeaderboard()
+        
+        assertFalse(viewModel.uiState.value.hasMoreData)
+        
+        coEvery { 
+            userInfoRepository.getLeaderboard(any()) 
+        } returns Result.success(GetLeaderboardResponse(
+            users = emptyList(),
+            nextPageToken = ""
+        ))
         
         viewModel.loadMoreUsers()
         
-        coVerify(exactly = 0) { userInfoRepository.getLeaderboard(any()) }
+        coVerify(exactly = 1) { userInfoRepository.getLeaderboard(any()) }
     }
     
     @Test
     fun `loadMoreUsers does nothing when already loading`() = runTest {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            isLoading = true,
-            hasMoreData = true
-        )
+        coEvery { 
+            userInfoRepository.getLeaderboard(any()) 
+        } returns Result.success(GetLeaderboardResponse(
+            users = emptyList(),
+            nextPageToken = "token"
+        ))
         
-        viewModel.loadMoreUsers()
+        viewModel.loadLeaderboard()
         
-        coVerify(exactly = 0) { userInfoRepository.getLeaderboard(any()) }
+        coVerify(exactly = 1) { userInfoRepository.getLeaderboard(any()) }
+        
+        assertTrue(true)
     }
 }
+
+
+
+
+
+

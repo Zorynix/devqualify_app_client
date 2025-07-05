@@ -11,9 +11,15 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -25,7 +31,7 @@ class AchievementsViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var userInfoRepository: UserInfoRepository
     private lateinit var session: AppSession
@@ -34,6 +40,8 @@ class AchievementsViewModelTest {
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        
         userInfoRepository = mockk()
         session = mockk(relaxed = true)
         errorHandler = mockk()
@@ -44,12 +52,18 @@ class AchievementsViewModelTest {
         coEvery { 
             userInfoRepository.getUserAchievements(any()) 
         } returns Result.success(GetUserAchievementsResponse(emptyList()))
-        
-        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is correct`() {
+    fun `initial state is correct`() = runTest {
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertTrue(state.achievements.isEmpty())
@@ -84,6 +98,7 @@ class AchievementsViewModelTest {
         } returns Result.success(response)
         
         viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
@@ -108,6 +123,7 @@ class AchievementsViewModelTest {
         } returns errorMessage
         
         viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
@@ -120,6 +136,7 @@ class AchievementsViewModelTest {
         every { session.getUserId() } returns null
         
         viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
@@ -130,7 +147,7 @@ class AchievementsViewModelTest {
     }
     
     @Test
-    fun `showAchievementDetails updates state correctly`() {
+    fun `showAchievementDetails updates state correctly`() = runTest {
         val achievement = Achievement(
             id = 1L,
             name = "Test Achievement",
@@ -138,6 +155,9 @@ class AchievementsViewModelTest {
             iconUrl = "test.png",
             dateEarned = "2023-01-01"
         )
+        
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         viewModel.showAchievementDetails(achievement)
         
@@ -147,7 +167,7 @@ class AchievementsViewModelTest {
     }
     
     @Test
-    fun `dismissAchievementDetails hides details`() {
+    fun `dismissAchievementDetails hides details`() = runTest {
         val achievement = Achievement(
             id = 1L,
             name = "Test Achievement",
@@ -155,6 +175,9 @@ class AchievementsViewModelTest {
             iconUrl = "test.png",
             dateEarned = "2023-01-01"
         )
+        
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         viewModel.showAchievementDetails(achievement)
         assertTrue(viewModel.uiState.value.showAchievementDetails)
@@ -166,10 +189,11 @@ class AchievementsViewModelTest {
     }
     
     @Test
-    fun `clearError resets error state`() {
+    fun `clearError resets error state`() = runTest {
         every { session.getUserId() } returns null
         
-        viewModel.loadAchievements()
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         val errorState = viewModel.uiState.value
         assertNotNull(errorState.errorMessage)
@@ -213,7 +237,8 @@ class AchievementsViewModelTest {
             userInfoRepository.getUserAchievements(any()) 
         } returns Result.success(GetUserAchievementsResponse(achievements1))
         
-        viewModel.loadAchievements()
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         assertEquals(1, viewModel.uiState.value.achievements.size)
         
@@ -222,16 +247,19 @@ class AchievementsViewModelTest {
         } returns Result.success(GetUserAchievementsResponse(achievements2))
         
         viewModel.loadAchievements()
+        advanceUntilIdle()
         
         assertEquals(2, viewModel.uiState.value.achievements.size)
         
-        coVerify(exactly = 3) { userInfoRepository.getUserAchievements(any()) }
+        coVerify(exactly = 2) { userInfoRepository.getUserAchievements(any()) }
     }
     
     @Test
     fun `loadAchievements clears previous error state`() = runTest {
         every { session.getUserId() } returns null
-        viewModel.loadAchievements()
+        
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
 
         assertNotNull(viewModel.uiState.value.errorMessage)
         
@@ -252,6 +280,7 @@ class AchievementsViewModelTest {
         } returns Result.success(GetUserAchievementsResponse(achievements))
         
         viewModel.loadAchievements()
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertNull(state.errorMessage)
@@ -259,7 +288,7 @@ class AchievementsViewModelTest {
     }
     
     @Test
-    fun `selectedAchievement persists across state changes`() {
+    fun `selectedAchievement persists across state changes`() = runTest {
         val achievement = Achievement(
             id = 1L,
             name = "Persistent Achievement",
@@ -267,6 +296,9 @@ class AchievementsViewModelTest {
             iconUrl = "persistent.png",
             dateEarned = "2023-01-01"
         )
+        
+        viewModel = AchievementsViewModel(userInfoRepository, session, errorHandler)
+        advanceUntilIdle()
         
         viewModel.showAchievementDetails(achievement)
         assertEquals(achievement, viewModel.uiState.value.selectedAchievement)
@@ -278,3 +310,9 @@ class AchievementsViewModelTest {
         assertEquals(achievement, viewModel.uiState.value.selectedAchievement)
     }
 }
+
+
+
+
+
+

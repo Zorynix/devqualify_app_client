@@ -2,13 +2,17 @@ package com.diploma.work.utils
 
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ValidationUtilsTest {
     
     @Test
     fun validateEmail_validEmail_returnsValid() {
         val result = ValidationUtils.validateEmail("test@example.com")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
@@ -36,12 +40,14 @@ class ValidationUtilsTest {
     fun validatePassword_validPassword_returnsValid() {
         val result = ValidationUtils.validatePassword("password123")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
     fun validatePassword_shortPassword_returnsInvalid() {
         val result = ValidationUtils.validatePassword("123")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("минимум"))
     }
     
@@ -50,6 +56,7 @@ class ValidationUtilsTest {
         val longPassword = "a".repeat(130)
         val result = ValidationUtils.validatePassword(longPassword)
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("более"))
     }
     
@@ -64,6 +71,7 @@ class ValidationUtilsTest {
     fun validatePasswordConfirmation_matchingPasswords_returnsValid() {
         val result = ValidationUtils.validatePasswordConfirmation("password", "password")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
@@ -77,12 +85,14 @@ class ValidationUtilsTest {
     fun validateUsername_validUsername_returnsValid() {
         val result = ValidationUtils.validateUsername("validuser123")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
     fun validateUsername_shortUsername_returnsInvalid() {
         val result = ValidationUtils.validateUsername("ab")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("минимум"))
     }
     
@@ -91,6 +101,7 @@ class ValidationUtilsTest {
         val longUsername = "a".repeat(32)
         val result = ValidationUtils.validateUsername(longUsername)
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("более"))
     }
     
@@ -98,6 +109,7 @@ class ValidationUtilsTest {
     fun validateUsername_invalidCharacters_returnsInvalid() {
         val result = ValidationUtils.validateUsername("user@name")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("латинские"))
     }
     
@@ -105,12 +117,14 @@ class ValidationUtilsTest {
     fun validateConfirmationCode_validCode_returnsValid() {
         val result = ValidationUtils.validateConfirmationCode("123456")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
     fun validateConfirmationCode_shortCode_returnsInvalid() {
         val result = ValidationUtils.validateConfirmationCode("1234")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("6 цифр"))
     }
     
@@ -118,6 +132,7 @@ class ValidationUtilsTest {
     fun validateConfirmationCode_nonNumericCode_returnsInvalid() {
         val result = ValidationUtils.validateConfirmationCode("12ab56")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("только цифры"))
     }
     
@@ -125,12 +140,14 @@ class ValidationUtilsTest {
     fun validateArticlesPerDay_validCount_returnsValid() {
         val result = ValidationUtils.validateArticlesPerDay(5)
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
     fun validateArticlesPerDay_belowMinimum_returnsInvalid() {
         val result = ValidationUtils.validateArticlesPerDay(0)
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("Минимальное"))
     }
     
@@ -138,6 +155,7 @@ class ValidationUtilsTest {
     fun validateArticlesPerDay_aboveMaximum_returnsInvalid() {
         val result = ValidationUtils.validateArticlesPerDay(150)
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("Максимальное"))
     }
     
@@ -145,12 +163,14 @@ class ValidationUtilsTest {
     fun validateUrl_validUrl_returnsValid() {
         val result = ValidationUtils.validateUrl("https://example.com")
         assertTrue(result.isValid)
+        assertNull(result.errorMessage)
     }
     
     @Test
     fun validateUrl_invalidUrl_returnsInvalid() {
         val result = ValidationUtils.validateUrl("not-a-url")
         assertFalse(result.isValid)
+        assertNotNull(result.errorMessage)
         assertTrue(result.errorMessage!!.contains("Неверный формат"))
     }
 }

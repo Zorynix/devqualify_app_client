@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
+import com.diploma.work.utils.Constants
 
 class TestsRepositoryImplTest {
     
@@ -31,8 +32,13 @@ class TestsRepositoryImplTest {
         sharedPreferences = mockk()
         editor = mockk(relaxed = true)
         
-        every { context.getSharedPreferences("test_sessions_prefs", Context.MODE_PRIVATE) } returns sharedPreferences
+        every { context.getSharedPreferences(Constants.PrefsKeys.TEST_SESSIONS_PREFS, Context.MODE_PRIVATE) } returns sharedPreferences
         every { sharedPreferences.edit() } returns editor
+        every { sharedPreferences.getStringSet(any(), any()) } returns mutableSetOf()
+        every { sharedPreferences.getInt(any(), any()) } returns 0
+        every { sharedPreferences.getLong(any(), any()) } returns 0L
+        every { sharedPreferences.getBoolean(any(), any()) } returns false
+        every { sharedPreferences.contains(any()) } returns false
         every { editor.putStringSet(any(), any()) } returns editor
         every { editor.putInt(any(), any()) } returns editor
         every { editor.putLong(any(), any()) } returns editor

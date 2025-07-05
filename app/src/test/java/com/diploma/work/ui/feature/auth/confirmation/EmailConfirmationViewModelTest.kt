@@ -9,13 +9,20 @@ import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.models.SendConfirmationCodeResponse
 import com.diploma.work.data.repository.AuthRepository
 import com.diploma.work.ui.navigation.Login
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -27,28 +34,37 @@ class EmailConfirmationViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var authRepository: AuthRepository
     private lateinit var session: AppSession
     private lateinit var savedStateHandle: SavedStateHandle
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: EmailConfirmationViewModel
     
     private val testEmail = "test@example.com"
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        
         authRepository = mockk()
         session = mockk(relaxed = true)
         savedStateHandle = mockk()
+        errorHandler = mockk()
         
         every { savedStateHandle.get<String>("email") } returns testEmail
         
-        viewModel = EmailConfirmationViewModel(authRepository, session, savedStateHandle)
+        viewModel = EmailConfirmationViewModel(authRepository, session, savedStateHandle, errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is correct`() {
+    fun `initial state is correct`() = runTest {
         assertEquals(testEmail, viewModel.email)
         assertEquals("", viewModel.code.value)
         assertFalse(viewModel.isLoading.value)
@@ -60,14 +76,14 @@ class EmailConfirmationViewModelTest {
     }
     
     @Test
-    fun `onCodeChanged updates code when valid`() {
+    fun `onCodeChanged updates code when valid`() = runTest {
         viewModel.onCodeChanged("123456")
         assertEquals("123456", viewModel.code.value)
         assertTrue(viewModel.confirmEnabled.value)
     }
     
     @Test
-    fun `onCodeChanged ignores non-digits`() {
+    fun `onCodeChanged ignores non-digits`() = runTest {
         viewModel.onCodeChanged("12a34b")
         assertEquals("", viewModel.code.value)
         
@@ -77,7 +93,7 @@ class EmailConfirmationViewModelTest {
     }
     
     @Test
-    fun `onCodeChanged ignores codes longer than 6 digits`() {
+    fun `onCodeChanged ignores codes longer than 6 digits`() = runTest {
         viewModel.onCodeChanged("1234567890")
         assertEquals("", viewModel.code.value)
         
@@ -87,7 +103,7 @@ class EmailConfirmationViewModelTest {
     }
     
     @Test
-    fun `confirmEnabled is true only when code is 6 digits`() {
+    fun `confirmEnabled is true only when code is 6 digits`() = runTest {
         assertFalse(viewModel.confirmEnabled.value)
         
         viewModel.onCodeChanged("12345")
@@ -218,13 +234,9 @@ class EmailConfirmationViewModelTest {
             Result.success(SendConfirmationCodeResponse(success = true))
         }
         
-        runTest {
-            viewModel.onSendCodeClicked()
-        }
+        viewModel.onSendCodeClicked()
         
         assertTrue(viewModel.isLoading.value)
-        
-        job.cancel()
     }
     
     @Test
@@ -238,14 +250,9 @@ class EmailConfirmationViewModelTest {
         
         viewModel.onCodeChanged("123456")
         
-        // Use runTest instead of deprecated launch
-        runTest {
-            viewModel.onConfirmClicked()
-        }
+        viewModel.onConfirmClicked()
         
         assertTrue(viewModel.isLoading.value)
-        
-        job.cancel()
     }
     
     @Test
@@ -270,3 +277,9 @@ class EmailConfirmationViewModelTest {
         assertNull(viewModel.successMessage.value)
     }
 }
+
+
+
+
+
+

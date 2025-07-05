@@ -4,12 +4,19 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.ArticlesRepository
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -22,24 +29,50 @@ class ArticlesViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var articlesRepository: ArticlesRepository
     private lateinit var session: AppSession
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: ArticlesViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        
         articlesRepository = mockk()
         session = mockk()
-        viewModel = ArticlesViewModel(articlesRepository, session)
+        errorHandler = mockk()
+        
+        coEvery { articlesRepository.getTechnologies(any()) } returns Result.success(GetTechnologiesResponse(emptyList(), ""))
+        coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
+        coEvery { session.getUserId() } returns 1L
+        coEvery { session.getUserPreferences() } returns null
+        coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
+        
+        // Initialize the ViewModel
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+    
+    private fun createViewModel(): ArticlesViewModel {
+        return ArticlesViewModel(articlesRepository, session, errorHandler)
     }
     
     @Test
-    fun `initial state is loading`() {
-        assertTrue(viewModel.uiState.value.isLoading)
-        assertTrue(viewModel.uiState.value.articles.isEmpty())
-        assertNull(viewModel.uiState.value.error)
+    fun `initial state is loading`() = runTest {
+        advanceUntilIdle()
+        
+        // Check final state after coroutines complete
+        val finalState = viewModel.uiState.value
+        assertFalse(finalState.isLoading)
+        assertTrue(finalState.articles.isEmpty())
+        assertNull(finalState.error)
     }
     
     @Test
@@ -79,7 +112,8 @@ class ArticlesViewModelTest {
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(articles, "", 1))
         
-        assertNotNull(viewModel.uiState.value)
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
@@ -94,13 +128,19 @@ class ArticlesViewModelTest {
         
         coEvery { articlesRepository.getTechnologies(any()) } returns Result.failure(Exception(errorMessage))
         
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
-        assertNull(state.error)
+        assertNotNull(state.error)
     }
     
     @Test
     fun `setSearchQuery updates search query`() = runTest {
         val query = "kotlin"
+        
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        advanceUntilIdle()
         
         viewModel.setSearchQuery(query)
         
@@ -115,6 +155,9 @@ class ArticlesViewModelTest {
         coEvery { session.getUserPreferences() } returns null
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
+        
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        advanceUntilIdle()
         
         viewModel.setSearchQuery("kotlin")
         viewModel.setSearchQuery("")
@@ -131,6 +174,8 @@ class ArticlesViewModelTest {
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
         
+        createViewModel()
+        
         viewModel.setTimePeriod(TimePeriod.MONTH)
         
         val state = viewModel.uiState.value
@@ -144,6 +189,8 @@ class ArticlesViewModelTest {
         coEvery { session.getUserPreferences() } returns null
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
+        
+        createViewModel()
         
         viewModel.setSortType(SortType.DATE_DESC)
         
@@ -159,6 +206,9 @@ class ArticlesViewModelTest {
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
         
+        viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
         assertNotNull(state.selectedDirections)
     }
@@ -171,6 +221,9 @@ class ArticlesViewModelTest {
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
         
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
         assertNotNull(state.selectedTechnologyIds)
     }
@@ -182,6 +235,9 @@ class ArticlesViewModelTest {
         coEvery { session.getUserPreferences() } returns null
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
+        
+        viewModel = createViewModel()
+        advanceUntilIdle()
         
         viewModel.setSearchQuery("kotlin")
         viewModel.setTimePeriod(TimePeriod.MONTH)
@@ -197,6 +253,15 @@ class ArticlesViewModelTest {
     
     @Test
     fun `filters expanded state is tracked`() = runTest {
+        coEvery { articlesRepository.getTechnologies(any()) } returns Result.success(GetTechnologiesResponse(emptyList(), ""))
+        coEvery { session.getUserId() } returns 1L
+        coEvery { session.getUserPreferences() } returns null
+        coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
+        coEvery { articlesRepository.getArticles(any()) } returns Result.success(GetArticlesResponse(emptyList(), "", 0))
+        
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
         assertNotNull(state.isFiltersExpanded)
     }
@@ -251,7 +316,11 @@ class ArticlesViewModelTest {
             Result.success(GetArticlesResponse(moreArticles, "", 2))
         )
         
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        
         viewModel.loadMoreArticles()
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertEquals(2, state.articles.size)
@@ -259,3 +328,9 @@ class ArticlesViewModelTest {
         assertEquals("Article 2", state.articles[1].title)
     }
 }
+
+
+
+
+
+

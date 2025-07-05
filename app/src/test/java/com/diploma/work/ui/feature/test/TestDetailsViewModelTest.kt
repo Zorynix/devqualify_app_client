@@ -3,14 +3,21 @@ package com.diploma.work.ui.feature.test
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -21,19 +28,27 @@ class TestDetailsViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var testsRepository: TestsRepository
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: TestDetailsViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         testsRepository = mockk()
-        viewModel = TestDetailsViewModel(testsRepository)
+        errorHandler = mockk(relaxed = true)
+        viewModel = TestDetailsViewModel(testsRepository, errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is loading`() {
+    fun `initial state is loading`() = runTest {
         assertTrue(viewModel.uiState.value.isLoading)
         assertNull(viewModel.uiState.value.test)
         assertNull(viewModel.uiState.value.error)
@@ -177,7 +192,7 @@ class TestDetailsViewModelTest {
     fun `continueTest with valid session id sets session id`() = runTest {
         val sessionId = "existing_session"
         
-        viewModel.continueTest(sessionId)
+        viewModel.continueTest()
         
         val state = viewModel.uiState.value
         assertEquals(sessionId, state.testSessionId)
@@ -198,7 +213,7 @@ class TestDetailsViewModelTest {
         coEvery { testsRepository.removeUncompletedSession(oldSessionId) } returns Unit
         coEvery { testsRepository.startTestSession(testId) } returns flowOf(Result.success(testSession))
         
-        viewModel.startNewTest(oldSessionId)
+        viewModel.startTest()
         
         val state = viewModel.uiState.value
         assertFalse(state.isStartingTest)
@@ -209,3 +224,9 @@ class TestDetailsViewModelTest {
         coVerify { testsRepository.startTestSession(testId) }
     }
 }
+
+
+
+
+
+

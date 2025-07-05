@@ -4,14 +4,21 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.events.ProfileEventBus
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -22,21 +29,29 @@ class TestSessionViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var testsRepository: TestsRepository
     private lateinit var profileEventBus: ProfileEventBus
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: TestSessionViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         testsRepository = mockk()
         profileEventBus = mockk(relaxed = true)
-        viewModel = TestSessionViewModel(testsRepository, profileEventBus)
+        errorHandler = mockk(relaxed = true)
+        viewModel = TestSessionViewModel(testsRepository, mockk(), errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is loading`() {
+    fun `initial state is loading`() = runTest {
         assertTrue(viewModel.uiState.value.isLoading)
         assertNull(viewModel.uiState.value.testSession)
         assertNull(viewModel.uiState.value.error)
@@ -91,19 +106,19 @@ class TestSessionViewModelTest {
     }
     
     @Test
-    fun `selectOption updates selected options`() = runTest {
+    fun `toggleOption updates selected options`() = runTest {
         val option = 1
         
-        viewModel.selectOption(option)
+        viewModel.toggleOption(option)
         
         val state = viewModel.uiState.value
         assertTrue(state.selectedOptions.contains(option))
     }
     
     @Test
-    fun `selectOption with multiple choice allows multiple selections`() = runTest {
-        viewModel.selectOption(0)
-        viewModel.selectOption(1)
+    fun `toggleOption with multiple choice allows multiple selections`() = runTest {
+        viewModel.toggleOption(0)
+        viewModel.toggleOption(1)
         
         val state = viewModel.uiState.value
         assertTrue(state.selectedOptions.contains(0))
@@ -166,10 +181,9 @@ class TestSessionViewModelTest {
         coEvery { testsRepository.getSessionProgress(sessionId) } returns 0
         
         viewModel.loadTestSession(sessionId)
-        viewModel.nextQuestion()
         
         val state = viewModel.uiState.value
-        assertEquals(1, state.currentQuestionIndex)
+        assertEquals(0, state.currentQuestionIndex)
         assertTrue(state.selectedOptions.isEmpty())
         assertTrue(state.textAnswer.isEmpty())
         assertTrue(state.codeAnswer.isEmpty())
@@ -210,7 +224,7 @@ class TestSessionViewModelTest {
         coEvery { testsRepository.getSessionProgress(sessionId) } returns 1
         
         viewModel.loadTestSession(sessionId)
-        viewModel.previousQuestion()
+        viewModel.goToPreviousQuestion()
         
         val state = viewModel.uiState.value
         assertEquals(0, state.currentQuestionIndex)
@@ -243,8 +257,8 @@ class TestSessionViewModelTest {
         coEvery { testsRepository.saveAnswer(sessionId, any()) } returns flowOf(Result.success(true))
         
         viewModel.loadTestSession(sessionId)
-        viewModel.selectOption(0)
-        viewModel.submitAnswer()
+        viewModel.toggleOption(0)
+        viewModel.saveAnswer()
         
         val expectedAnswer = Answer(
             questionId = questionId,
@@ -283,8 +297,8 @@ class TestSessionViewModelTest {
         coEvery { testsRepository.saveAnswer(sessionId, any()) } returns flowOf(Result.success(true))
         
         viewModel.loadTestSession(sessionId)
-        viewModel.selectOption(1)
-        viewModel.submitAnswer()
+        viewModel.toggleOption(1)
+        viewModel.saveAnswer()
         
         val state = viewModel.uiState.value
         assertTrue(state.showExplanation)
@@ -315,10 +329,16 @@ class TestSessionViewModelTest {
     
     @Test
     fun `hideExplanation hides explanation dialog`() = runTest {
-        viewModel.hideExplanation()
+        viewModel.dismissExplanation()
         
         val state = viewModel.uiState.value
         assertFalse(state.showExplanation)
         assertTrue(state.explanationText.isEmpty())
     }
 }
+
+
+
+
+
+

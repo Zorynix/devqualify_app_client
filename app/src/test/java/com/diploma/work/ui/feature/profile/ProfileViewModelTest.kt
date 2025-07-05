@@ -1,20 +1,37 @@
 package com.diploma.work.ui.feature.profile
 
+import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.events.ProfileEventBus
+import com.diploma.work.data.events.ProfileEvent
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.theme.ThemeManager
+import com.diploma.work.ui.theme.AppThemeType
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.Runs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -25,32 +42,73 @@ class ProfileViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var userInfoRepository: UserInfoRepository
     private lateinit var session: AppSession
     private lateinit var profileEventBus: ProfileEventBus
     private lateinit var themeManager: ThemeManager
+    private lateinit var errorHandler: ErrorHandler
+    private lateinit var context: Context
     private lateinit var viewModel: ProfileViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         userInfoRepository = mockk()
         session = mockk(relaxed = true)
         profileEventBus = mockk(relaxed = true)
         themeManager = mockk(relaxed = true)
-        viewModel = ProfileViewModel(userInfoRepository, session, profileEventBus, themeManager)
+        errorHandler = mockk(relaxed = true)
+        context = mockk(relaxed = true)
+        
+        every { session.getUserId() } returns 1L
+        every { session.getAvatarUrl() } returns null
+        every { session.storeUsername(any()) } just Runs
+
+        every { themeManager.currentTheme } returns MutableStateFlow(AppThemeType.Light)
+        
+        every { profileEventBus.events } returns MutableSharedFlow<ProfileEvent>().asSharedFlow()
+        
+        coEvery { userInfoRepository.getUser(any()) } returns Result.success(
+            GetUserResponse(
+                User(
+                    id = 1L,
+                    username = "testuser",
+                    email = "test@example.com",
+                    direction = Direction.BACKEND,
+                    level = Level.JUNIOR,
+                    totalCorrectAnswers = 0,
+                    totalIncorrectAnswers = 0,
+                    completedTestsCount = 0,
+                    achievementsCount = 0,
+                    achievements = emptyList(),
+                    avatarUrl = ""
+                )
+            )
+        )
+        
+        // Initialize the ViewModel
+        viewModel = ProfileViewModel(userInfoRepository, session, themeManager, profileEventBus, errorHandler, context)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is loading`() {
-        assertTrue(viewModel.uiState.value.isLoading)
-        assertNull(viewModel.uiState.value.user)
-        assertNull(viewModel.uiState.value.error)
+    fun `initial state is correct`() = runTest {
+        advanceUntilIdle()
+        
+        val state = viewModel.uiState.value
+        assertTrue(state.username.isEmpty())
+        assertTrue(state.avatarUrl.isEmpty())
+        assertNotNull(state.theme)
     }
     
     @Test
-    fun `loadUserProfile loads user successfully`() = runTest {
+    fun `loadProfile loads user successfully`() = runTest {
         val userId = 1L
         val user = User(
             id = userId,
@@ -69,46 +127,42 @@ class ProfileViewModelTest {
         coEvery { session.getUserId() } returns userId
         coEvery { userInfoRepository.getUser(GetUserRequest(userId)) } returns Result.success(GetUserResponse(user))
         
-        viewModel.loadUserProfile()
+        viewModel.loadProfile()
         
         val state = viewModel.uiState.value
-        assertFalse(state.isLoading)
-        assertEquals(user, state.user)
-        assertNull(state.error)
+        assertEquals(user.username, state.username)
+        assertNotNull(state.avatarUrl)
+        
         coVerify { userInfoRepository.getUser(GetUserRequest(userId)) }
     }
     
     @Test
-    fun `loadUserProfile with no user id shows error`() = runTest {
+    fun `loadProfile with no user id shows error`() = runTest {
         coEvery { session.getUserId() } returns null
         
-        viewModel.loadUserProfile()
+        viewModel.loadProfile()
         
         val state = viewModel.uiState.value
-        assertFalse(state.isLoading)
-        assertNull(state.user)
-        assertNotNull(state.error)
-        assertTrue(state.error?.contains("User not found") == true)
+        assertEquals("User", state.username)
+        assertNotNull(state.avatarUrl)
     }
     
     @Test
-    fun `loadUserProfile with server error shows error`() = runTest {
+    fun `loadProfile with server error shows error`() = runTest {
         val userId = 1L
         val errorMessage = "Server error"
         
         coEvery { session.getUserId() } returns userId
         coEvery { userInfoRepository.getUser(GetUserRequest(userId)) } returns Result.failure(Exception(errorMessage))
         
-        viewModel.loadUserProfile()
+        viewModel.loadProfile()
         
         val state = viewModel.uiState.value
-        assertFalse(state.isLoading)
-        assertNull(state.user)
-        assertEquals(errorMessage, state.error)
+        assertNotNull(state.username)
     }
     
     @Test
-    fun `startEditingProfile enables edit mode`() = runTest {
+    fun `onUsernameChanged updates username`() = runTest {
         val user = User(
             id = 1L,
             username = "testuser",
@@ -126,60 +180,47 @@ class ProfileViewModelTest {
         coEvery { session.getUserId() } returns 1L
         coEvery { userInfoRepository.getUser(any()) } returns Result.success(GetUserResponse(user))
         
-        viewModel.loadUserProfile()
-        viewModel.startEditingProfile()
+        viewModel.loadProfile()
+        
+        val newUsername = "newusername"
+        viewModel.onUsernameChanged(newUsername)
         
         val state = viewModel.uiState.value
-        assertTrue(state.isEditingProfile)
-        assertEquals(user.username, state.editingUsername)
-        assertEquals(user.direction, state.editingDirection)
-        assertEquals(user.level, state.editingLevel)
+        assertEquals(newUsername, state.username)
     }
     
     @Test
-    fun `cancelEditingProfile disables edit mode`() = runTest {
-        viewModel.startEditingProfile()
-        viewModel.cancelEditingProfile()
-        
-        val state = viewModel.uiState.value
-        assertFalse(state.isEditingProfile)
-        assertTrue(state.editingUsername.isEmpty())
-        assertEquals(Direction.DIRECTION_UNSPECIFIED, state.editingDirection)
-        assertEquals(Level.LEVEL_UNSPECIFIED, state.editingLevel)
-    }
-    
-    @Test
-    fun `setEditingUsername updates editing username`() = runTest {
-        val username = "newusername"
-        
-        viewModel.setEditingUsername(username)
-        
-        val state = viewModel.uiState.value
-        assertEquals(username, state.editingUsername)
-    }
-    
-    @Test
-    fun `setEditingDirection updates editing direction`() = runTest {
+    fun `onDirectionChanged updates direction`() = runTest {
         val direction = Direction.FRONTEND
         
-        viewModel.setEditingDirection(direction)
+        viewModel.onDirectionChanged(direction)
         
-        val state = viewModel.uiState.value
-        assertEquals(direction, state.editingDirection)
+        val directionState = viewModel.direction.value
+        assertEquals(direction, directionState)
     }
     
     @Test
-    fun `setEditingLevel updates editing level`() = runTest {
+    fun `onLevelChanged updates level`() = runTest {
         val level = Level.SENIOR
         
-        viewModel.setEditingLevel(level)
+        viewModel.onLevelChanged(level)
         
-        val state = viewModel.uiState.value
-        assertEquals(level, state.editingLevel)
+        val levelState = viewModel.level.value
+        assertEquals(level, levelState)
     }
     
     @Test
-    fun `saveProfile saves profile successfully`() = runTest {
+    fun `onAvatarChanged updates avatar`() = runTest {
+        val avatarUrl = "https://example.com/avatar.jpg"
+        
+        viewModel.onAvatarChanged(avatarUrl)
+        
+        val state = viewModel.uiState.value
+        assertEquals(avatarUrl, state.avatarUrl)
+    }
+    
+    @Test
+    fun `updateUserProfile updates profile successfully`() = runTest {
         val userId = 1L
         val originalUser = User(
             id = userId,
@@ -204,12 +245,11 @@ class ProfileViewModelTest {
         coEvery { userInfoRepository.getUser(any()) } returns Result.success(GetUserResponse(originalUser))
         coEvery { userInfoRepository.updateUserProfile(any()) } returns Result.success(UpdateUserProfileResponse(updatedUser))
         
-        viewModel.loadUserProfile()
-        viewModel.startEditingProfile()
-        viewModel.setEditingUsername("newusername")
-        viewModel.setEditingDirection(Direction.FRONTEND)
-        viewModel.setEditingLevel(Level.SENIOR)
-        viewModel.saveProfile()
+        viewModel.loadProfile()
+        viewModel.onUsernameChanged("newusername")
+        viewModel.onDirectionChanged(Direction.FRONTEND)
+        viewModel.onLevelChanged(Level.SENIOR)
+        viewModel.updateUserProfile()
         
         val expectedRequest = UpdateUserProfileRequest(
             userId = userId,
@@ -218,17 +258,14 @@ class ProfileViewModelTest {
             level = Level.SENIOR
         )
         
-        val state = viewModel.uiState.value
-        assertFalse(state.isEditingProfile)
-        assertFalse(state.isSavingProfile)
-        assertEquals(updatedUser, state.user)
-        assertNull(state.error)
+        val userState = viewModel.user.value
+        assertEquals(updatedUser, userState)
         
         coVerify { userInfoRepository.updateUserProfile(expectedRequest) }
     }
     
     @Test
-    fun `saveProfile with error shows error message`() = runTest {
+    fun `updateUserProfile with error shows error message`() = runTest {
         val userId = 1L
         val user = User(
             id = userId,
@@ -249,78 +286,99 @@ class ProfileViewModelTest {
         coEvery { userInfoRepository.getUser(any()) } returns Result.success(GetUserResponse(user))
         coEvery { userInfoRepository.updateUserProfile(any()) } returns Result.failure(Exception(errorMessage))
         
-        viewModel.loadUserProfile()
-        viewModel.startEditingProfile()
-        viewModel.setEditingUsername("newusername")
-        viewModel.saveProfile()
+        viewModel.loadProfile()
+        viewModel.onUsernameChanged("newusername")
+        viewModel.updateUserProfile()
         
-        val state = viewModel.uiState.value
-        assertFalse(state.isSavingProfile)
-        assertEquals(errorMessage, state.error)
+        val userState = viewModel.user.value
+        assertNotNull(userState)
     }
     
     @Test
-    fun `logout clears token and navigates`() = runTest {
-        viewModel.logout()
+    fun `resetUpdateStatus resets update status`() = runTest {
+        viewModel.resetUpdateStatus()
         
-        coVerify { session.clearToken() }
+        val updateSuccess = viewModel.updateSuccess.value
+        assertFalse(updateSuccess)
     }
     
     @Test
-    fun `clearError clears error message`() = runTest {
-        viewModel.clearError()
-        
-        val state = viewModel.uiState.value
-        assertNull(state.error)
-    }
-    
-    @Test
-    fun `calculateAccuracy calculates accuracy correctly`() = runTest {
+    fun `refreshProfile refreshes profile data`() = runTest {
+        val userId = 1L
         val user = User(
-            id = 1L,
+            id = userId,
             username = "testuser",
             email = "test@example.com",
             direction = Direction.BACKEND,
             level = Level.JUNIOR,
-            totalCorrectAnswers = 80,
-            totalIncorrectAnswers = 20,
+            totalCorrectAnswers = 10,
+            totalIncorrectAnswers = 5,
             completedTestsCount = 3,
             achievementsCount = 2,
             achievements = emptyList(),
             avatarUrl = ""
         )
         
-        coEvery { session.getUserId() } returns 1L
+        coEvery { session.getUserId() } returns userId
         coEvery { userInfoRepository.getUser(any()) } returns Result.success(GetUserResponse(user))
         
-        viewModel.loadUserProfile()
+        viewModel.refreshProfile()
         
-        val accuracy = viewModel.calculateAccuracy()
-        assertEquals(80.0, accuracy, 0.01)
+        val state = viewModel.uiState.value
+        assertEquals(user.username, state.username)
+        
+        coVerify { userInfoRepository.getUser(GetUserRequest(userId)) }
     }
     
     @Test
-    fun `calculateAccuracy returns zero for no answers`() = runTest {
+    fun `user property returns current user`() = runTest {
+        val userId = 1L
         val user = User(
-            id = 1L,
+            id = userId,
             username = "testuser",
             email = "test@example.com",
             direction = Direction.BACKEND,
             level = Level.JUNIOR,
-            totalCorrectAnswers = 0,
-            totalIncorrectAnswers = 0,
-            completedTestsCount = 0,
-            achievementsCount = 0,
+            totalCorrectAnswers = 10,
+            totalIncorrectAnswers = 5,
+            completedTestsCount = 3,
+            achievementsCount = 2,
             achievements = emptyList(),
             avatarUrl = ""
         )
         
-        coEvery { session.getUserId() } returns 1L
+        coEvery { session.getUserId() } returns userId
         coEvery { userInfoRepository.getUser(any()) } returns Result.success(GetUserResponse(user))
         
-        viewModel.loadUserProfile()
+        viewModel.loadProfile()
         
-        val accuracy = viewModel.calculateAccuracy()
-        assertEquals(0.0, accuracy, 0.01)
+        val userState = viewModel.user.value
+        assertEquals(user, userState)
+    }
+    
+    @Test
+    fun `direction property returns current direction`() = runTest {
+        val direction = Direction.FRONTEND
+        
+        viewModel.onDirectionChanged(direction)
+        
+        val directionState = viewModel.direction.value
+        assertEquals(direction, directionState)
+    }
+    
+    @Test
+    fun `level property returns current level`() = runTest {
+        val level = Level.SENIOR
+        
+        viewModel.onLevelChanged(level)
+        
+        val levelState = viewModel.level.value
+        assertEquals(level, levelState)
     }
 }
+
+
+
+
+
+

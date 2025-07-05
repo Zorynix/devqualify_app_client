@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.diploma.work.data.models.*
 import com.diploma.work.utils.Constants
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.*
@@ -21,12 +19,19 @@ class AppSessionTest {
     
     @Before
     fun setup() {
+        clearAllMocks()
         context = mockk()
         sharedPreferences = mockk()
         editor = mockk(relaxed = true)
         
         every { context.getSharedPreferences(Constants.PrefsKeys.APP_SESSION, Context.MODE_PRIVATE) } returns sharedPreferences
         every { sharedPreferences.edit() } returns editor
+        every { sharedPreferences.getString(any(), any()) } returns null
+        every { sharedPreferences.getLong(any(), any()) } returns -1L
+        every { sharedPreferences.getBoolean(any(), any()) } returns false
+        every { sharedPreferences.getInt(any(), any()) } returns 0
+        every { sharedPreferences.getStringSet(any(), any()) } returns null
+        every { sharedPreferences.contains(any()) } returns false
         every { editor.putString(any(), any()) } returns editor
         every { editor.putLong(any(), any()) } returns editor
         every { editor.putBoolean(any(), any()) } returns editor
@@ -92,6 +97,7 @@ class AppSessionTest {
     @Test
     fun `getUserId returns stored user id`() {
         val userId = 123L
+        every { sharedPreferences.contains(Constants.PrefsKeys.USER_ID) } returns true
         every { sharedPreferences.getLong(Constants.PrefsKeys.USER_ID, -1) } returns userId
         
         val result = appSession.getUserId()
@@ -101,6 +107,7 @@ class AppSessionTest {
     
     @Test
     fun `getUserId returns null when no user id stored`() {
+        every { sharedPreferences.contains(Constants.PrefsKeys.USER_ID) } returns false
         every { sharedPreferences.getLong(Constants.PrefsKeys.USER_ID, -1) } returns -1L
         
         val result = appSession.getUserId()

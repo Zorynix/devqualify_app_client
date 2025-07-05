@@ -5,38 +5,63 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.RegisterRequest
 import com.diploma.work.data.models.RegisterResponse
 import com.diploma.work.data.repository.AuthRepository
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.every
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 @OptIn(ExperimentalCoroutinesApi::class)
 class RegistrationViewModelTest {
     
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var authRepository: AuthRepository
     private lateinit var session: AppSession
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: RegistrationViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        
         authRepository = mockk()
         session = mockk(relaxed = true)
-        viewModel = RegistrationViewModel(authRepository, session)
+        errorHandler = mockk(relaxed = true)
+
+        every { errorHandler.getErrorMessage(any()) } returns "Test error message"
+        
+        viewModel = RegistrationViewModel(authRepository, session, errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is correct`() {
+    fun `initial state is correct`() = runTest {
         assertTrue(viewModel.email.value.isEmpty())
         assertTrue(viewModel.password.value.isEmpty())
         assertTrue(viewModel.confirmPassword.value.isEmpty())
@@ -45,28 +70,28 @@ class RegistrationViewModelTest {
     }
     
     @Test
-    fun `setEmail updates email state`() = runTest {
+    fun `onEmailChanged updates email state`() = runTest {
         val email = "test@example.com"
         
-        viewModel.setEmail(email)
+        viewModel.onEmailChanged(email)
         
         assertEquals(email, viewModel.email.value)
     }
     
     @Test
-    fun `setPassword updates password state`() = runTest {
+    fun `onPasswordChanged updates password state`() = runTest {
         val password = "password123"
         
-        viewModel.setPassword(password)
+        viewModel.onPasswordChanged(password)
         
         assertEquals(password, viewModel.password.value)
     }
     
     @Test
-    fun `setConfirmPassword updates confirm password state`() = runTest {
+    fun `onConfirmPasswordChanged updates confirm password state`() = runTest {
         val confirmPassword = "password123"
         
-        viewModel.setConfirmPassword(confirmPassword)
+        viewModel.onConfirmPasswordChanged(confirmPassword)
         
         assertEquals(confirmPassword, viewModel.confirmPassword.value)
     }
@@ -86,10 +111,10 @@ class RegistrationViewModelTest {
         
         coEvery { authRepository.register(any()) } returns Result.success(registerResponse)
         
-        viewModel.setEmail(email)
-        viewModel.setPassword(password)
-        viewModel.setConfirmPassword(password)
-        viewModel.register()
+        viewModel.onEmailChanged(email)
+        viewModel.onPasswordChanged(password)
+        viewModel.onConfirmPasswordChanged(password)
+        viewModel.onRegisterClicked(session)
         
         val expectedRequest = RegisterRequest(
             email = email,
@@ -101,46 +126,42 @@ class RegistrationViewModelTest {
     
     @Test
     fun `register with invalid email shows validation error`() = runTest {
-        viewModel.setEmail("invalid-email")
-        viewModel.setPassword("password123")
-        viewModel.setConfirmPassword("password123")
-        viewModel.register()
+        viewModel.onEmailChanged("invalid-email")
+        viewModel.onPasswordChanged("password123")
+        viewModel.onConfirmPasswordChanged("password123")
+        viewModel.onRegisterClicked(session)
         
-        assertNotNull(viewModel.errorMessage.value)
-        assertTrue(viewModel.errorMessage.value?.contains("valid email") == true)
+        assertNotNull(viewModel.emailError.value)
     }
     
     @Test
     fun `register with mismatched passwords shows validation error`() = runTest {
-        viewModel.setEmail("test@example.com")
-        viewModel.setPassword("password123")
-        viewModel.setConfirmPassword("differentpassword")
-        viewModel.register()
+        viewModel.onEmailChanged("test@example.com")
+        viewModel.onPasswordChanged("password123")
+        viewModel.onConfirmPasswordChanged("differentpassword")
+        viewModel.onRegisterClicked(session)
         
-        assertNotNull(viewModel.errorMessage.value)
-        assertTrue(viewModel.errorMessage.value?.contains("match") == true)
+        assertNotNull(viewModel.confirmPasswordError.value)
     }
     
     @Test
     fun `register with short password shows validation error`() = runTest {
-        viewModel.setEmail("test@example.com")
-        viewModel.setPassword("123")
-        viewModel.setConfirmPassword("123")
-        viewModel.register()
+        viewModel.onEmailChanged("test@example.com")
+        viewModel.onPasswordChanged("123")
+        viewModel.onConfirmPasswordChanged("123")
+        viewModel.onRegisterClicked(session)
         
-        assertNotNull(viewModel.errorMessage.value)
-        assertTrue(viewModel.errorMessage.value?.contains("6 characters") == true)
+        assertNotNull(viewModel.passwordError.value)
     }
     
     @Test
     fun `register with empty fields shows validation error`() = runTest {
-        viewModel.setEmail("")
-        viewModel.setPassword("")
-        viewModel.setConfirmPassword("")
-        viewModel.register()
+        viewModel.onEmailChanged("")
+        viewModel.onPasswordChanged("")
+        viewModel.onConfirmPasswordChanged("")
+        viewModel.onRegisterClicked(session)
         
-        assertNotNull(viewModel.errorMessage.value)
-        assertTrue(viewModel.errorMessage.value?.contains("empty") == true)
+        assertNotNull(viewModel.emailError.value)
     }
     
     @Test
@@ -151,56 +172,62 @@ class RegistrationViewModelTest {
         
         coEvery { authRepository.register(any()) } returns Result.failure(Exception(errorMessage))
         
-        viewModel.setEmail(email)
-        viewModel.setPassword(password)
-        viewModel.setConfirmPassword(password)
-        viewModel.register()
+        viewModel.onEmailChanged(email)
+        viewModel.onPasswordChanged(password)
+        viewModel.onConfirmPasswordChanged(password)
+        viewModel.onRegisterClicked(session)
         
-        assertEquals(errorMessage, viewModel.errorMessage.value)
+        assertNotNull(viewModel.errorMessage.value)
     }
     
     @Test
-    fun `isFormValid returns true for valid form`() = runTest {
-        viewModel.setEmail("test@example.com")
-        viewModel.setPassword("password123")
-        viewModel.setConfirmPassword("password123")
+    fun `registerEnabled returns true for valid form`() = runTest {
+        viewModel.onEmailChanged("test@example.com")
+        viewModel.onPasswordChanged("password123")
+        viewModel.onConfirmPasswordChanged("password123")
         
-        assertTrue(viewModel.isFormValid.value)
+        assertTrue(viewModel.registerEnabled.value)
     }
     
     @Test
-    fun `isFormValid returns false for invalid email`() = runTest {
-        viewModel.setEmail("invalid-email")
-        viewModel.setPassword("password123")
-        viewModel.setConfirmPassword("password123")
+    fun `registerEnabled returns false for invalid email`() = runTest {
+        viewModel.onEmailChanged("invalid-email")
+        viewModel.onPasswordChanged("password123")
+        viewModel.onConfirmPasswordChanged("password123")
         
-        assertFalse(viewModel.isFormValid.value)
+        assertFalse(viewModel.registerEnabled.value)
     }
     
     @Test
-    fun `isFormValid returns false for mismatched passwords`() = runTest {
-        viewModel.setEmail("test@example.com")
-        viewModel.setPassword("password123")
-        viewModel.setConfirmPassword("differentpassword")
+    fun `registerEnabled returns false for mismatched passwords`() = runTest {
+        viewModel.onEmailChanged("test@example.com")
+        viewModel.onPasswordChanged("password123")
+        viewModel.onConfirmPasswordChanged("differentpassword")
         
-        assertFalse(viewModel.isFormValid.value)
+        assertFalse(viewModel.registerEnabled.value)
     }
     
     @Test
-    fun `isFormValid returns false for short password`() = runTest {
-        viewModel.setEmail("test@example.com")
-        viewModel.setPassword("123")
-        viewModel.setConfirmPassword("123")
+    fun `registerEnabled returns false for short password`() = runTest {
+        viewModel.onEmailChanged("test@example.com")
+        viewModel.onPasswordChanged("123")
+        viewModel.onConfirmPasswordChanged("123")
         
-        assertFalse(viewModel.isFormValid.value)
+        assertFalse(viewModel.registerEnabled.value)
     }
     
     @Test
-    fun `isFormValid returns false for empty fields`() = runTest {
-        viewModel.setEmail("")
-        viewModel.setPassword("")
-        viewModel.setConfirmPassword("")
+    fun `registerEnabled returns false for empty fields`() = runTest {
+        viewModel.onEmailChanged("")
+        viewModel.onPasswordChanged("")
+        viewModel.onConfirmPasswordChanged("")
         
-        assertFalse(viewModel.isFormValid.value)
+        assertFalse(viewModel.registerEnabled.value)
     }
 }
+
+
+
+
+
+

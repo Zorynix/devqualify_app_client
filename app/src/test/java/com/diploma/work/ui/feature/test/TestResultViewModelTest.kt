@@ -4,15 +4,22 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.models.QuestionResult
 import com.diploma.work.data.models.TestResult
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
@@ -22,19 +29,27 @@ class TestResultViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var testsRepository: TestsRepository
+    private lateinit var errorHandler: ErrorHandler
     private lateinit var viewModel: TestResultViewModel
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         testsRepository = mockk()
-        viewModel = TestResultViewModel(testsRepository)
+        errorHandler = mockk(relaxed = true)
+        viewModel = TestResultViewModel(testsRepository, errorHandler)
+    }
+    
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
     
     @Test
-    fun `initial state is loading`() {
+    fun `initial state is loading`() = runTest {
         assertTrue(viewModel.uiState.value.isLoading)
         assertNull(viewModel.uiState.value.result)
         assertNull(viewModel.uiState.value.error)
@@ -206,3 +221,9 @@ class TestResultViewModelTest {
         assertFalse(viewModel.uiState.value.result?.questionResults?.all { it.isCorrect } == true)
     }
 }
+
+
+
+
+
+

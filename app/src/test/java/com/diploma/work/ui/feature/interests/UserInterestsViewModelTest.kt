@@ -3,6 +3,7 @@ package com.diploma.work.ui.feature.interests
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
+import com.diploma.work.data.repository.ArticlesRepository
 import com.diploma.work.utils.ErrorHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -10,10 +11,16 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
@@ -24,7 +31,7 @@ class UserInterestsViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
     
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher()
     
     private lateinit var articlesRepository: ArticlesRepository
     private lateinit var session: AppSession
@@ -33,29 +40,36 @@ class UserInterestsViewModelTest {
     
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         articlesRepository = mockk()
         session = mockk(relaxed = true)
-        errorHandler = mockk()
+        errorHandler = mockk(relaxed = true)
         
-        every { errorHandler.getErrorMessage(any()) } returns "Generic error"
         every { session.getUserId() } returns 123L
         every { session.getUserPreferences() } returns null
         
         coEvery { 
             articlesRepository.getTechnologies(any()) 
-        } returns Result.success(GetTechnologiesResponse(emptyList()))
+        } returns Result.success(GetTechnologiesResponse(emptyList(), ""))
         
         coEvery { 
             articlesRepository.getUserPreferences(any()) 
         } returns Result.success(GetUserPreferencesResponse(null))
         
+        // Initialize the ViewModel
         viewModel = UserInterestsViewModel(articlesRepository, session, errorHandler)
     }
     
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+    
     @Test
-    fun `initial state is correct`() {
+    fun `initial state is correct`() = runTest {
+        advanceUntilIdle()
+        
         val state = viewModel.uiState.value
-        assertFalse(state.isLoading)
         assertTrue(state.technologies.isEmpty())
         assertTrue(state.selectedTechnologyIds.isEmpty())
         assertTrue(state.selectedDirections.isEmpty())
@@ -70,14 +84,14 @@ class UserInterestsViewModelTest {
     @Test
     fun `loadData success with cached preferences`() = runTest {
         val technologies = listOf(
-            ArticleTechnology(1L, "Kotlin", "kotlin"),
-            ArticleTechnology(2L, "Java", "java")
+            ArticleTechnology(1L, "Kotlin", "kotlin", ArticleDirection.BACKEND, ""),
+            ArticleTechnology(2L, "Java", "java", ArticleDirection.BACKEND, "")
         )
         
         val cachedPreferences = UserPreferences(
             userId = 123L,
             technologyIds = listOf(1L),
-            directions = listOf(ArticleDirection.MOBILE),
+            directions = listOf(ArticleDirection.BACKEND),
             deliveryFrequency = DeliveryFrequency.DAILY,
             emailNotifications = false,
             pushNotifications = true,
@@ -89,9 +103,9 @@ class UserInterestsViewModelTest {
         every { session.getUserPreferences() } returns cachedPreferences
         coEvery { 
             articlesRepository.getTechnologies(any()) 
-        } returns Result.success(GetTechnologiesResponse(technologies))
+        } returns Result.success(GetTechnologiesResponse(technologies, ""))
         
-        viewModel = UserInterestsViewModel(articlesRepository, session, errorHandler)
+        val viewModel = UserInterestsViewModel(articlesRepository, session, errorHandler)
         
         val state = viewModel.uiState.value
         assertEquals(2, state.technologies.size)
@@ -109,8 +123,8 @@ class UserInterestsViewModelTest {
     @Test
     fun `loadData success with server preferences`() = runTest {
         val technologies = listOf(
-            ArticleTechnology(1L, "React", "react"),
-            ArticleTechnology(2L, "Vue", "vue")
+            ArticleTechnology(1L, "React", "react", ArticleDirection.FRONTEND, ""),
+            ArticleTechnology(2L, "Vue", "vue", ArticleDirection.FRONTEND, "")
         )
         
         val serverPreferences = UserPreferences(
@@ -127,7 +141,7 @@ class UserInterestsViewModelTest {
         
         coEvery { 
             articlesRepository.getTechnologies(any()) 
-        } returns Result.success(GetTechnologiesResponse(technologies))
+        } returns Result.success(GetTechnologiesResponse(technologies, ""))
         
         coEvery { 
             articlesRepository.getUserPreferences(any()) 
@@ -163,7 +177,7 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `toggleTechnology adds technology when not selected`() {
+    fun `toggleTechnology adds technology when not selected`() = runTest {
         viewModel.toggleTechnology(1L)
         
         val state = viewModel.uiState.value
@@ -171,10 +185,20 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `toggleTechnology removes technology when already selected`() {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            selectedTechnologyIds = setOf(1L, 2L)
+    fun `toggleTechnology removes technology when already selected`() = runTest {
+        val technologies = listOf(
+            ArticleTechnology(1L, "Kotlin", "kotlin", ArticleDirection.BACKEND, ""),
+            ArticleTechnology(2L, "Java", "java", ArticleDirection.BACKEND, "")
         )
+        
+        coEvery { 
+            articlesRepository.getTechnologies(any()) 
+        } returns Result.success(GetTechnologiesResponse(technologies, ""))
+        
+        val viewModel = UserInterestsViewModel(articlesRepository, session, errorHandler)
+        
+        viewModel.toggleTechnology(1L)
+        viewModel.toggleTechnology(2L)
         
         viewModel.toggleTechnology(1L)
         
@@ -184,7 +208,7 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `toggleDirection adds direction when not selected`() {
+    fun `toggleDirection adds direction when not selected`() = runTest {
         viewModel.toggleDirection(ArticleDirection.BACKEND)
         
         val state = viewModel.uiState.value
@@ -192,10 +216,15 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `toggleDirection removes direction when already selected`() {
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            selectedDirections = setOf(ArticleDirection.BACKEND, ArticleDirection.FRONTEND)
-        )
+    fun `toggleDirection removes direction when already selected`() = runTest {
+        coEvery { 
+            articlesRepository.getTechnologies(any()) 
+        } returns Result.success(GetTechnologiesResponse(emptyList(), ""))
+        
+        val viewModel = UserInterestsViewModel(articlesRepository, session, errorHandler)
+        
+        viewModel.toggleDirection(ArticleDirection.BACKEND)
+        viewModel.toggleDirection(ArticleDirection.FRONTEND)
         
         viewModel.toggleDirection(ArticleDirection.BACKEND)
         
@@ -205,32 +234,32 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `updateDeliveryFrequency changes frequency`() {
-        viewModel.updateDeliveryFrequency(DeliveryFrequency.DAILY)
+    fun `setDeliveryFrequency changes frequency`() = runTest {
+        viewModel.setDeliveryFrequency(DeliveryFrequency.DAILY)
         
         val state = viewModel.uiState.value
         assertEquals(DeliveryFrequency.DAILY, state.deliveryFrequency)
     }
     
     @Test
-    fun `updateEmailNotifications changes email setting`() {
-        viewModel.updateEmailNotifications(false)
+    fun `setEmailNotifications changes email setting`() = runTest {
+        viewModel.setEmailNotifications(false)
         
         val state = viewModel.uiState.value
         assertFalse(state.emailNotifications)
     }
     
     @Test
-    fun `updatePushNotifications changes push setting`() {
-        viewModel.updatePushNotifications(false)
+    fun `setPushNotifications changes push setting`() = runTest {
+        viewModel.setPushNotifications(false)
         
         val state = viewModel.uiState.value
         assertFalse(state.pushNotifications)
     }
     
     @Test
-    fun `updateArticlesPerDay changes articles count`() {
-        viewModel.updateArticlesPerDay(50)
+    fun `setArticlesPerDay changes articles count`() = runTest {
+        viewModel.setArticlesPerDay(50)
         
         val state = viewModel.uiState.value
         assertEquals(50, state.articlesPerDay)
@@ -251,18 +280,17 @@ class UserInterestsViewModelTest {
             updatedAt = Instant.now()
         )
         
-        viewModel.uiState.value = viewModel.uiState.value.copy(
-            selectedTechnologyIds = setOf(1L, 2L),
-            selectedDirections = setOf(ArticleDirection.BACKEND),
-            deliveryFrequency = DeliveryFrequency.DAILY,
-            emailNotifications = true,
-            pushNotifications = false,
-            articlesPerDay = 25
-        )
+        viewModel.toggleTechnology(1L)
+        viewModel.toggleTechnology(2L)
+        viewModel.toggleDirection(ArticleDirection.BACKEND)
+        viewModel.setDeliveryFrequency(DeliveryFrequency.DAILY)
+        viewModel.setEmailNotifications(true)
+        viewModel.setPushNotifications(false)
+        viewModel.setArticlesPerDay(25)
         
         coEvery { 
             articlesRepository.updateUserPreferences(any()) 
-        } returns Result.success(UpdateUserPreferencesResponse(preferences))
+        } returns Result.success(UpdateUserPreferencesResponse("Success"))
         
         viewModel.savePreferences()
         
@@ -294,8 +322,14 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `clearError resets error state`() {
-        viewModel.uiState.value = viewModel.uiState.value.copy(error = "Some error")
+    fun `clearError resets error state`() = runTest {
+        coEvery { 
+            articlesRepository.updateUserPreferences(any()) 
+        } returns Result.failure(Exception("Test error"))
+        
+        viewModel.savePreferences()
+        
+        assertNotNull(viewModel.uiState.value.error)
         
         viewModel.clearError()
         
@@ -304,8 +338,14 @@ class UserInterestsViewModelTest {
     }
     
     @Test
-    fun `clearSaveSuccess resets save success state`() {
-        viewModel.uiState.value = viewModel.uiState.value.copy(saveSuccess = true)
+    fun `clearSaveSuccess resets save success state`() = runTest {
+        coEvery { 
+            articlesRepository.updateUserPreferences(any()) 
+        } returns Result.success(UpdateUserPreferencesResponse("Success"))
+        
+        viewModel.savePreferences()
+        
+        assertTrue(viewModel.uiState.value.saveSuccess)
         
         viewModel.clearSaveSuccess()
         
@@ -313,3 +353,9 @@ class UserInterestsViewModelTest {
         assertFalse(state.saveSuccess)
     }
 }
+
+
+
+
+
+
