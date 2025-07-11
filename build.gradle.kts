@@ -5,7 +5,7 @@ plugins {
     id("com.google.dagger.hilt.android") version "2.56.2" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("org.jlleitschuh.gradle.ktlint") version "12.3.0"
+    id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
     id("com.google.gms.google-services") version "4.4.3" apply false
     id("com.google.protobuf") version "0.9.5" apply false
 }

@@ -1,4 +1,4 @@
-package com.diploma.work.ui.base
+package com.diploma.work.ui.feature.base
 
 import org.junit.Test
 

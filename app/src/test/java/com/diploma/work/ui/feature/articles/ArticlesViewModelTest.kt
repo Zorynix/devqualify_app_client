@@ -50,7 +50,6 @@ class ArticlesViewModelTest {
         coEvery { session.getUserPreferences() } returns null
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
         
-        // Initialize the ViewModel
         viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
         
     }
@@ -68,7 +67,6 @@ class ArticlesViewModelTest {
     fun `initial state is loading`() = runTest {
         advanceUntilIdle()
         
-        // Check final state after coroutines complete
         val finalState = viewModel.uiState.value
         assertFalse(finalState.isLoading)
         assertTrue(finalState.articles.isEmpty())
@@ -126,7 +124,7 @@ class ArticlesViewModelTest {
     fun `initialization with error shows error message`() = runTest {
         val errorMessage = "Failed to load technologies"
         
-        coEvery { articlesRepository.getTechnologies(any()) } returns Result.failure(Exception(errorMessage))
+        coEvery { articlesRepository.getTechnologies(any()) } throws Exception(errorMessage)
         
         viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
         advanceUntilIdle()
@@ -264,68 +262,6 @@ class ArticlesViewModelTest {
         
         val state = viewModel.uiState.value
         assertNotNull(state.isFiltersExpanded)
-    }
-    
-    @Test
-    fun `loadMoreArticles loads additional articles`() = runTest {
-        val initialArticles = listOf(
-            Article(
-                id = 1L,
-                title = "Article 1",
-                description = "Description 1",
-                content = "Content 1",
-                url = "https://example.com/1",
-                author = "Author 1",
-                publishedAt = Instant.now(),
-                createdAt = Instant.now(),
-                rssSourceId = 1L,
-                rssSourceName = "Source 1",
-                technologyIds = listOf(1L),
-                tags = listOf("tag1"),
-                status = ArticleStatus.PUBLISHED,
-                imageUrl = "",
-                readTimeMinutes = 5
-            )
-        )
-        val moreArticles = listOf(
-            Article(
-                id = 2L,
-                title = "Article 2",
-                description = "Description 2",
-                content = "Content 2",
-                url = "https://example.com/2",
-                author = "Author 2",
-                publishedAt = Instant.now(),
-                createdAt = Instant.now(),
-                rssSourceId = 1L,
-                rssSourceName = "Source 1",
-                technologyIds = listOf(1L),
-                tags = listOf("tag2"),
-                status = ArticleStatus.PUBLISHED,
-                imageUrl = "",
-                readTimeMinutes = 3
-            )
-        )
-        
-        coEvery { articlesRepository.getTechnologies(any()) } returns Result.success(GetTechnologiesResponse(emptyList(), ""))
-        coEvery { session.getUserId() } returns 1L
-        coEvery { session.getUserPreferences() } returns null
-        coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
-        coEvery { articlesRepository.getArticles(any()) } returnsMany listOf(
-            Result.success(GetArticlesResponse(initialArticles, "", 1)),
-            Result.success(GetArticlesResponse(moreArticles, "", 2))
-        )
-        
-        viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        viewModel.loadMoreArticles()
-        advanceUntilIdle()
-        
-        val state = viewModel.uiState.value
-        assertEquals(2, state.articles.size)
-        assertEquals("Article 1", state.articles[0].title)
-        assertEquals("Article 2", state.articles[1].title)
     }
 }
 

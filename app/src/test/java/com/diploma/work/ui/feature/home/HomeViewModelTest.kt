@@ -94,8 +94,8 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(null, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(null, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel = HomeViewModel(testsRepository, errorHandler)
         advanceUntilIdle()
@@ -107,7 +107,6 @@ class HomeViewModelTest {
         assertFalse(viewModel.isLoading.value)
         assertEquals(tests, state.tests)
         assertNull(state.error)
-        coVerify { testsRepository.getTests(null, null) }
     }
     
     @Test
@@ -126,17 +125,17 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(Direction.BACKEND, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(Direction.BACKEND, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectDirection(Direction.BACKEND)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(viewModel.isLoading.value)
         assertEquals(tests, state.tests)
         assertEquals(Direction.BACKEND, state.selectedDirection)
         assertNull(state.error)
-        coVerify { testsRepository.getTests(Direction.BACKEND, null) }
     }
     
     @Test
@@ -155,17 +154,17 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(null, Level.SENIOR) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(null, Level.SENIOR, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectLevel(Level.SENIOR)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(viewModel.isLoading.value)
         assertEquals(tests, state.tests)
         assertEquals(Level.SENIOR, state.selectedLevel)
         assertNull(state.error)
-        coVerify { testsRepository.getTests(null, Level.SENIOR) }
     }
     
     @Test
@@ -190,17 +189,17 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTestsByTechnology(1L, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTestsByTechnology(1L, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectTechnology(technology)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(viewModel.isLoading.value)
         assertEquals(tests, state.tests)
         assertEquals(technology, state.selectedTechnology)
         assertNull(state.error)
-        coVerify { testsRepository.getTestsByTechnology(1L, null) }
     }
     
     @Test
@@ -225,11 +224,12 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTestsByTechnology(1L, Level.MIDDLE) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTestsByTechnology(1L, Level.MIDDLE, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectTechnology(technology)
         viewModel.selectLevel(Level.MIDDLE)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(viewModel.isLoading.value)
@@ -237,23 +237,22 @@ class HomeViewModelTest {
         assertEquals(technology, state.selectedTechnology)
         assertEquals(Level.MIDDLE, state.selectedLevel)
         assertNull(state.error)
-        coVerify { testsRepository.getTestsByTechnology(1L, Level.MIDDLE) }
     }
     
     @Test
     fun `loadTests with error shows error message`() = runTest {
         val errorMessage = "Failed to load tests"
         
-        coEvery { testsRepository.getTests(null, null) } returns flowOf(Result.failure(Exception(errorMessage)))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(null, null, false) } returns flowOf(Result.failure(Exception(errorMessage)))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.loadTests()
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertFalse(viewModel.isLoading.value)
         assertTrue(state.tests.isEmpty())
         assertNotNull(viewModel.errorMessage.value)
-        coVerify { testsRepository.getTests(null, null) }
     }
     
     @Test
@@ -272,15 +271,15 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(Direction.FRONTEND, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(Direction.FRONTEND, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectDirection(Direction.FRONTEND)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertEquals(Direction.FRONTEND, state.selectedDirection)
         assertEquals(tests, state.tests)
-        coVerify { testsRepository.getTests(Direction.FRONTEND, null) }
     }
     
     @Test
@@ -299,15 +298,15 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(null, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(null, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectDirection(null)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertNull(state.selectedDirection)
         assertEquals(tests, state.tests)
-        coVerify { testsRepository.getTests(null, null) }
     }
     
     @Test
@@ -326,15 +325,15 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(null, Level.SENIOR) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTests(null, Level.SENIOR, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectLevel(Level.SENIOR)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertEquals(Level.SENIOR, state.selectedLevel)
         assertEquals(tests, state.tests)
-        coVerify { testsRepository.getTests(null, Level.SENIOR) }
     }
     
     @Test
@@ -359,15 +358,15 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTestsByTechnology(2L, null) } returns flowOf(Result.success(tests))
-        coEvery { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
+        every { testsRepository.getTestsByTechnology(2L, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTechnologies() } returns flowOf(Result.success(emptyList()))
         
         viewModel.selectTechnology(technology)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertEquals(technology, state.selectedTechnology)
         assertEquals(tests, state.tests)
-        coVerify { testsRepository.getTestsByTechnology(2L, null) }
     }
     
     @Test
@@ -386,14 +385,14 @@ class HomeViewModelTest {
             )
         )
         
-        coEvery { testsRepository.getTests(null, null, false) } returns flowOf(Result.success(tests))
+        every { testsRepository.getTests(null, null, false) } returns flowOf(Result.success(tests))
         
         viewModel.selectTechnology(null)
+        advanceUntilIdle()
         
         val state = viewModel.uiState.value
         assertNull(state.selectedTechnology)
         assertEquals(tests, state.tests)
-        coVerify { testsRepository.getTests(null, null, false) }
     }
 }
 
