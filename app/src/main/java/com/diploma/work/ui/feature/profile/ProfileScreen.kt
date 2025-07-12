@@ -39,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -46,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -64,10 +66,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.R
+import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.User
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -78,8 +83,9 @@ import com.diploma.work.ui.theme.ThemeManager
 @Composable
 fun ProfileScreen(
     navController: NavController,
-    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     themeManager: ThemeManager,
+    modifier: Modifier = Modifier,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -95,21 +101,33 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-
     LaunchedEffect(updateSuccess) {
         if (updateSuccess) {
-            snackbarHostState.showSnackbar("Profile updated successfully!")
+            snackbarHostState.showSnackbar(
+                message = "Profile updated successfully!",
+                duration = SnackbarDuration.Short
+            )
             viewModel.resetUpdateStatus()
         }
     }
 
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
-            snackbarHostState.showSnackbar(errorMessage ?: "An error occurred")
+            snackbarHostState.showSnackbar(
+                message = errorMessage ?: "An error occurred",
+                duration = SnackbarDuration.Short
+            )
+            viewModel.resetUpdateStatus()
         }
     }
-    
-    Scaffold(
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetUpdateStatus()
+        }
+    }
+      Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -121,53 +139,48 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
-        ) {
+                .padding(paddingValues)        ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .align(Alignment.Center)
+                LoadingCard(
+                    message = "Loading profile...",
+                    modifier = Modifier.align(Alignment.Center)
                 )
             } else if (user != null) {
-                UserProfileContent(
+                Column {
+                    if (errorMessage != null) {
+                        ErrorCard(
+                            error = errorMessage!!,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    
+                    UserProfileContent(
                     user = user!!,
                     username = state.username,
                     direction = direction,
                     level = level,
                     avatarUrl = avatarUrl,
-                    onUsernameChanged = { viewModel.onUsernameChanged(it) },
-                    onDirectionChanged = { viewModel.onDirectionChanged(it) },
-                    onLevelChanged = { viewModel.onLevelChanged(it) },
-                    onAvatarChanged = { viewModel.onAvatarChanged(it) },
-                    onImagePickerClicked = { uri -> 
-                        uri?.toString()?.let { viewModel.onAvatarChanged(it) }
-                    },
-                    onUpdateClicked = { viewModel.updateUserProfile() },
-                    isLoading = isLoading
-                )            } else {
-                Column(
+                    session = viewModel.session,
+                    onUsernameChange = { viewModel.onUsernameChanged(it) },
+                    onDirectionChange = { viewModel.onDirectionChanged(it) },
+                    onLevelChange = { viewModel.onLevelChanged(it) },
+                    onAvatarChange = { viewModel.onAvatarChanged(it) },
+                    onImagePickerClick = { uri -> 
+                        uri?.let { 
+                            viewModel.uploadAvatar(it)
+                            viewModel.onAvatarChanged(it.toString())
+                        }
+                    },                        onUpdateClick = { viewModel.updateUserProfile() },
+                        isLoading = isLoading
+                    )
+                }            } else {
+                ErrorCard(
+                    error = "Failed to load user data. Please try again.",
+                    onRetry = { viewModel.loadProfile() },
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "Failed to load user data. Please try again.",
-                        style = TextStyle.BodyMedium.value,
-                        color = Theme.extendedColorScheme.outlineDanger
-                    )
-                    Button(
-                        onClick = { viewModel.loadProfile() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
-                        Text("Retry", style = TextStyle.ButtonText.value, color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
+                        .padding(16.dp)
+                )
             }
         }
     }
@@ -179,14 +192,14 @@ fun AppDrawerContent(
     username: String,
     avatarUrl: String,
     theme: AppThemeType,
+    session: AppSession,
     onThemeToggle: () -> Unit,
     onInterestsClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val session = hiltViewModel<ProfileViewModel>().session
-    
     DismissibleDrawerSheet(
-        modifier = Modifier.width(280.dp)
+        modifier = modifier.width(280.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -201,12 +214,11 @@ fun AppDrawerContent(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        com.diploma.work.ui.components.AvatarImage(
+                    ) {                        com.diploma.work.ui.components.AvatarImage(
                             avatarUrl = avatarUrl,
+                            session = session,
                             size = 60.dp,
-                            borderWidth = 2.dp,
-                            session = session
+                            borderWidth = 2.dp
                         )
                         
                         Spacer(modifier = Modifier.width(16.dp))
@@ -301,26 +313,24 @@ private fun UserProfileContent(
     direction: Direction,
     level: Level,
     avatarUrl: String,
-    onUsernameChanged: (String) -> Unit,
-    onDirectionChanged: (Direction) -> Unit,
-    onLevelChanged: (Level) -> Unit,
-    onAvatarChanged: (String) -> Unit,
-    onImagePickerClicked: (Uri?) -> Unit,
-    onUpdateClicked: () -> Unit,
+    session: AppSession,
+    onUsernameChange: (String) -> Unit,
+    onDirectionChange: (Direction) -> Unit,
+    onLevelChange: (Level) -> Unit,
+    onAvatarChange: (String) -> Unit,
+    onImagePickerClick: (Uri?) -> Unit,
+    onUpdateClick: () -> Unit,
     isLoading: Boolean
 ) {
     var directionMenuExpanded by remember { mutableStateOf(false) }
     var levelMenuExpanded by remember { mutableStateOf(false) }
     var showAvatarDialog by remember { mutableStateOf(false) }
-
     val coroutineScope = rememberCoroutineScope()
-    val viewModel = hiltViewModel<ProfileViewModel>()
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? -> 
             if (uri != null) {
-                viewModel.uploadAvatar(uri)
-                onImagePickerClicked(uri)
+                onImagePickerClick(uri)
             }
         }
     )
@@ -340,17 +350,16 @@ private fun UserProfileContent(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
+            ) {                Box(
                     contentAlignment = Alignment.BottomEnd,
                     modifier = Modifier
                         .padding(bottom = 16.dp)
                 ) {
                     com.diploma.work.ui.components.AvatarImage(
                         avatarUrl = avatarUrl,
+                        session = session,
                         size = 120.dp,
-                        borderWidth = 2.dp,
-                        session = viewModel.session
+                        borderWidth = 2.dp
                     )
                     
                     IconButton(
@@ -388,7 +397,7 @@ private fun UserProfileContent(
         Text("Username", style = TextStyle.BodyMedium.value)
         DiplomTextField(
             value = username,
-            onValueChange = onUsernameChanged,
+            onValueChange = onUsernameChange,
             modifier = Modifier.fillMaxWidth()
         )
           Spacer(modifier = Modifier.height(16.dp))
@@ -417,7 +426,7 @@ private fun UserProfileContent(
                     DropdownMenuItem(
                         text = { Text(directionToString(dir)) },
                         onClick = {
-                            onDirectionChanged(dir)
+                            onDirectionChange(dir)
                             directionMenuExpanded = false
                         }
                     )
@@ -450,7 +459,7 @@ private fun UserProfileContent(
                     DropdownMenuItem(
                         text = { Text(levelToString(lvl)) },
                         onClick = {
-                            onLevelChanged(lvl)
+                            onLevelChange(lvl)
                             levelMenuExpanded = false
                         }
                     )
@@ -471,7 +480,7 @@ private fun UserProfileContent(
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(
-            onClick = onUpdateClicked,
+            onClick = onUpdateClick,
             enabled = !isLoading,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
@@ -506,12 +515,11 @@ private fun UserProfileContent(
                             style = TextStyle.TitleLarge.value,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                        
-                        com.diploma.work.ui.components.AvatarImage(
+                          com.diploma.work.ui.components.AvatarImage(
                             avatarUrl = avatarUrl,
+                            session = session,
                             size = 120.dp,
-                            borderWidth = 2.dp,
-                            session = viewModel.session
+                            borderWidth = 2.dp
                         )
                         
                         Spacer(modifier = Modifier.height(24.dp))

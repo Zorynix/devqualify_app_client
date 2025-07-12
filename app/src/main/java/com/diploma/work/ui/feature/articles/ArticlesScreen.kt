@@ -6,61 +6,59 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.diploma.work.R
 import com.diploma.work.data.models.*
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticlesScreen(
-    onNavigateUp: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
     viewModel: ArticlesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showFilters by remember { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
-        viewModel.loadArticles()
+        viewModel.refreshUserPreferences()
     }
-
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
         TopAppBar(
             title = { Text("Articles") },
             navigationIcon = {
-                IconButton(onClick = onNavigateUp) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                IconButton(onClick = onOpenDrawer) {
+                    Icon(Icons.Default.Menu, contentDescription = "Open menu")
                 }
             },
             actions = {                IconButton(onClick = { showFilters = !showFilters }) {
                     Icon(
                         Icons.Default.Tune,
                         contentDescription = "Filters",
-                        tint = if (uiState.selectedDirections.isNotEmpty() || 
-                                  uiState.selectedTechnologyIds.isNotEmpty() ||
-                                  uiState.searchQuery.isNotBlank() ||
+                        tint = if (uiState.searchQuery.isNotBlank() ||
                                   uiState.selectedTimePeriod != TimePeriod.WEEK ||
                                   uiState.selectedSortType != SortType.RELEVANCE) {
                             MaterialTheme.colorScheme.primary
@@ -82,33 +80,39 @@ fun ArticlesScreen(
                 uiState = uiState,
                 onTimePeriodChange = viewModel::setTimePeriod,
                 onSortByChange = viewModel::setSortBy,
-                onDirectionChange = viewModel::toggleDirection,
                 onSourceChange = viewModel::toggleSource,
-                onClearFilters = viewModel::clearFilters
+                onClearFilters = viewModel::clearFilters,
+                onApplyUserPreferences = viewModel::applyUserPreferencesToFilters
             )
         }
-
-        when {
-            uiState.isLoading && uiState.articles.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refreshArticles() },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when {
+                uiState.isLoading && uiState.articles.isEmpty() -> {
+                    LoadingCard(
+                        message = "Loading articles...",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }            uiState.error != null -> {
+                    ErrorCard(
+                        error = uiState.error!!,
+                        onRetry = { viewModel.loadArticles() }
+                    )
+                }uiState.articles.isEmpty() -> {
+                    EmptyStateCard()
+                }            else -> {
+                    ArticlesList(
+                        articles = uiState.articles,
+                        onArticleClick = { /* TODO: Navigate to article detail */ },
+                        onLoadMore = { viewModel.loadMoreArticles() },
+                        isLoading = uiState.isLoading,
+                        hasMore = uiState.hasMore
+                    )
                 }
-            }
-            uiState.error != null -> {
-                ErrorCard(
-                    error = uiState.error!!,
-                    onRetry = { viewModel.loadArticles() }
-                )
-            }            uiState.articles.isEmpty() -> {
-                EmptyStateCard()
-            }            else -> {
-                ArticlesList(
-                    articles = uiState.articles,
-                    onArticleClick = { /* TODO: Navigate to article detail */ }
-                )
             }
         }
     }
@@ -147,9 +151,9 @@ private fun FiltersPanel(
     uiState: ArticlesUiState,
     onTimePeriodChange: (TimePeriod) -> Unit,
     onSortByChange: (SortType) -> Unit,
-    onDirectionChange: (ArticleDirection) -> Unit,
     onSourceChange: (String) -> Unit,
-    onClearFilters: () -> Unit
+    onClearFilters: () -> Unit,
+    onApplyUserPreferences: () -> Unit
 ){
     Card(
         modifier = Modifier
@@ -161,8 +165,7 @@ private fun FiltersPanel(
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
+        ) {            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -172,8 +175,12 @@ private fun FiltersPanel(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                TextButton(onClick = onClearFilters) {
-                    Text("Clear All")
+                Row {                    TextButton(onClick = onApplyUserPreferences) {
+                        Text("My Interests")
+                    }
+                    TextButton(onClick = onClearFilters) {
+                        Text("Clear All")
+                    }
                 }
             }
 
@@ -191,7 +198,6 @@ private fun FiltersPanel(
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
             FilterSection(title = "Sort By") {
                 LazyRow(
@@ -203,23 +209,6 @@ private fun FiltersPanel(
                             onClick = { onSortByChange(sortType) },
                             label = { Text(sortType.displayName) }
                         )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            FilterSection(title = "Categories") {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(ArticleDirection.entries) { direction ->
-                        if (direction != ArticleDirection.UNSPECIFIED) {
-                            FilterChip(
-                                selected = uiState.selectedDirections.contains(direction),
-                                onClick = { onDirectionChange(direction) },
-                                label = { Text(direction.displayName) }
-                            )
-                        }
                     }
                 }
             }
@@ -246,10 +235,29 @@ private fun FilterSection(
 @Composable
 private fun ArticlesList(
     articles: List<Article>,
-    onArticleClick: (Article) -> Unit
+    onArticleClick: (Article) -> Unit,
+    onLoadMore: () -> Unit = {},
+    isLoading: Boolean = false,
+    hasMore: Boolean = true
 ) {
+    val listState = rememberLazyListState()
+    
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                val lastVisibleItem = visibleItems.lastOrNull()
+                if (lastVisibleItem != null && 
+                    lastVisibleItem.index >= articles.size - 5 &&
+                    hasMore && 
+                    !isLoading) {
+                    onLoadMore()
+                }
+            }
+    }
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -258,6 +266,22 @@ private fun ArticlesList(
                 article = article,
                 onClick = { onArticleClick(article) }
             )
+        }
+        
+        if (isLoading && articles.isNotEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }
@@ -337,42 +361,6 @@ private fun ArticleCard(
 }
 
 @Composable
-private fun ErrorCard(
-    error: String,
-    onRetry: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                Icons.Default.Error,
-                contentDescription = "Error",
-                tint = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
-
-@Composable
 private fun EmptyStateCard() {
     Card(
         modifier = Modifier
@@ -430,4 +418,7 @@ private val ArticleDirection.displayName: String
         ArticleDirection.FRONTEND -> "Frontend"
         ArticleDirection.DEVOPS -> "DevOps"
         ArticleDirection.DATA_SCIENCE -> "Data Science"
-        ArticleDirection.UNSPECIFIED -> "All"    }
+        ArticleDirection.UNSPECIFIED -> "All"
+    }
+
+

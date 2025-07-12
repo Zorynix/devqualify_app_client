@@ -21,22 +21,29 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Register
+import com.diploma.work.ui.navigation.safeNavigate
+import com.diploma.work.ui.navigation.safeNavigateBack
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.diploma.work.ui.theme.Theme
+import com.diploma.work.utils.ValidationUtils
 
 @Composable
 fun LoginScreen(
     navController: NavController,
     session: AppSession,
+    modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val password by viewModel.password.collectAsState()
@@ -45,45 +52,65 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val username by viewModel.username.collectAsState()
     val loginSuccess by viewModel.loginSuccess.collectAsState()
-
     if (loginSuccess) {
-        navController.navigate(Home::class.simpleName.toString()) {
-            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-            launchSingleTop = true
-        }
+        navController.safeNavigate("Home", clearStack = true)
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        IconButton(onClick = { navController.popBackStack() }) {
+        IconButton(onClick = { navController.safeNavigateBack() }) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-        }
+        }        
         Text("Войти", style = TextStyle.TitleLarge.value)
+        
         DiplomTextField(
             value = username,
             onValueChange = { viewModel.onUsernameChanged(it) },
             label = { Text("Email", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 16.dp)
         )
+        
+        val emailValidation = ValidationUtils.validateEmail(username)
+        if (!emailValidation.isValid && username.isNotBlank()) {
+            Text(
+                text = emailValidation.errorMessage ?: "",
+                color = Color.Red,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .align(Alignment.Start)
+            )
+        }
+        
         DiplomPasswordTextField(
             value = password,
             onValueChange = { viewModel.onPasswordChanged(it) },
             label = { Text("Пароль", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
-        if (errorMessage != null) {
+          val passwordValidation = ValidationUtils.validateStrongPassword(password)
+        if (!passwordValidation.isValid && password.isNotBlank()) {
             Text(
-                text = errorMessage!!,
-                color = Theme.extendedColorScheme.outlineDanger,
-                style = TextStyle.BodySmall.value,
+                text = "Пароль: мин. 8 символов, цифра, заглавная/строчная буквы, спецсимвол (@#$%^&+=)",
+                color = Color.Red,
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .align(Alignment.Start)
+            )
+        }
+        if (errorMessage != null) {
+            ErrorCard(
+                error = errorMessage!!,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
+        
         Button(
             onClick = { viewModel.onLoginClicked(session) },
             enabled = loginEnabled && !isLoading,
@@ -108,9 +135,9 @@ fun LoginScreen(
             Text(
                 "Зарегистрироваться",
                 style = TextStyle.Link.value,
-                color = Theme.extendedColorScheme.onBackgroundPositive,
+                color = Theme.extendedColorScheme.onBackgroundPositive,                
                 modifier = Modifier.clickable {
-                    navController.navigate(Register::class.simpleName.toString())
+                    navController.safeNavigate("Register")
                 }
             )
         }

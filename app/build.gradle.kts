@@ -14,12 +14,12 @@ plugins {
 
 android {
     namespace = "com.diploma.work"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.diploma.work"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -49,7 +49,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
         resources {
@@ -70,7 +70,7 @@ dependencies {
 
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.espresso.remote)
-    val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
+    val composeBom = platform("androidx.compose:compose-bom:2025.06.01")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
     debugImplementation(libs.ui.tooling)
@@ -78,7 +78,7 @@ dependencies {
     androidTestImplementation(composeBom)
     androidTestImplementation(libs.ui.test.junit4)
     implementation(libs.androidx.material.icons.core)
-    debugImplementation(libs.ui.test.manifest)
+    implementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.adaptive)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.runtime.livedata)
@@ -94,11 +94,27 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material)
+    
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.mockk)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.androidx.core)
+    testImplementation(libs.androidx.junit)
+    
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.androidx.rules)
+    androidTestImplementation(libs.androidx.junit.ktx)
+    debugImplementation(libs.androidx.compose.ui.ui.test.manifest)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.core.splashscreen)
@@ -150,6 +166,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.grpc.stub)
+    testImplementation(kotlin("test"))
 }
 kapt {
     correctErrorTypes = true

@@ -3,4 +3,34 @@
 	<string name="ok">OK</string>
     <string name="skip">Пропустить</string>
     <string name="app_name_new">DevQualify</string>
+    <string name="retry">Повторить</string>
+    
+    <string name="error_generic">Произошла ошибка</string>
+    <string name="error_network_connection">Ошибка подключения к сети</string>
+    <string name="error_network_timeout">Время ожидания истекло</string>
+    <string name="error_security">Ошибка безопасности</string>
+    <string name="error_invalid_input">Неверные данные</string>
+    <string name="error_invalid_state">Неверное состояние приложения</string>
+    
+    <string name="error_auth_invalid_credentials">Неверные учетные данные</string>
+    <string name="error_auth_forbidden">Доступ запрещен</string>
+    <string name="error_auth_invalid_email">Неверный формат email</string>
+    <string name="error_auth_email_exists">Пользователь с таким email уже существует</string>
+    <string name="error_auth_username_exists">Пользователь с таким именем уже существует</string>
+    <string name="error_auth_invalid_code">Неверный код подтверждения</string>
+    <string name="error_auth_code_expired">Код подтверждения истек</string>
+    <string name="error_auth_unauthorized">Нет авторизации</string>
+    <string name="error_validation_failed">Ошибка валидации данных</string>
+    <string name="error_test_not_found">Тест не найден</string>
+    <string name="error_test_already_completed">Тест уже завершен</string>
+    <string name="error_test_expired">Время выполнения теста истекло</string>
+    <string name="error_network_generic">Ошибка сети</string>
+    
+    <string name="error_field_required">Поле "%s" обязательно для заполнения</string>
+    <string name="error_field_invalid">Поле "%s" содержит неверные данные</string>
+    <string name="error_field_too_short">Поле "%s" слишком короткое</string>
+    <string name="error_field_too_long">Поле "%s" слишком длинное</string>
+    
+    <string name="empty_state_title">Данные отсутствуют</string>
+    <string name="empty_state_message">Здесь пока ничего нет</string>
 </resources>

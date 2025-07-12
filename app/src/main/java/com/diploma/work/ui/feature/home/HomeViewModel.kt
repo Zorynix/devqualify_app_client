@@ -1,12 +1,14 @@
 package com.diploma.work.ui.feature.home
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.data.models.Technology
 import com.diploma.work.data.models.TestInfo
 import com.diploma.work.data.repository.TestsRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +18,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
-    val isLoading: Boolean = false,
     val error: String? = null,
     val tests: List<TestInfo> = emptyList(),
     val technologies: List<Technology> = emptyList(),
@@ -27,82 +28,84 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val testsRepository: TestsRepository
-) : ViewModel() {
-    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
+    private val testsRepository: TestsRepository,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
 
     init {
+        setLoading(true)
         loadTests()
         loadTechnologies()
     }
 
     fun loadTests() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            setLoading(true)
+            clearGlobalError()
 
-            val direction = _uiState.value.selectedDirection
-            val level = _uiState.value.selectedLevel
-            val technologyId = _uiState.value.selectedTechnology?.id
+            try {                val direction = _uiState.value.selectedDirection
+                val level = _uiState.value.selectedLevel
+                val technologyId = _uiState.value.selectedTechnology?.id
 
-            val testFlow = if (technologyId != null) {
-                testsRepository.getTestsByTechnology(technologyId, level)
-            } else {
-                testsRepository.getTests(direction, level)
+                val testFlow = if (technologyId != null) {
+                    testsRepository.getTestsByTechnology(technologyId, level)
+                } else {
+                    testsRepository.getTests(direction, level)
+                }
+
+                testFlow
+                    .catch { e ->
+                        val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.NETWORK_ERROR)
+                        setError(errorMessage)
+                        setLoading(false)
+                    }
+                    .collectLatest { result ->
+                        result.fold(
+                            onSuccess = { tests ->
+                                _uiState.value = _uiState.value.copy(
+                                    tests = tests,
+                                    error = null
+                                )
+                                setLoading(false)
+                            },
+                            onFailure = { e ->
+                                val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.NETWORK_ERROR)
+                                setError(errorMessage)
+                                setLoading(false)
+                            }
+                        )
+                    }            } catch (e: Exception) {
+                val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+                setError(errorMessage)
+                setLoading(false)
             }
-
-            testFlow
-                .catch { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load tests"
-                    )
-                }
-                .collectLatest { result ->
-                    result.fold(
-                        onSuccess = { tests ->
-                            _uiState.value = _uiState.value.copy(
-                                tests = tests,
-                                isLoading = false,
-                                error = null
-                            )
-                        },
-                        onFailure = { e ->
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = e.message ?: "Failed to load tests"
-                            )
-                        }
-                    )
-                }
         }
-    }
-
-    private fun loadTechnologies() {
+    }private fun loadTechnologies() {
         viewModelScope.launch {
-            testsRepository.getTechnologies()
-                .catch { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load technologies"
-                    )
-                }
-                .collectLatest { result ->
-                    result.fold(
-                        onSuccess = { technologies ->
-                            _uiState.value = _uiState.value.copy(
-                                technologies = technologies,
-                                isLoading = false
-                            )
-                        },
-                        onFailure = { e ->
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = e.message ?: "Failed to load technologies"
-                            )
-                        }
-                    )
-                }
+            try {
+                testsRepository.getTechnologies()
+                    .catch { e ->
+                        val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.NETWORK_ERROR)
+                        setError(errorMessage)
+                    }
+                    .collectLatest { result ->
+                        result.fold(
+                            onSuccess = { technologies ->
+                                _uiState.value = _uiState.value.copy(
+                                    technologies = technologies
+                                )
+                            },
+                            onFailure = { e ->
+                                val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.NETWORK_ERROR)
+                                setError(errorMessage)
+                            }
+                        )
+                    }
+            } catch (e: Exception) {
+                val errorMessage = errorHandler.handleError(e, Constants.ErrorMessages.GENERIC_ERROR)
+                setError(errorMessage)
+            }
         }
     }
 

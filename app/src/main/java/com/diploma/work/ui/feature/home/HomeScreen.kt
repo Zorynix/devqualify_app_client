@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,7 +52,10 @@ import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.data.models.Technology
 import com.diploma.work.data.models.TestInfo
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.navigation.TestDetails
+import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 
@@ -59,15 +63,22 @@ import com.diploma.work.ui.theme.TextStyle
 @Composable
 fun HomeScreen(
     navController: NavController,
+    modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     var showFilterDialog by remember { mutableStateOf(false) }
-
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Available Tests", style = TextStyle.TitleLarge.value) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showFilterDialog = !showFilterDialog }) {
                         Icon(
@@ -97,11 +108,10 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
-
                             ChipGroup(
                                 items = listOf(null) + Direction.entries.filter { it != Direction.UNSPECIFIED },
                                 selectedItem = state.selectedDirection?.toModelDirection(),
-                                onSelectedChanged = { direction ->
+                                onSelectChange = { direction ->
                                     viewModel.selectDirection(direction?.toProtoDirection())
                                 },
                                 chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
@@ -115,11 +125,10 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
-
                             ChipGroup(
                                 items = listOf(null) + Level.entries.filter { it != Level.UNSPECIFIED },
                                 selectedItem = state.selectedLevel?.toModelLevel(),
-                                onSelectedChanged = { level ->
+                                onSelectChange = { level ->
                                     viewModel.selectLevel(level?.toProtoLevel())
                                 },
                                 chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
@@ -134,11 +143,10 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
-
                                 ChipGroup(
                                     items = listOf(null) + state.technologies,
                                     selectedItem = state.selectedTechnology,
-                                    onSelectedChanged = { technology ->
+                                    onSelectChange = { technology ->
                                         viewModel.selectTechnology(technology)
                                     },
                                     chipLabel = { it?.name ?: "All" }
@@ -155,27 +163,16 @@ fun HomeScreen(
                     }
                 )
             }
-
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (state.error != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.error ?: "An error occurred",
-                        style = TextStyle.BodyLarge.value,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+            if (viewModel.isLoading.collectAsState().value) {
+                LoadingCard(
+                    message = "Loading tests...",
+                    modifier = Modifier.fillMaxSize()
+                )            }            else if (viewModel.errorMessage.collectAsState().value != null) {
+                ErrorCard(
+                    error = viewModel.errorMessage.collectAsState().value!!,
+                    onRetry = { viewModel.loadTests() },
+                    modifier = Modifier.fillMaxSize()
+                )
             } else if (state.tests.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -189,11 +186,10 @@ fun HomeScreen(
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-            } else {
-                TestsList(
+            } else {                TestsList(
                     tests = state.tests,
-                    onTestSelected = { test ->
-                        navController.navigate("TestDetails/${test.id}")
+                    onTestSelect = { test ->
+                        navController.safeNavigate("TestDetails/${test.id}")
                     }
                 )
             }
@@ -206,7 +202,7 @@ fun HomeScreen(
 private fun <T> ChipGroup(
     items: List<T>,
     selectedItem: T?,
-    onSelectedChanged: (T) -> Unit,
+    onSelectChange: (T) -> Unit,
     chipLabel: (T) -> String
 ) {
     LazyRow(
@@ -215,7 +211,7 @@ private fun <T> ChipGroup(
         items(items) { item ->
             FilterChip(
                 selected = item == selectedItem,
-                onClick = { onSelectedChanged(item) },
+                onClick = { onSelectChange(item) },
                 label = { Text(chipLabel(item)) },
                 leadingIcon = if (item == selectedItem) {
                     {
@@ -234,14 +230,15 @@ private fun <T> ChipGroup(
 @Composable
 fun TestsList(
     tests: List<TestInfo>,
-    onTestSelected: (TestInfo) -> Unit
-) {
-    LazyColumn(
+    onTestSelect: (TestInfo) -> Unit,
+    modifier: Modifier = Modifier
+) {    LazyColumn(
+        modifier = modifier,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(tests) { test ->
-            TestCard(test = test, onClick = { onTestSelected(test) })
+            TestCard(test = test, onClick = { onTestSelect(test) })
         }
     }
 }
@@ -249,10 +246,10 @@ fun TestsList(
 @Composable
 fun TestCard(
     test: TestInfo,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {    Card(
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),

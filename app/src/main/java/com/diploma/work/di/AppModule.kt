@@ -16,6 +16,8 @@ import com.diploma.work.data.repository.TestsRepositoryImpl
 import com.diploma.work.data.repository.UserInfoRepository
 import com.diploma.work.data.repository.UserInfoRepositoryImpl
 import com.diploma.work.ui.theme.ThemeManager
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,14 +46,15 @@ annotation class ArticlesChannel
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
-
-    @AuthChannel
+object AppModule {    @AuthChannel
     @Provides
     @Singleton
     fun provideAuthManagedChannel(): ManagedChannel {
-        return ManagedChannelBuilder.forTarget("10.0.2.2:50051")
+        return ManagedChannelBuilder.forTarget("${Constants.Network.AUTH_SERVER_HOST}:${Constants.Network.AUTH_SERVER_PORT}")
             .usePlaintext()
+            .keepAliveTime(Constants.Network.CONNECTION_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveTimeout(Constants.Network.READ_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveWithoutCalls(true)
             .build()
     }
     
@@ -59,17 +62,21 @@ object AppModule {
     @Provides
     @Singleton
     fun provideUserInfoManagedChannel(): ManagedChannel {
-        return ManagedChannelBuilder.forTarget("10.0.2.2:50052")
+        return ManagedChannelBuilder.forTarget("${Constants.Network.USER_INFO_SERVER_HOST}:${Constants.Network.USER_INFO_SERVER_PORT}")
             .usePlaintext()
+            .keepAliveTime(Constants.Network.CONNECTION_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveTimeout(Constants.Network.READ_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveWithoutCalls(true)
             .build()
-    }
-
-    @TestsChannel
+    }    @TestsChannel
     @Provides
     @Singleton
     fun provideTestsManagedChannel(): ManagedChannel {
-        return ManagedChannelBuilder.forTarget("10.0.2.2:50053")
+        return ManagedChannelBuilder.forTarget("${Constants.Network.TESTS_SERVER_HOST}:${Constants.Network.TESTS_SERVER_PORT}")
             .usePlaintext()
+            .keepAliveTime(Constants.Network.CONNECTION_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveTimeout(Constants.Network.READ_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveWithoutCalls(true)
             .build()
     }
 
@@ -77,8 +84,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideArticlesManagedChannel(): ManagedChannel {
-        return ManagedChannelBuilder.forTarget("10.0.2.2:50054")
+        return ManagedChannelBuilder.forTarget("${Constants.Network.ARTICLES_SERVER_HOST}:${Constants.Network.ARTICLES_SERVER_PORT}")
             .usePlaintext()
+            .keepAliveTime(Constants.Network.CONNECTION_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveTimeout(Constants.Network.READ_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            .keepAliveWithoutCalls(true)
             .build()
     }
 
@@ -146,5 +156,11 @@ object AppModule {
     @Singleton
     fun provideAppSession(@ApplicationContext context: Context): AppSession {
         return AppSession(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideErrorHandler(@ApplicationContext context: Context): ErrorHandler {
+        return ErrorHandler(context)
     }
 }

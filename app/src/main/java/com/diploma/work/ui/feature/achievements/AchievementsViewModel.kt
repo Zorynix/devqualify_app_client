@@ -1,11 +1,13 @@
 package com.diploma.work.ui.feature.achievements
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.Achievement
 import com.diploma.work.data.models.GetUserAchievementsRequest
 import com.diploma.work.data.repository.UserInfoRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,8 +27,9 @@ data class AchievementsUiState(
 @HiltViewModel
 class AchievementsViewModel @Inject constructor(
     private val userInfoRepository: UserInfoRepository,
-    private val session: AppSession
-) : ViewModel() {
+    private val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
     private val _uiState = MutableStateFlow(AchievementsUiState())
     val uiState: StateFlow<AchievementsUiState> = _uiState.asStateFlow()
 
@@ -50,19 +53,18 @@ class AchievementsViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         achievements = response.achievements
-                    )
-                }.onFailure { error ->
+                    )                }.onFailure { error ->
                     Logger.e("Failed to load achievements: ${error.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Failed to load achievements"
+                        errorMessage = errorHandler.getContextualErrorMessage(error, ErrorHandler.ErrorContext.DATA_LOADING)
                     )
                 }
             } else {
                 Logger.e("User ID not found in session")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "User ID not found in session"
+                    errorMessage = "Не удалось определить пользователя. Попробуйте войти в систему заново."
                 )
             }
         }
@@ -82,8 +84,7 @@ class AchievementsViewModel @Inject constructor(
             showAchievementDetails = false
         )
     }
-    
-    fun clearError() {
+      override fun clearError() {
         Logger.d("Clearing error message")
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }

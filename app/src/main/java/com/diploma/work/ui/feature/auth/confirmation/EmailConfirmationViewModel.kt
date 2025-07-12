@@ -1,14 +1,16 @@
 package com.diploma.work.ui.feature.auth.confirmation
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.ConfirmEmailRequest
 import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.repository.AuthRepository
+import com.diploma.work.ui.base.BaseViewModel
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.NavRoute
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -26,18 +28,12 @@ import javax.inject.Inject
 class EmailConfirmationViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val session: AppSession,
-    savedStateHandle: SavedStateHandle
-) : ViewModel() {
+    savedStateHandle: SavedStateHandle,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
     val email: String = savedStateHandle.get<String>("email") ?: ""
-
     private val _code = MutableStateFlow("")
     val code: StateFlow<String> = _code
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage
 
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage
@@ -46,7 +42,7 @@ class EmailConfirmationViewModel @Inject constructor(
     val resendCooldownSeconds: StateFlow<Int> = _resendCooldownSeconds
     
     val resendEnabled: StateFlow<Boolean> = _resendCooldownSeconds
-        .map { it == 0 && !_isLoading.value }
+        .map { it == 0 && !isLoading.value }
         .stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     private val _navigationChannel = Channel<NavRoute>(Channel.BUFFERED)
@@ -68,23 +64,21 @@ class EmailConfirmationViewModel @Inject constructor(
                 _resendCooldownSeconds.value -= 1
             }
         }
-    }
-
-    private fun sendConfirmationCode() = viewModelScope.launch {
-        _isLoading.value = true
+    }    private fun sendConfirmationCode() = viewModelScope.launch {
+        setLoading(true)
         val request = SendConfirmationCodeRequest(email = email)
         authRepository.sendConfirmationCode(request)
             .onSuccess {
                 if(it.success) {
                     _successMessage.value = "Код отправлен"
                     startResendCooldown()
+                } else {
+                    setError("Ошибка отправки")
                 }
-                else _errorMessage.value = "Ошибка отправки"
+            }.onFailure { error ->
+                setError(errorHandler.getContextualErrorMessage(error, ErrorHandler.ErrorContext.EMAIL_CONFIRMATION))
             }
-            .onFailure { error ->
-                _errorMessage.value = error.message ?: "Ошибка отправки кода"
-            }
-            .also { _isLoading.value = false }
+            .also { setLoading(false) }
     }
 
     fun onSendCodeClicked() = sendConfirmationCode()
@@ -93,24 +87,22 @@ class EmailConfirmationViewModel @Inject constructor(
         if (_resendCooldownSeconds.value == 0) {
             sendConfirmationCode()
         }
-    }
-
-    fun onConfirmClicked() {
+    }    fun onConfirmClicked() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            setLoading(true)
+            clearGlobalError()
             _successMessage.value = null
             val request = ConfirmEmailRequest(email = email, confirmationToken = code.value)
             val confirmationResult = authRepository.confirmEmail(request)
-            _isLoading.value = false
+            setLoading(false)
             confirmationResult.onSuccess { response ->
                 if (response.confirmed) {
                     _navigationChannel.send(Login)
                 } else {
-                    _errorMessage.value = "Подтверждение не удалось"
+                    setError("Подтверждение не удалось. Проверьте правильность введенного кода.")
                 }
             }.onFailure { error ->
-                _errorMessage.value = error.message ?: "Неверный код"
+                setError(errorHandler.getContextualErrorMessage(error, ErrorHandler.ErrorContext.EMAIL_CONFIRMATION))
             }
         }
     }

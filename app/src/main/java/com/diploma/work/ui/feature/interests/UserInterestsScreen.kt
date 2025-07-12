@@ -20,20 +20,21 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.DeliveryFrequency
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserInterestsScreen(
+    modifier: Modifier = Modifier,
     viewModel: UserInterestsViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null
-) {
-    val state by viewModel.uiState.collectAsState()
-
+) {val state by viewModel.uiState.collectAsState()
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Интересы", style = TextStyle.TitleLarge.value) },
+                title = { Text("Interests", style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -54,12 +55,12 @@ fun UserInterestsScreen(
                     modifier = Modifier.padding(8.dp)
                 ) { Text(state.error ?: "Ошибка") }
             }
-        }
-    ) { padding ->
+        }    ) { padding ->
         if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingCard(
+                message = "Loading user interests...",
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -75,7 +76,7 @@ fun UserInterestsScreen(
                     val techs = viewModel.getTechnologiesByDirection(direction)
                     if (techs.isNotEmpty()) {
                         item {
-                            Text(direction.name, style = TextStyle.TitleMedium.value, modifier = Modifier.padding(top = 8.dp))
+                            Text(direction.displayName, style = TextStyle.TitleMedium.value, modifier = Modifier.padding(top = 8.dp))
                         }
                         items(techs) { tech ->
                             Row(
@@ -107,7 +108,7 @@ fun UserInterestsScreen(
                             FilterChip(
                                 selected = state.deliveryFrequency == freq,
                                 onClick = { viewModel.setDeliveryFrequency(freq) },
-                                label = { Text(freq.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                                label = { Text(freq.displayName) }
                             )
                         }
                     }

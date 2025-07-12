@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -31,6 +32,8 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.diploma.work.data.models.Achievement
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.orhanobut.logger.Logger
@@ -40,7 +43,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
+fun AchievementsScreen(
+    modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
+    viewModel: AchievementsViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing = uiState.isLoading
     val state = rememberPullToRefreshState()
@@ -51,42 +58,47 @@ fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
         }
     }
     
-    Box(modifier = Modifier.fillMaxSize()) {
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = { viewModel.loadAchievements() },
-            modifier = Modifier.fillMaxSize(),
-            state = state,
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    isRefreshing = isRefreshing,
-                    state = state
-                )
-            }
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {                Text(
-                    text = "Achievements",
-                    style = TextStyle.HeadlineMedium.value,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                
-                when {
-                    isRefreshing && uiState.achievements.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Achievements", style = TextStyle.HeadlineMedium.value) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
                     }
-                    uiState.errorMessage != null -> {
-                        ErrorView(
-                            errorMessage = uiState.errorMessage ?: "Unknown error",
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.loadAchievements() },
+                modifier = Modifier.fillMaxSize(),
+                state = state,
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        isRefreshing = isRefreshing,
+                        state = state
+                    )
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    when {
+                    isRefreshing && uiState.achievements.isEmpty() -> {
+                        LoadingCard(
+                            message = "Loading achievements...",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }                    uiState.errorMessage != null -> {
+                        ErrorCard(
+                            error = uiState.errorMessage ?: "Unknown error",
                             onRetry = { viewModel.loadAchievements() }
                         )
                     }
@@ -111,16 +123,17 @@ fun AchievementsScreen(viewModel: AchievementsViewModel = hiltViewModel()) {
         }
     }
 }
+}
 
 @Composable
 fun AchievementsGrid(
     achievements: List<Achievement>,
-    onAchievementClick: (Achievement) -> Unit
-) {
-    LazyVerticalGrid(
+    onAchievementClick: (Achievement) -> Unit,
+    modifier: Modifier = Modifier
+) {    LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(4.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         items(achievements) { achievement ->
             AchievementCard(
@@ -354,48 +367,12 @@ fun AchievementDetailsDialog(
 }
 
 @Composable
-fun ErrorView(
-    errorMessage: String,
-    onRetry: () -> Unit
+fun EmptyAchievementsView(
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = "Error",
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(48.dp)
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Text(text = "Retry", color = MaterialTheme.colorScheme.onPrimaryContainer)
-        }
-    }
-}
-
-@Composable
-fun EmptyAchievementsView(onRefresh: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

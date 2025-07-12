@@ -18,10 +18,11 @@ import java.io.InputStream
 import com.diploma.work.data.models.UserPreferences
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.DeliveryFrequency
+import com.diploma.work.utils.Constants
 
 class AppSession(private val context: Context) {
     private val sharedPrefs: SharedPreferences =
-        context.getSharedPreferences("app_session", Context.MODE_PRIVATE)
+        context.getSharedPreferences(Constants.PrefsKeys.APP_SESSION, Context.MODE_PRIVATE)
         
     private val _avatarUrlFlow = MutableStateFlow<String?>(null)
     private val _usernameFlow = MutableStateFlow<String?>(null)
@@ -29,21 +30,23 @@ class AppSession(private val context: Context) {
     init {
         _avatarUrlFlow.value = getAvatarUrl()
         _usernameFlow.value = getUsername()
-    }
-
-    fun storeToken(token: String) {
-        sharedPrefs.edit() { putString("access_token", token) }
+    }    fun storeToken(token: String) {
+        sharedPrefs.edit {
+            putString(Constants.PrefsKeys.ACCESS_TOKEN, token)
+        }
     }
 
     fun getToken(): String? {
-        return sharedPrefs.getString("access_token", null)
-    }    fun clearToken() {
-        sharedPrefs.edit() { 
-            remove("access_token")
-            remove("user_id")
-            remove("username") 
-            remove("avatar_url")
-            remove("avatar_data")
+        return sharedPrefs.getString(Constants.PrefsKeys.ACCESS_TOKEN, null)
+    }
+
+    fun clearToken() {
+        sharedPrefs.edit {
+            remove(Constants.PrefsKeys.ACCESS_TOKEN)
+            remove(Constants.PrefsKeys.USER_ID)
+            remove(Constants.PrefsKeys.USERNAME)
+            remove(Constants.PrefsKeys.AVATAR_URL)
+            remove(Constants.PrefsKeys.AVATAR_DATA)
         }
         clearUserPreferences()
         _avatarUrlFlow.value = null
@@ -51,7 +54,9 @@ class AppSession(private val context: Context) {
     }
 
     fun setTheme(isDark: Boolean) {
-        sharedPrefs.edit() { putBoolean("is_dark_theme", isDark) }
+        sharedPrefs.edit {
+            putBoolean("is_dark_theme", isDark)
+        }
     }
 
     fun getTheme(): Boolean {
@@ -59,18 +64,22 @@ class AppSession(private val context: Context) {
     }
     
     fun storeUserId(userId: Long) {
-        sharedPrefs.edit() { putLong("user_id", userId) }
+        sharedPrefs.edit {
+            putLong(Constants.PrefsKeys.USER_ID, userId)
+        }
     }
     
     fun getUserId(): Long? {
-        if (!sharedPrefs.contains("user_id")) {
+        if (!sharedPrefs.contains(Constants.PrefsKeys.USER_ID)) {
             return null
         }
-        return sharedPrefs.getLong("user_id", -1)
+        return sharedPrefs.getLong(Constants.PrefsKeys.USER_ID, -1)
     }
     
     fun storeAvatarUrl(avatarUrl: String) {
-        sharedPrefs.edit() { putString("avatar_url", avatarUrl) }
+        sharedPrefs.edit {
+            putString(Constants.PrefsKeys.AVATAR_URL, avatarUrl)
+        }
         _avatarUrlFlow.value = avatarUrl
     }
     
@@ -80,7 +89,7 @@ class AppSession(private val context: Context) {
             return "data:avatar"
         }
         
-        return sharedPrefs.getString("avatar_url", null)
+        return sharedPrefs.getString(Constants.PrefsKeys.AVATAR_URL, null)
     }
     
     suspend fun storeAvatarImage(uri: Uri) {
@@ -96,8 +105,10 @@ class AppSession(private val context: Context) {
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
                         val byteArray = outputStream.toByteArray()
                         val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
-                        
-                        sharedPrefs.edit { putString("avatar_data", base64String) }
+
+                        sharedPrefs.edit {
+                            putString(Constants.PrefsKeys.AVATAR_DATA, base64String)
+                        }
                         Logger.d("Avatar image stored as base64 string")
                         
                         _avatarUrlFlow.value = "data:avatar"
@@ -113,7 +124,7 @@ class AppSession(private val context: Context) {
     }
     
     fun getAvatarData(): String? {
-        return sharedPrefs.getString("avatar_data", null)
+        return sharedPrefs.getString(Constants.PrefsKeys.AVATAR_DATA, null)
     }
     
     fun getAvatarBitmap(): Bitmap? {
@@ -132,12 +143,14 @@ class AppSession(private val context: Context) {
     }
     
     fun storeUsername(username: String) {
-        sharedPrefs.edit() { putString("username", username) }
+        sharedPrefs.edit {
+            putString(Constants.PrefsKeys.USERNAME, username)
+        }
         _usernameFlow.value = username
     }
     
     fun getUsername(): String? {
-        return sharedPrefs.getString("username", null)
+        return sharedPrefs.getString(Constants.PrefsKeys.USERNAME, null)
     }
     
     fun observeUsername(): StateFlow<String?> {
@@ -146,66 +159,59 @@ class AppSession(private val context: Context) {
     
     fun storeUserPreferences(preferences: UserPreferences) {
         sharedPrefs.edit {
-            putString("user_preferences_technology_ids", preferences.technologyIds.joinToString(","))
-            putString("user_preferences_directions", preferences.directions.map { it.name }.joinToString(","))
-            putString("user_preferences_delivery_frequency", preferences.deliveryFrequency.name)
-            putBoolean("user_preferences_email_notifications", preferences.emailNotifications)
-            putBoolean("user_preferences_push_notifications", preferences.pushNotifications)
-            putInt("user_preferences_articles_per_day", preferences.articlesPerDay)
-            putString("user_preferences_excluded_sources", preferences.excludedSources.joinToString(","))
+            putLong(Constants.PrefsKeys.USER_ID, preferences.userId)
+            putStringSet(
+                Constants.PrefsKeys.TECHNOLOGY_IDS,
+                preferences.technologyIds.map { it.toString() }.toSet()
+            )
+            putStringSet(
+                Constants.PrefsKeys.DIRECTIONS,
+                preferences.directions.map { it.name }.toSet()
+            )
+            putString(Constants.PrefsKeys.DELIVERY_FREQUENCY, preferences.deliveryFrequency.name)
+            putBoolean(Constants.PrefsKeys.EMAIL_NOTIFICATIONS, preferences.emailNotifications)
+            putBoolean(Constants.PrefsKeys.PUSH_NOTIFICATIONS, preferences.pushNotifications)
+            putInt(Constants.PrefsKeys.ARTICLES_PER_DAY, preferences.articlesPerDay)
         }
     }
     
     fun getUserPreferences(): UserPreferences? {
-        if (!sharedPrefs.contains("user_preferences_technology_ids")) {
+        if (!sharedPrefs.contains(Constants.PrefsKeys.TECHNOLOGY_IDS)) {
             return null
         }
         
         return try {
-            val technologyIdsString = sharedPrefs.getString("user_preferences_technology_ids", "") ?: ""
-            val directionsString = sharedPrefs.getString("user_preferences_directions", "") ?: ""
-            val deliveryFrequencyString = sharedPrefs.getString("user_preferences_delivery_frequency", "WEEKLY") ?: "WEEKLY"
-            val emailNotifications = sharedPrefs.getBoolean("user_preferences_email_notifications", true)
-            val pushNotifications = sharedPrefs.getBoolean("user_preferences_push_notifications", true)
-            val articlesPerDay = sharedPrefs.getInt("user_preferences_articles_per_day", 5)
-            val excludedSourcesString = sharedPrefs.getString("user_preferences_excluded_sources", "") ?: ""
+            val technologyIds = sharedPrefs.getStringSet(Constants.PrefsKeys.TECHNOLOGY_IDS, emptySet())
+                ?.mapNotNull { it.toLongOrNull() } ?: emptyList()
             
-            val technologyIds = if (technologyIdsString.isNotEmpty()) {
-                technologyIdsString.split(",").mapNotNull { it.toLongOrNull() }
-            } else {
-                emptyList()
-            }
-              val directions = if (directionsString.isNotEmpty()) {
-                directionsString.split(",").mapNotNull { directionName ->
+            val directions = sharedPrefs.getStringSet(Constants.PrefsKeys.DIRECTIONS, emptySet())
+                ?.mapNotNull { directionName ->
                     try {
                         ArticleDirection.valueOf(directionName)
                     } catch (e: IllegalArgumentException) {
                         null
                     }
-                }
-            } else {
-                emptyList()
-            }
+                } ?: emptyList()
             
+            val deliveryFrequencyString = sharedPrefs.getString(Constants.PrefsKeys.DELIVERY_FREQUENCY, "WEEKLY") ?: "WEEKLY"
             val deliveryFrequency = try {
                 DeliveryFrequency.valueOf(deliveryFrequencyString)
             } catch (e: IllegalArgumentException) {
                 DeliveryFrequency.WEEKLY
             }
             
-            val excludedSources = if (excludedSourcesString.isNotEmpty()) {
-                excludedSourcesString.split(",")
-            } else {
-                emptyList()
-            }
-              UserPreferences(
+            val emailNotifications = sharedPrefs.getBoolean(Constants.PrefsKeys.EMAIL_NOTIFICATIONS, true)
+            val pushNotifications = sharedPrefs.getBoolean(Constants.PrefsKeys.PUSH_NOTIFICATIONS, true)
+            val articlesPerDay = sharedPrefs.getInt(Constants.PrefsKeys.ARTICLES_PER_DAY, 5)
+            
+            UserPreferences(
                 userId = getUserId() ?: -1L,
                 technologyIds = technologyIds,
                 directions = directions,
                 deliveryFrequency = deliveryFrequency,
                 emailNotifications = emailNotifications,
                 pushNotifications = pushNotifications,
-                excludedSources = excludedSources,
+                excludedSources = emptyList(),
                 articlesPerDay = articlesPerDay,
                 updatedAt = java.time.Instant.now()
             )
@@ -217,13 +223,12 @@ class AppSession(private val context: Context) {
     
     fun clearUserPreferences() {
         sharedPrefs.edit {
-            remove("user_preferences_technology_ids")
-            remove("user_preferences_directions")
-            remove("user_preferences_delivery_frequency")
-            remove("user_preferences_email_notifications")
-            remove("user_preferences_push_notifications")
-            remove("user_preferences_articles_per_day")
-            remove("user_preferences_excluded_sources")
+            remove(Constants.PrefsKeys.TECHNOLOGY_IDS)
+            remove(Constants.PrefsKeys.DIRECTIONS)
+            remove(Constants.PrefsKeys.DELIVERY_FREQUENCY)
+            remove(Constants.PrefsKeys.EMAIL_NOTIFICATIONS)
+            remove(Constants.PrefsKeys.PUSH_NOTIFICATIONS)
+            remove(Constants.PrefsKeys.ARTICLES_PER_DAY)
         }
     }
 }

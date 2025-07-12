@@ -1,19 +1,7 @@
 package com.diploma.work.ui.feature.test
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,7 +18,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,23 +52,41 @@ import androidx.navigation.NavController
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.QuestionType
 import com.diploma.work.ui.components.CodeHighlighterText
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 import com.orhanobut.logger.Logger
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.mutableLongStateOf
+import com.diploma.work.ui.navigation.safeNavigate
+import com.diploma.work.ui.navigation.safeNavigateBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TestSessionScreen(
     navController: NavController,
     sessionId: String,
+    modifier: Modifier = Modifier,
     viewModel: TestSessionViewModel = hiltViewModel()
-) {
-    val state by viewModel.uiState.collectAsState()
+) {val state by viewModel.uiState.collectAsState()
     var showConfirmDialog by remember { mutableStateOf(false) }
-    var elapsedTime by remember { mutableStateOf(0L) }
-    var startTime by remember { mutableStateOf(0L) }
+    var elapsedTime by remember { mutableLongStateOf(0L) }
+    var startTime by remember { mutableLongStateOf(0L) }
 
     BackHandler {
         Logger.d("Navigation: Back button pressed in TestSessionScreen")
@@ -112,12 +117,9 @@ fun TestSessionScreen(
             delay(1000)
         }
     }
-
     LaunchedEffect(state.testCompleted) {
         if (state.testCompleted && state.testResult != null) {
-            navController.navigate("TestResult/$sessionId") {
-                popUpTo(navController.graph.startDestinationId)
-            }
+            navController.safeNavigate("TestResult/$sessionId", clearStack = true)
         }
     }
 
@@ -128,17 +130,16 @@ fun TestSessionScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.navigationEvents.collect { event ->
-            when (event) {
+        viewModel.navigationEvents.collect { event ->            when (event) {
                 is NavigationEvent.NavigateUp -> {
                     Logger.d("Navigation: Handling NavigateUp event from TestSessionScreen")
-                    navController.popBackStack(navController.graph.startDestinationId, false)
+                    navController.safeNavigateBack()
                 }
             }
         }
     }
-
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Taking Test", style = TextStyle.TitleLarge.value) },
@@ -171,70 +172,24 @@ fun TestSessionScreen(
                 }
             )
         }
-    ) { paddingValues ->
-        Box(
+    ) { paddingValues ->        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
             if (state.isLoading) {
-                CircularProgressIndicator()
-            } else if (state.isCompletingTest) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Finalizing your test...",
-                        style = TextStyle.TitleMedium.value,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Please wait while we calculate your results",
-                        style = TextStyle.BodyMedium.value,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else if (state.error != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Error,
-                        contentDescription = "Error",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = state.error ?: "An error occurred",
-                        style = TextStyle.BodyLarge.value,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { viewModel.loadTestSession(sessionId) }
-                    ) {
-                        Text("Try Again")
-                    }
-                }
+                LoadingCard(
+                    message = "Loading test session..."
+                )            } else if (state.isCompletingTest) {
+                LoadingCard(
+                    message = "Finalizing your test... Please wait while we calculate your results"
+                )}
+            else if (state.error != null) {
+                ErrorCard(
+                    error = state.error!!,
+                    onRetry = { viewModel.loadTestSession(sessionId) }
+                )
             } else if (state.testSession == null) {
                 Text(
                     text = "Test session not found",
@@ -249,9 +204,8 @@ fun TestSessionScreen(
                     questionNumber = state.currentQuestionIndex + 1,
                     totalQuestions = state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0,
                     selectedOptions = state.selectedOptions,
-                    textAnswer = state.textAnswer,
-                    onOptionSelected = { viewModel.toggleOption(it) },
-                    onTextAnswerChanged = { viewModel.setTextAnswer(it) },
+                    textAnswer = state.textAnswer,                    onOptionSelect = { viewModel.toggleOption(it) },
+                    onTextAnswerChange = { viewModel.setTextAnswer(it) },
                     onPrevious = { viewModel.goToPreviousQuestion() },
                     onNext = { viewModel.saveAnswer() },
                     isSavingAnswer = state.isSavingAnswer,
@@ -310,8 +264,8 @@ fun QuestionScreen(
     totalQuestions: Int,
     selectedOptions: List<Int>,
     textAnswer: String,
-    onOptionSelected: (Int) -> Unit,
-    onTextAnswerChanged: (String) -> Unit,
+    onOptionSelect: (Int) -> Unit,
+    onTextAnswerChange: (String) -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     isSavingAnswer: Boolean,
@@ -320,11 +274,11 @@ fun QuestionScreen(
     isQuestionAnswered: Boolean,
     isIncorrectlyAnswered: Boolean,
     isCorrectlyAnswered: Boolean,
-    isLastQuestion: Boolean
+    isLastQuestion: Boolean,
+    modifier: Modifier = Modifier
 ) {
-    if (question == null) {
-        Column(
-            modifier = Modifier
+    if (question == null) {        Column(
+            modifier = modifier
                 .fillMaxSize()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -500,10 +454,9 @@ fun QuestionScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(backgroundColor)
                                     .selectable(
-                                        selected = isSelected,
-                                        onClick = { 
+                                        selected = isSelected,                                        onClick = { 
                                             if (!isQuestionAnswered) {
-                                                onOptionSelected(index) 
+                                                onOptionSelect(index) 
                                             }
                                         },
                                         role = Role.Checkbox,
@@ -513,10 +466,9 @@ fun QuestionScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = { 
+                                    checked = isSelected,                                    onCheckedChange = { 
                                         if (!isQuestionAnswered) {
-                                            onOptionSelected(index)
+                                            onOptionSelect(index)
                                         }
                                     },
                                     enabled = !isQuestionAnswered
@@ -556,7 +508,7 @@ fun QuestionScreen(
                                         selected = isSelected,
                                         onClick = { 
                                             if (!isQuestionAnswered) {
-                                                onOptionSelected(index)
+                                                onOptionSelect(index)
                                             }
                                         },
                                         role = Role.RadioButton,
@@ -564,12 +516,11 @@ fun QuestionScreen(
                                     )
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
+                            ) {                                RadioButton(
                                     selected = isSelected,
                                     onClick = { 
                                         if (!isQuestionAnswered) {
-                                            onOptionSelected(index)
+                                            onOptionSelect(index)
                                         }
                                     },
                                     enabled = !isQuestionAnswered
@@ -602,7 +553,7 @@ fun QuestionScreen(
                         
                         OutlinedTextField(
                             value = textAnswer,
-                            onValueChange = onTextAnswerChanged,
+                            onValueChange = onTextAnswerChange,
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Your Answer") },
                             minLines = 3,

@@ -44,7 +44,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.navigation.TestSession
+import com.diploma.work.ui.navigation.safeNavigate
+import com.diploma.work.ui.navigation.safeNavigateBack
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 
@@ -53,6 +57,7 @@ import com.diploma.work.ui.theme.TextStyle
 fun TestDetailsScreen(
     navController: NavController,
     testId: Long,
+    modifier: Modifier = Modifier,
     viewModel: TestDetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -63,16 +68,16 @@ fun TestDetailsScreen(
 
     LaunchedEffect(state.testSessionId) {
         state.testSessionId?.let { sessionId ->
-            navController.navigate("TestSession/$sessionId")
+            navController.safeNavigate("TestSession/$sessionId")
         }
     }
-
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Test Details", style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { navController.safeNavigateBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -87,16 +92,16 @@ fun TestDetailsScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
-        ) {
-            if (state.isLoading) {
-                CircularProgressIndicator()
-            } else if (state.error != null) {
-                Text(
-                    text = state.error ?: "An error occurred",
-                    style = TextStyle.BodyLarge.value,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
+        ) {            if (state.isLoading) {
+                LoadingCard(
+                    message = "Loading test details...",
+                    modifier = Modifier.fillMaxSize()
+                )            }
+        else if (state.error != null) {
+                ErrorCard(
+                    error = state.error!!,
+                    onRetry = { viewModel.loadTest(testId) },
+                    modifier = Modifier.fillMaxSize()
                 )
             } else if (state.test == null) {
                 Text(
@@ -307,9 +312,10 @@ fun TestDetailsScreen(
 fun TestInfoTag(
     text: String,
     icon: ImageVector,
-    contentDescription: String
-) {
-    Surface(
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {    Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.secondaryContainer,
         shape = RoundedCornerShape(4.dp)
     ) {

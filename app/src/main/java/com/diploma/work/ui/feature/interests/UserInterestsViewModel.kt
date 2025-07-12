@@ -1,10 +1,12 @@
 package com.diploma.work.ui.feature.interests
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.*
 import com.diploma.work.data.repository.ArticlesRepository
+import com.diploma.work.ui.base.BaseViewModel
+import com.diploma.work.utils.Constants
+import com.diploma.work.utils.ErrorHandler
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +23,7 @@ data class UserInterestsUiState(
     val deliveryFrequency: DeliveryFrequency = DeliveryFrequency.WEEKLY,
     val emailNotifications: Boolean = true,
     val pushNotifications: Boolean = true,
-    val articlesPerDay: Int = 5,
+    val articlesPerDay: Int = 20,
     val error: String? = null,
     val saveSuccess: Boolean = false
 )
@@ -29,17 +31,18 @@ data class UserInterestsUiState(
 @HiltViewModel
 class UserInterestsViewModel @Inject constructor(
     private val articlesRepository: ArticlesRepository,
-    private val session: AppSession
-) : ViewModel() {
+    private val session: AppSession,
+    override val errorHandler: ErrorHandler
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(UserInterestsUiState())
     val uiState: StateFlow<UserInterestsUiState> = _uiState.asStateFlow()
 
     private val tag = "UserInterestsViewModel"
-
     init {
+        Logger.d("$tag: UserInterestsViewModel initialized")
         loadData()
-    }    private fun loadData() {
+    }private fun loadData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
@@ -55,6 +58,8 @@ class UserInterestsViewModel @Inject constructor(
                     
                     if (cachedPreferences != null) {
                         Logger.d("$tag: Loaded preferences from cache")
+                        Logger.d("$tag: Cached technology IDs: ${cachedPreferences.technologyIds}")
+                        Logger.d("$tag: Cached directions: ${cachedPreferences.directions}")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             technologies = technologies,
@@ -88,7 +93,7 @@ class UserInterestsViewModel @Inject constructor(
                                     deliveryFrequency = preferences?.deliveryFrequency ?: DeliveryFrequency.WEEKLY,
                                     emailNotifications = preferences?.emailNotifications ?: true,
                                     pushNotifications = preferences?.pushNotifications ?: true,
-                                    articlesPerDay = preferences?.articlesPerDay ?: 5
+                                    articlesPerDay = preferences?.articlesPerDay ?: 20
                                 )
                             } else {
                                 _uiState.value = _uiState.value.copy(
@@ -184,7 +189,7 @@ class UserInterestsViewModel @Inject constructor(
                 )
 
                 val result = articlesRepository.updateUserPreferences(request)
-                  if (result.isSuccess) {
+                if (result.isSuccess) {
                     Logger.d("$tag: User preferences saved successfully")
                       val savedPreferences = UserPreferences(
                         userId = userId,
@@ -220,8 +225,7 @@ class UserInterestsViewModel @Inject constructor(
             }
         }
     }
-
-    fun clearError() {
+    override fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
 

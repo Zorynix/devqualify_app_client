@@ -3,15 +3,18 @@ package com.diploma.work.data.grpc
 import com.diploma.work.data.models.*
 import com.diploma.work.grpc.userinfo.UserServiceGrpc
 import com.diploma.work.grpc.userinfo.Pagination as GrpcPagination
+import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorMessageUtils
 import com.google.protobuf.ByteString
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
+import io.grpc.Metadata
+import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import com.diploma.work.data.AppSession
-import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 
 class UserInfoGrpcClient @Inject constructor(
@@ -42,13 +45,12 @@ class UserInfoGrpcClient @Inject constructor(
             val user = grpcResponse.user.toModel()
             
             Logger.d("Successfully got user info: ${user.id}")
-            Result.success(GetUserResponse(user = user))
-        } catch (e: StatusRuntimeException) {
+            Result.success(GetUserResponse(user = user))        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while getting user info: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while getting user info")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -67,13 +69,11 @@ class UserInfoGrpcClient @Inject constructor(
             val user = grpcResponse.user.toModel()
             
             Logger.d("Successfully updated user profile: ${user.id}")
-            Result.success(UpdateUserProfileResponse(user = user))
-        } catch (e: StatusRuntimeException) {
+            Result.success(UpdateUserProfileResponse(user = user))        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while updating user profile: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
-        } catch (e: Exception) {
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)))        } catch (e: Exception) {
             Logger.e("Error while updating user profile")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -100,13 +100,12 @@ class UserInfoGrpcClient @Inject constructor(
                     tests = tests,
                     nextPageToken = grpcResponse.nextPageToken
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while getting test history: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while getting test history")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -126,13 +125,12 @@ class UserInfoGrpcClient @Inject constructor(
                 GetUserAchievementsResponse(
                     achievements = achievements
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while getting achievements: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while getting achievements")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -160,13 +158,12 @@ class UserInfoGrpcClient @Inject constructor(
                     users = users,
                     nextPageToken = grpcResponse.nextPageToken
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while getting leaderboard: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while getting leaderboard")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -189,13 +186,12 @@ class UserInfoGrpcClient @Inject constructor(
                     achievements = achievements,
                     message = grpcResponse.message
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while updating achievements: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while updating achievements")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -218,13 +214,11 @@ class UserInfoGrpcClient @Inject constructor(
                     avatarUrl = grpcResponse.avatarUrl,
                     message = grpcResponse.message
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while uploading avatar: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
-        } catch (e: Exception) {
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)))        } catch (e: Exception) {
             Logger.e("Error while uploading avatar")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -247,13 +241,11 @@ class UserInfoGrpcClient @Inject constructor(
                     avatarUrl = grpcResponse.avatarUrl,
                     message = grpcResponse.message
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while updating avatar: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
-        } catch (e: Exception) {
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)))        } catch (e: Exception) {
             Logger.e("Error while updating avatar")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
     
@@ -274,13 +266,12 @@ class UserInfoGrpcClient @Inject constructor(
                     avatarUrl = grpcResponse.avatarUrl,
                     message = grpcResponse.message
                 )
-            )
-        } catch (e: StatusRuntimeException) {
+            )        } catch (e: StatusRuntimeException) {
             Logger.e("gRPC error while getting avatar: ${e.status.code} - ${e.status.description}")
-            Result.failure(Exception("Ошибка gRPC: ${e.status.code} - ${e.status.description}"))
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.DATA_LOADING))))
         } catch (e: Exception) {
             Logger.e("Error while getting avatar")
-            Result.failure(e)
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
 
@@ -318,5 +309,20 @@ class UserInfoGrpcClient @Inject constructor(
             score = score,
             totalPoints = totalPoints
         )
+    }
+    
+    private fun getErrorContext(e: StatusRuntimeException, defaultContext: ErrorContext): ErrorContext {
+        return when (e.status.code) {
+            Status.Code.UNAVAILABLE, Status.Code.DEADLINE_EXCEEDED -> ErrorContext.NETWORK
+            else -> defaultContext
+        }
+    }
+
+    private fun getGenericErrorContext(e: Exception): ErrorContext {
+        return if (e is StatusRuntimeException) {
+            getErrorContext(e, ErrorContext.GENERIC)
+        } else {
+            ErrorContext.GENERIC
+        }
     }
 }

@@ -201,8 +201,8 @@ val unspecified_scheme = ColorFamily(
 @Composable
 fun DiplomaWorkTheme(
     themeManager: ThemeManager,
-    content: @Composable () -> Unit,
     dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
 ) {
     val theme by themeManager.currentTheme.collectAsState()
     val colorScheme = when (theme) {

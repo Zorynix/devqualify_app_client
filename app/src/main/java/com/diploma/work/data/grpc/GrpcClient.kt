@@ -1,5 +1,6 @@
 package com.diploma.work.data.grpc
 
+import com.diploma.work.utils.Constants
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import java.util.concurrent.TimeUnit
@@ -12,7 +13,7 @@ class GrpcClient @Inject constructor() {
 
     fun getChannel(): ManagedChannel {
         if (channel == null || channel!!.isShutdown) {
-            channel = ManagedChannelBuilder.forTarget("10.0.2.2:50051")
+            channel = ManagedChannelBuilder.forTarget("${Constants.Network.AUTH_SERVER_HOST}:${Constants.Network.AUTH_SERVER_PORT}")
                 .usePlaintext()
                 .build()
         }
