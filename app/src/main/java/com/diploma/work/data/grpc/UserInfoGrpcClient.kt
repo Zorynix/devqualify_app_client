@@ -274,6 +274,34 @@ class UserInfoGrpcClient @Inject constructor(
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
         }
     }
+    
+    suspend fun sendFeedback(request: SendFeedbackRequest): Result<SendFeedbackResponse> = withContext(Dispatchers.IO) {
+        try {
+            Logger.d("Sending feedback from user: ${request.userId}")
+            
+            val grpcRequest = com.diploma.work.grpc.userinfo.SendFeedbackRequest.newBuilder()
+                .setUserId(request.userId)
+                .setSubject(request.subject)
+                .setBody(request.body)
+                .build()
+                
+            val grpcResponse = withAuthStub().sendFeedback(grpcRequest)
+            
+            Logger.d("Feedback sent successfully: ${grpcResponse.success}")
+            Result.success(
+                SendFeedbackResponse(
+                    success = grpcResponse.success,
+                    message = grpcResponse.message
+                )
+            )
+        } catch (e: StatusRuntimeException) {
+            Logger.e("gRPC error while sending feedback: ${e.status.code} - ${e.status.description}")
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.FEEDBACK))))
+        } catch (e: Exception) {
+            Logger.e("Error while sending feedback")
+            Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getGenericErrorContext(e))))
+        }
+    }
 
     private fun com.diploma.work.grpc.userinfo.User.toModel(): User {
         return User(

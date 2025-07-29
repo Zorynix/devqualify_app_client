@@ -103,6 +103,9 @@ class LoginViewModel @Inject constructor(
                     Logger.d("Using temporary user ID: $tempUserId")
                 }
                 
+                session.refreshUsername()
+                session.refreshAvatarUrl()
+                
                 _loginSuccess.value = true
                 Logger.d("Login successful: Access Token = ${response.accessToken}")
             }.onFailure { error ->

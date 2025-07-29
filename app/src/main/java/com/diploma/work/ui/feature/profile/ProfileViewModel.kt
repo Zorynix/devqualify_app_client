@@ -93,12 +93,14 @@ class ProfileViewModel @Inject constructor(
                     
                     if (response.user.avatarUrl.isNotEmpty()) {
                         _avatarUrl.value = response.user.avatarUrl
+                        session.storeAvatarUrl(response.user.avatarUrl)
                     } else {
                         val localAvatar = session.getAvatarUrl()
                         if (localAvatar != null) {
                             _avatarUrl.value = localAvatar                        } else {
                             val generatedAvatarUrl = "https://ui-avatars.com/api/?name=${response.user.username}&background=random&size=${Constants.Business.GENERATED_AVATAR_SIZE}"
                             _avatarUrl.value = generatedAvatarUrl
+                            session.storeAvatarUrl(generatedAvatarUrl)
                         }
                     }
                     
@@ -112,6 +114,9 @@ class ProfileViewModel @Inject constructor(
                     
                     _direction.value = response.user.direction
                     _level.value = response.user.level
+                    
+                    updateSessionWithProfileData()
+                    
                     Logger.d("Successfully loaded user info: ${response.user.id}")                        }.onFailure { error ->
                             val errorMessage = errorHandler.handleError(error, Constants.ErrorMessages.NETWORK_ERROR)
                             setError(errorMessage)
@@ -127,6 +132,7 @@ class ProfileViewModel @Inject constructor(
                     Logger.e("User ID not found in session")                
                 val defaultAvatarUrl = "https://ui-avatars.com/api/?name=User&background=random&size=${Constants.Business.GENERATED_AVATAR_SIZE}"
                 _avatarUrl.value = session.getAvatarUrl() ?: defaultAvatarUrl
+                session.storeAvatarUrl(_avatarUrl.value)
                 
                 _uiState.value = _uiState.value.copy(
                     username = "User",
@@ -233,11 +239,13 @@ class ProfileViewModel @Inject constructor(
                             _avatarUrl.value = response.avatarUrl
                             _uiState.value = _uiState.value.copy(avatarUrl = response.avatarUrl)
                             session.storeAvatarUrl(response.avatarUrl)
+                            updateSessionWithProfileData()
                             Logger.d("Avatar successfully uploaded to server: ${response.avatarUrl}")
                         } else if (response is UpdateUserAvatarResponse) {
                             _avatarUrl.value = response.avatarUrl
                             _uiState.value = _uiState.value.copy(avatarUrl = response.avatarUrl)
                             session.storeAvatarUrl(response.avatarUrl)
+                            updateSessionWithProfileData()
                             Logger.d("Avatar successfully updated on server: ${response.avatarUrl}")
                         }
                     }.onFailure { error ->
@@ -245,6 +253,7 @@ class ProfileViewModel @Inject constructor(
                         val localAvatarUrl = "data:avatar"
                         _avatarUrl.value = localAvatarUrl
                         _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
+                        session.storeAvatarUrl(localAvatarUrl)
                     }                } else {
                     Logger.e("Failed to open avatar image stream")
                     val errorMessage = errorHandler.handleError(
@@ -255,10 +264,12 @@ class ProfileViewModel @Inject constructor(
                     val localAvatarUrl = "data:avatar"
                     _avatarUrl.value = localAvatarUrl
                     _uiState.value = _uiState.value.copy(avatarUrl = localAvatarUrl)
+                    session.storeAvatarUrl(localAvatarUrl)
                 }
             } else {
                 _avatarUrl.value = "data:avatar"
                 _uiState.value = _uiState.value.copy(avatarUrl = "data:avatar")
+                session.storeAvatarUrl("data:avatar")
                 Logger.d("Avatar image stored locally only (no user ID available)")
             }        } catch (e: Exception) {
             Logger.e("Error saving avatar image: ${e.message}")
@@ -268,6 +279,7 @@ class ProfileViewModel @Inject constructor(
             if (session.getAvatarUrl() == "data:avatar") {
                 _avatarUrl.value = "data:avatar"
                 _uiState.value = _uiState.value.copy(avatarUrl = "data:avatar")
+                session.storeAvatarUrl("data:avatar")
             }
         } finally {
             setLoading(false)
@@ -296,6 +308,8 @@ class ProfileViewModel @Inject constructor(
                         
                         session.storeAvatarUrl(_avatarUrl.value)
                         session.storeUsername(_uiState.value.username)
+                        
+                        updateSessionWithProfileData()
                         
                         _updateSuccess.value = true
                         Logger.d("Successfully updated user profile: ${response.user.id}")
@@ -341,5 +355,10 @@ class ProfileViewModel @Inject constructor(
     
     fun refreshProfile() {
         loadProfile()
+    }
+    
+    private fun updateSessionWithProfileData() {
+        session.refreshUsername()
+        session.refreshAvatarUrl()
     }
 }

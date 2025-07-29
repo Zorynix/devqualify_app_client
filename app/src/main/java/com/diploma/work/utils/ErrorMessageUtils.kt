@@ -181,6 +181,14 @@ object ErrorMessageUtils {
                 else -> "Ошибка сети. Проверьте подключение к интернету."
             }
             
+            ErrorContext.FEEDBACK -> when {
+                baseMessage.contains("unauthorized") || baseMessage.contains("unauthenticated") -> "Необходимо войти в систему для отправки обратной связи."
+                baseMessage.contains("invalid") -> "Проверьте правильность заполнения полей формы."
+                baseMessage.contains("too long") -> "Сообщение слишком длинное. Сократите текст."
+                baseMessage.contains("empty") || baseMessage.contains("required") -> "Заполните все обязательные поля."
+                else -> "Не удалось отправить сообщение. Попробуйте позже."
+            }
+            
             ErrorContext.GENERIC -> when {
                 baseMessage.contains("неизвестная ошибка") -> "Произошла неожиданная ошибка. Попробуйте позже."
                 else -> baseMessage.ifEmpty { "Произошла ошибка. Попробуйте еще раз." }
@@ -197,5 +205,6 @@ enum class ErrorContext {
     PROFILE_UPDATE,
     DATA_LOADING,
     NETWORK,
+    FEEDBACK,
     GENERIC
 }

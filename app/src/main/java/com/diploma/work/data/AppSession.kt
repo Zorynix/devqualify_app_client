@@ -142,6 +142,14 @@ class AppSession(private val context: Context) {
         return _avatarUrlFlow
     }
     
+    fun refreshAvatarUrl() {
+        _avatarUrlFlow.value = getAvatarUrl()
+    }
+    
+    fun refreshUsername() {
+        _usernameFlow.value = getUsername()
+    }
+    
     fun storeUsername(username: String) {
         sharedPrefs.edit {
             putString(Constants.PrefsKeys.USERNAME, username)

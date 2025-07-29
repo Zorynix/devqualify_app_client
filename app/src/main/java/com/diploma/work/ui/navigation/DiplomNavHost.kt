@@ -55,6 +55,7 @@ import com.diploma.work.ui.feature.articles.ArticlesScreen
 import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
+import com.diploma.work.ui.feature.feedback.FeedbackScreen
 import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.feature.interests.UserInterestsScreen
 import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
@@ -198,6 +199,13 @@ fun AppNavigation(
                             navController.safeNavigate("UserInterests")
                         }
                     },
+                    onFeedbackClick = {
+                        Logger.d("Navigation: Navigating to Feedback")
+                        scope.launch {
+                            drawerState.close()
+                            navController.safeNavigate("Feedback")
+                        }
+                    },
                     onLogout = {
                         Logger.d("Navigation: User logging out")
                         session.clearToken()
@@ -323,8 +331,8 @@ fun AppNavigation(
                 composable("Home") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     HomeScreen(
                         navController = navController,
@@ -344,16 +352,16 @@ fun AppNavigation(
                         themeManager = themeManager
                     )
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     profileScreen
                 }
                 composable("Achievements") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     AchievementsScreen(
                         onOpenDrawer = {
@@ -367,8 +375,8 @@ fun AppNavigation(
                 composable("Leaderboard") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     LeaderboardScreen(
                         navController = navController,
@@ -415,8 +423,8 @@ fun AppNavigation(
                 composable("UserInterests") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     UserInterestsScreen(
                         onBack = { 
@@ -431,8 +439,8 @@ fun AppNavigation(
                 composable("Articles") {
                     shouldShowBottomNav.value = true
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     ArticlesScreen(
                         onOpenDrawer = { 
@@ -442,6 +450,10 @@ fun AppNavigation(
                             }
                         }
                     )
+                }
+                composable("Feedback") {
+                    shouldShowBottomNav.value = false
+                    FeedbackScreen(navController)
                 }
             }
         }

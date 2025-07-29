@@ -46,13 +46,9 @@ class MyApplication : Application() {
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val versionName = packageInfo.versionName
-            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val versionCode =
                 packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
-            
+
             Logger.i("App Version: $versionName ($versionCode)")
         } catch (e: Exception) {
             Logger.e("Failed to get app version: ${e.message}")

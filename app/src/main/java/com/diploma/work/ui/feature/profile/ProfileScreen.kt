@@ -37,6 +37,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -199,6 +201,7 @@ fun AppDrawerContent(
     session: AppSession,
     onThemeToggle: () -> Unit,
     onInterestsClick: () -> Unit,
+    onFeedbackClick: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -276,6 +279,27 @@ fun AppDrawerContent(
                     
                     Text(
                         text = stringResource(R.string.interests),
+                        style = TextStyle.BodyLarge.value,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onFeedbackClick() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Feedback,
+                        contentDescription = "Обратная связь",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Text(
+                        text = "Обратная связь",
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
