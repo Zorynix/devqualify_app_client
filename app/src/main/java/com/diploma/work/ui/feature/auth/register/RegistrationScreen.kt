@@ -26,11 +26,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
@@ -68,14 +70,14 @@ fun RegistrationScreen(
         verticalArrangement = Arrangement.Center
     ) {
         IconButton(onClick = { navController.safeNavigateBack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
         }
-        Text("Регистрация", style = TextStyle.TitleLarge.value)
-        
+        Text(stringResource(R.string.registration), style = TextStyle.TitleLarge.value)
+
         DiplomTextField(
             value = email,
             onValueChange = { viewModel.onEmailChanged(it) },
-            label = { Text("Email", style = TextStyle.BodyLarge.value) },
+            label = { Text(stringResource(R.string.email), style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
         
@@ -94,14 +96,14 @@ fun RegistrationScreen(
         DiplomPasswordTextField(
             value = password,
             onValueChange = { viewModel.onPasswordChanged(it) },
-            label = { Text("Пароль", style = TextStyle.BodyLarge.value) },
+            label = { Text(stringResource(R.string.password), style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )        
         if (password.isNotBlank()) {
             val passwordValidation = ValidationUtils.validateStrongPassword(password)
             if (!passwordValidation.isValid) {
                 Text(
-                    text = "Пароль: мин. 8 символов, цифра, заглавная/строчная буквы, спецсимвол (@#$%^&+=)",
+                    text = stringResource(R.string.password_requirements),
                     color = Color.Red,
                     fontSize = 11.sp,
                     modifier = Modifier
@@ -113,13 +115,13 @@ fun RegistrationScreen(
         DiplomPasswordTextField(
             value = confirmPassword,
             onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-            label = { Text("Подтвердите пароль", style = TextStyle.BodyLarge.value) },
+            label = { Text(stringResource(R.string.confirm_password), style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
         
         if (confirmPassword.isNotBlank() && password != confirmPassword) {
             Text(
-                text = "Пароли не совпадают",
+                text = stringResource(R.string.passwords_dont_match),
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier
@@ -150,13 +152,13 @@ fun RegistrationScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Зарегистрироваться", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(stringResource(R.string.register), color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
         Row(modifier = Modifier.padding(top = 16.dp)) {
-            Text("Уже зарегистрированы? ", style = TextStyle.BodyMedium.value)
+            Text(stringResource(R.string.already_registered), style = TextStyle.BodyMedium.value)
             Text(
-                "Войти",
+                stringResource(R.string.login),
                 style = TextStyle.Link.value,
                 color = Theme.extendedColorScheme.onBackgroundPositive,
                 modifier = Modifier.clickable {

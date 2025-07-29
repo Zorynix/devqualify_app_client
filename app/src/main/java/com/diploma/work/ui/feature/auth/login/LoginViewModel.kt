@@ -44,7 +44,7 @@ class LoginViewModel @Inject constructor(
 
     val loginEnabled: StateFlow<Boolean> = combine(username, password) { u, p ->
         ValidationUtils.validateEmail(u).isValid && ValidationUtils.validateStrongPassword(p).isValid
-    }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     fun onUsernameChanged(newValue: String) {
         _username.value = newValue
         

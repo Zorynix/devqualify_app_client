@@ -42,11 +42,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.models.QuestionResult
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
@@ -75,12 +77,12 @@ fun TestResultScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Test Results", style = TextStyle.TitleLarge.value) },
+                title = { Text(stringResource(R.string.test_results), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     IconButton(onClick = { navController.safeNavigateBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back_short)
                         )
                     }
                 }
@@ -94,7 +96,7 @@ fun TestResultScreen(
             contentAlignment = Alignment.Center        ) {
             if (state.isLoading) {
                 LoadingCard(
-                    message = "Loading test results..."
+                    message = stringResource(R.string.loading_test_results_message)
                 )            }
             else if (state.error != null) {
                 ErrorCard(
@@ -103,7 +105,7 @@ fun TestResultScreen(
                 )
             } else if (state.result == null) {
                 Text(
-                    text = "No results found for this test session",
+                    text = stringResource(R.string.no_results_found),
                     style = TextStyle.BodyLarge.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -126,7 +128,7 @@ fun TestResultScreen(
 
                     item {
                         Text(
-                            text = "Feedback",
+                            text = stringResource(R.string.feedback),
                             style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -150,7 +152,7 @@ fun TestResultScreen(
 
                     item {
                         Text(
-                            text = "Question Results",
+                            text = stringResource(R.string.question_results),
                             style = TextStyle.TitleMedium.value,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -174,10 +176,10 @@ fun TestResultScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Home,
-                                contentDescription = "Home"
+                                contentDescription = stringResource(R.string.home_short)
                             )
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Back to Home", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(stringResource(R.string.back_to_home_short), style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         Spacer(modifier = Modifier.height(24.dp))
                     }
@@ -213,7 +215,7 @@ fun ScoreSection(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Your Score",
+                text = stringResource(R.string.your_score),
                 style = TextStyle.TitleMedium.value,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -243,7 +245,7 @@ fun ScoreSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Points: $score / $totalPoints",
+                    text = stringResource(R.string.points_format, score, totalPoints),
                     style = TextStyle.BodyLarge.value,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -258,13 +260,13 @@ fun ScoreSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.Timer,
-                    contentDescription = "Time",
+                    contentDescription = stringResource(R.string.time),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Time: ${formatTime(durationMillis)}",
+                    text = stringResource(R.string.time_format, formatTime(durationMillis)),
                     style = TextStyle.BodyMedium.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -273,7 +275,7 @@ fun ScoreSection(
             if (durationMillis > 0) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "(${durationMillis / 1000} seconds)",
+                    text = stringResource(R.string.seconds_format, durationMillis / 1000),
                     style = TextStyle.BodySmall.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -351,7 +353,7 @@ fun QuestionResultItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (questionResult.isCorrect) "Correct" else "Incorrect",
+                        text = if (questionResult.isCorrect) stringResource(R.string.correct) else stringResource(R.string.incorrect),
                         style = TextStyle.LabelLarge.value,
                         fontWeight = FontWeight.Bold,
                         color = if (questionResult.isCorrect)
@@ -361,7 +363,7 @@ fun QuestionResultItem(
                     )
 
                     Text(
-                        text = "${questionResult.pointsEarned} point${if (questionResult.pointsEarned != 1) "s" else ""}",
+                        text = stringResource(R.string.points_earned, questionResult.pointsEarned, if (questionResult.pointsEarned != 1) stringResource(R.string.points_multiple) else stringResource(R.string.points_single)),
                         style = TextStyle.LabelMedium.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -371,7 +373,7 @@ fun QuestionResultItem(
 
                 if (!questionResult.isCorrect) {
                     Text(
-                        text = "Your answer: ${questionResult.userAnswer}",
+                        text = stringResource(R.string.your_answer_format, questionResult.userAnswer),
                         style = TextStyle.BodySmall.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -379,7 +381,7 @@ fun QuestionResultItem(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Correct answer: ${questionResult.correctAnswer}",
+                        text = stringResource(R.string.correct_answer_format, questionResult.correctAnswer),
                         style = TextStyle.BodySmall.value,
                         color = MaterialTheme.colorScheme.primary
                     )

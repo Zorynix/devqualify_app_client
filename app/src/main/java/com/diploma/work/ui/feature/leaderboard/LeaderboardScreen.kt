@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,10 +82,10 @@ fun LeaderboardScreen(
     val isRefreshing = uiState.isLoading
     val state = rememberPullToRefreshState()
     val lazyListState = rememberLazyListState()
-    
+
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage != null) {
-            snackbarHostState.showSnackbar(uiState.errorMessage ?: "An error occurred")
+            snackbarHostState.showSnackbar(uiState.errorMessage ?: "Произошла ошибка")
         }
     }
 
@@ -93,28 +94,29 @@ fun LeaderboardScreen(
             val layoutInfo = lazyListState.layoutInfo
             val totalItemsCount = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            
+
             if (lastVisibleItemIndex >= totalItemsCount - 3) {
                 viewModel.loadMoreUsers()
             }
         }
     }
-      Scaffold(
+
+    Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Leaderboard", style = TextStyle.HeadlineMedium.value) },
+                title = { Text(stringResource(R.string.leaderboard), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.loadLeaderboard(true) }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_refresh),
-                            contentDescription = "Refresh"
+                            contentDescription = stringResource(R.string.refresh)
                         )
                     }
                 }
@@ -153,9 +155,9 @@ fun LeaderboardScreen(
                         onLevelSelect = { viewModel.setLevel(it) },
                         onSortTypeSelect = { viewModel.setSortType(it) }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(12.dp))
-                    
+
                     if (uiState.users.isEmpty() && !uiState.isLoading) {
                         Box(
                             modifier = Modifier
@@ -164,7 +166,7 @@ fun LeaderboardScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No users found for these filters.",
+                                text = stringResource(R.string.no_leaderboard_data),
                                 style = TextStyle.BodyMedium.value,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -175,7 +177,7 @@ fun LeaderboardScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.users) { user ->                                
+                            items(uiState.users) { user ->
                                 UserListItem(
                                     user = user,
                                     sortType = uiState.sortType,
@@ -183,7 +185,7 @@ fun LeaderboardScreen(
                                     onClick = { viewModel.selectUser(user) }
                                 )
                             }
-                            
+
                             item {
                                 if (uiState.isLoading && uiState.users.isNotEmpty()) {
                                     Box(
@@ -198,23 +200,25 @@ fun LeaderboardScreen(
                                         )
                                     }
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     }
                 }
             }
-              if (isRefreshing && uiState.users.isEmpty()) {
+
+            if (isRefreshing && uiState.users.isEmpty()) {
                 LoadingCard(
-                    message = "Loading leaderboard...",
+                    message = stringResource(R.string.loading_leaderboard),
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
         }
     }
-    
-    if (uiState.isUserDetailDialogVisible && uiState.selectedUser != null) {        UserDetailDialog(
+
+    if (uiState.isUserDetailDialogVisible && uiState.selectedUser != null) {
+        UserDetailDialog(
             user = uiState.selectedUser!!,
             onDismiss = { viewModel.dismissUserDetailDialog() },
             session = viewModel.session
@@ -237,22 +241,22 @@ fun CompactFilterSortSection(
     var showSortDialog by remember { mutableStateOf(false) }
 
     val filterLabel = when {
-        selectedDirection != Direction.DIRECTION_UNSPECIFIED && selectedLevel != Level.LEVEL_UNSPECIFIED -> 
+        selectedDirection != Direction.DIRECTION_UNSPECIFIED && selectedLevel != Level.LEVEL_UNSPECIFIED ->
             "${directionToString(selectedDirection)}, ${levelToString(selectedLevel)}"
-        selectedDirection != Direction.DIRECTION_UNSPECIFIED -> 
+        selectedDirection != Direction.DIRECTION_UNSPECIFIED ->
             directionToString(selectedDirection)
-        selectedLevel != Level.LEVEL_UNSPECIFIED -> 
+        selectedLevel != Level.LEVEL_UNSPECIFIED ->
             levelToString(selectedLevel)
-        else -> "Filter"
+        else -> stringResource(R.string.filter)
     }
-    
+
     val hasActiveFilters = selectedDirection != Direction.DIRECTION_UNSPECIFIED ||
                           selectedLevel != Level.LEVEL_UNSPECIFIED
-      Row(
+
+    Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
         FilterChip(
             selected = hasActiveFilters,
             onClick = { showFilterDialog = !showFilterDialog },
@@ -260,7 +264,7 @@ fun CompactFilterSortSection(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.FilterList,
-                    contentDescription = "Filter",
+                    contentDescription = stringResource(R.string.filter),
                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                     tint = LocalContentColor.current
                 )
@@ -271,11 +275,11 @@ fun CompactFilterSortSection(
         FilterChip(
             selected = false,
             onClick = { showSortDialog = !showSortDialog },
-            label = { Text("Sort: ${selectedSortType.displayName}") },
+            label = { Text("Сортировка: ${selectedSortType.displayName}") },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Sort,
-                    contentDescription = "Sort",
+                    contentDescription = stringResource(R.string.sort),
                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                     tint = LocalContentColor.current
                 )
@@ -287,33 +291,33 @@ fun CompactFilterSortSection(
     if (showFilterDialog) {
         AlertDialog(
             onDismissRequest = { showFilterDialog = false },
-            title = { Text("Filter", style = TextStyle.TitleLarge.value) },
+            title = { Text(stringResource(R.string.filter), style = TextStyle.TitleLarge.value) },
             text = {
                 Column {
                     Text(
-                        text = "Direction",
+                        text = stringResource(R.string.direction),
                         style = TextStyle.LabelMedium.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     ChipGroup(
-                        items = listOf(Direction.DIRECTION_UNSPECIFIED) + 
+                        items = listOf(Direction.DIRECTION_UNSPECIFIED) +
                                 Direction.entries.filter { it != Direction.UNRECOGNIZED && it != Direction.DIRECTION_UNSPECIFIED },
                         selectedItem = selectedDirection,
                         onSelectChange = { onDirectionSelect(it) },
                         chipLabel = { directionToString(it) }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Text(
-                        text = "Level",
+                        text = stringResource(R.string.level),
                         style = TextStyle.LabelMedium.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     ChipGroup(
-                        items = listOf(Level.LEVEL_UNSPECIFIED) + 
+                        items = listOf(Level.LEVEL_UNSPECIFIED) +
                                 Level.entries.filter { it != Level.UNRECOGNIZED && it != Level.LEVEL_UNSPECIFIED },
                         selectedItem = selectedLevel,
                         onSelectChange = { onLevelSelect(it) },
@@ -325,7 +329,7 @@ fun CompactFilterSortSection(
                 TextButton(
                     onClick = { showFilterDialog = false }
                 ) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -334,12 +338,13 @@ fun CompactFilterSortSection(
     if (showSortDialog) {
         AlertDialog(
             onDismissRequest = { showSortDialog = false },
-            title = { Text("Sort by", style = TextStyle.TitleLarge.value) },
+            title = { Text("Сортировать по", style = TextStyle.TitleLarge.value) },
             text = {
-                Column {                    ChipGroup(
+                Column {
+                    ChipGroup(
                         items = LeaderboardSortType.entries.toList(),
                         selectedItem = selectedSortType,
-                        onSelectChange = { 
+                        onSelectChange = {
                             onSortTypeSelect(it)
                             showSortDialog = false
                         },
@@ -351,7 +356,7 @@ fun CompactFilterSortSection(
                 TextButton(
                     onClick = { showSortDialog = false }
                 ) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -378,7 +383,7 @@ private fun <T> ChipGroup(
                     {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = "Selected",
+                            contentDescription = stringResource(R.string.selected),
                             modifier = Modifier.size(FilterChipDefaults.IconSize),
                             tint = LocalContentColor.current
                         )
@@ -389,15 +394,15 @@ private fun <T> ChipGroup(
     }
 }
 
-
 @Composable
 fun UserListItem(
-    user: User, 
+    user: User,
     sortType: LeaderboardSortType,
     session: AppSession,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
-) {    ElevatedCard(
+) {
+    ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
@@ -407,9 +412,10 @@ fun UserListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically        ) {
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             AvatarImage(
-                avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
+                avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl
                            else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
                 session = session,
                 size = 50.dp,
@@ -445,7 +451,7 @@ fun UserListItem(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Achievements",
+                            text = "Достижения",
                             style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -457,7 +463,7 @@ fun UserListItem(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Correct Answers",
+                            text = "Правильные ответы",
                             style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -469,7 +475,7 @@ fun UserListItem(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Completed Tests",
+                            text = "Завершенные тесты",
                             style = TextStyle.BodySmall.value,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -482,11 +488,10 @@ fun UserListItem(
 
 @Composable
 fun UserDetailDialog(
-    user: User, 
+    user: User,
     onDismiss: () -> Unit,
     session: AppSession
 ) {
-    
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -498,14 +503,15 @@ fun UserDetailDialog(
                     .padding(24.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) {                AvatarImage(
-                    avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl 
+            ) {
+                AvatarImage(
+                    avatarUrl = if (user.avatarUrl.isNotEmpty()) user.avatarUrl
                                else "https://ui-avatars.com/api/?name=${user.username}&background=random&size=200",
                     session = session,
                     size = 100.dp,
                     borderWidth = 2.dp
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = user.username,
@@ -517,25 +523,25 @@ fun UserDetailDialog(
                     style = TextStyle.BodyMedium.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
-                    "Statistics",
+                    "Статистика",
                     style = TextStyle.TitleMedium.value,
                     modifier = Modifier.align(Alignment.Start)
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                StatisticRow("Achievements", "${user.achievementsCount}")
-                StatisticRow("Correct Answers", "${user.totalCorrectAnswers}")
-                StatisticRow("Incorrect Answers", "${user.totalIncorrectAnswers}")
-                StatisticRow("Completed Tests", "${user.completedTestsCount}")
-                
+
+                StatisticRow("Достижения", "${user.achievementsCount}")
+                StatisticRow("Правильные ответы", "${user.totalCorrectAnswers}")
+                StatisticRow("Неправильные ответы", "${user.totalIncorrectAnswers}")
+                StatisticRow("Завершенные тесты", "${user.completedTestsCount}")
+
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = onDismiss,
@@ -545,7 +551,7 @@ fun UserDetailDialog(
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
-                    Text("Close", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(stringResource(R.string.close), color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
@@ -571,8 +577,8 @@ private fun directionToString(direction: Direction): String {
         Direction.FRONTEND -> "Frontend"
         Direction.DEVOPS -> "DevOps"
         Direction.DATA_SCIENCE -> "Data Science"
-        Direction.DIRECTION_UNSPECIFIED -> "All Directions"
-        else -> "Unknown"
+        Direction.DIRECTION_UNSPECIFIED -> "Все направления"
+        else -> "Неизвестно"
     }
 }
 
@@ -581,7 +587,7 @@ private fun levelToString(level: Level): String {
         Level.JUNIOR -> "Junior"
         Level.MIDDLE -> "Middle"
         Level.SENIOR -> "Senior"
-        Level.LEVEL_UNSPECIFIED -> "All Levels"
-        else -> "Unknown"
+        Level.LEVEL_UNSPECIFIED -> "Все уровни"
+        else -> "Неизвестно"
     }
 }

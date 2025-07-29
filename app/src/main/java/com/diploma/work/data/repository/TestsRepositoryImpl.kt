@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.orhanobut.logger.Logger
+import com.diploma.work.utils.Constants
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +21,7 @@ class TestsRepositoryImpl @Inject constructor(
     private val tag = "repo.tests"
     
     private val sessionPrefs: SharedPreferences by lazy {
-        context.getSharedPreferences("test_sessions_prefs", Context.MODE_PRIVATE) 
+        context.getSharedPreferences(Constants.PrefsKeys.TEST_SESSIONS_PREFS, Context.MODE_PRIVATE) 
     }
 
     override fun getTechnologies(direction: Direction?): Flow<Result<List<Technology>>> {

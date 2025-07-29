@@ -34,11 +34,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
@@ -82,11 +84,11 @@ fun EmailConfirmationScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Назад"
+                contentDescription = stringResource(R.string.back)
             )
         }
-        Text("Подтверждение почты", style = TextStyle.TitleLarge.value, modifier = Modifier.padding(16.dp))
-        Text("Введите 6-значный код, отправленный на $email", style = TextStyle.BodyMedium.value, modifier = Modifier.padding(16.dp))
+        Text(stringResource(R.string.email_confirmation_title), style = TextStyle.TitleLarge.value, modifier = Modifier.padding(16.dp))
+        Text(stringResource(R.string.enter_6_digit_code, email), style = TextStyle.BodyMedium.value, modifier = Modifier.padding(16.dp))
 
         val focusRequester = remember { FocusRequester() }
         Box {
@@ -159,13 +161,13 @@ fun EmailConfirmationScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Подтвердить", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
         Text(
             text = if (resendCooldownSeconds > 0) 
-                "Отправить код повторно (${resendCooldownSeconds}с)" 
-                else "Отправить код повторно",
+                stringResource(R.string.resend_code_with_timer, resendCooldownSeconds)
+                else stringResource(R.string.resend_code_no_timer),
             style = TextStyle.Link.value,
             color = if (resendEnabled) Theme.extendedColorScheme.onBackgroundPositive 
                 else Theme.extendedColorScheme.onBackgroundHint,
