@@ -6,6 +6,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Home
@@ -19,6 +27,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.diploma.work.R
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -170,7 +181,7 @@ fun AppNavigation(
         BottomNavItem.Articles
     )
     ModalNavigationDrawer(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         drawerState = drawerState,
         gesturesEnabled = isLoggedIn,
         drawerContent = {            if (isLoggedIn) {                AppDrawerContent(
@@ -202,6 +213,7 @@ fun AppNavigation(
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 if (shouldShowBottomNav.value) {
                     NavigationBar {
@@ -226,7 +238,8 @@ fun AppNavigation(
                                         is Achievements -> "Achievements"
                                         is Leaderboard -> "Leaderboard"
                                         is Articles -> "Articles"
-                                        else -> ""                                    }
+                                        else -> ""
+                                    }
                                     Logger.d("Navigation: Bottom nav bar click - $route")
                                     Logger.d("Navigation: Current destination: ${navController.currentDestination?.route}")
                                     val currentRoute = navController.currentDestination?.route
@@ -240,11 +253,23 @@ fun AppNavigation(
                                     Icon(
                                         imageVector = item.icon,                                        
                                         contentDescription = when (item.route) {
-                                            is Home -> "Home"
-                                            is Profile -> "Profile"
-                                            is Achievements -> "Achievements"
-                                            is Leaderboard -> "Leaderboard"
-                                            is Articles -> "Articles"
+                                            is Home -> stringResource(R.string.home)
+                                            is Profile -> stringResource(R.string.profile)
+                                            is Achievements -> stringResource(R.string.achievements)
+                                            is Leaderboard -> stringResource(R.string.leaderboard)
+                                            is Articles -> stringResource(R.string.articles)
+                                            else -> ""
+                                        }
+                                    )
+                                },
+                                label = {
+                                    androidx.compose.material3.Text(
+                                        when (item.route) {
+                                            is Home -> stringResource(R.string.home)
+                                            is Profile -> stringResource(R.string.profile)
+                                            is Achievements -> stringResource(R.string.achievements)
+                                            is Leaderboard -> stringResource(R.string.leaderboard)
+                                            is Articles -> stringResource(R.string.articles)
                                             else -> ""
                                         }
                                     )
@@ -258,7 +283,10 @@ fun AppNavigation(
             NavHost(
                 navController = navController,
                 startDestination = if (session.getToken() != null) "Home" else "Login",
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(innerPadding),
                 enterTransition = {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Left,

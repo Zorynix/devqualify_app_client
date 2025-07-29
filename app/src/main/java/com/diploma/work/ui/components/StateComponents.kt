@@ -39,7 +39,7 @@ fun ErrorCard(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = "Error",
+                contentDescription = stringResource(R.string.error_short),
                 tint = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.size(48.dp)
             )

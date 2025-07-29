@@ -38,10 +38,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.ui.components.ErrorCard
@@ -75,12 +77,12 @@ fun TestDetailsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Test Details", style = TextStyle.TitleLarge.value) },
+                title = { Text(stringResource(R.string.test_details), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     IconButton(onClick = { navController.safeNavigateBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -92,12 +94,14 @@ fun TestDetailsScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
-        ) {            if (state.isLoading) {
+        ) {
+            if (state.isLoading) {
                 LoadingCard(
-                    message = "Loading test details...",
+                    message = stringResource(R.string.loading_test_details),
                     modifier = Modifier.fillMaxSize()
-                )            }
-        else if (state.error != null) {
+                )
+            }
+            else if (state.error != null) {
                 ErrorCard(
                     error = state.error!!,
                     onRetry = { viewModel.loadTest(testId) },
@@ -105,7 +109,7 @@ fun TestDetailsScreen(
                 )
             } else if (state.test == null) {
                 Text(
-                    text = "Test not found",
+                    text = "Тест не найден",
                     style = TextStyle.BodyLarge.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -152,13 +156,13 @@ fun TestDetailsScreen(
                                 TestInfoTag(
                                     text = state.test?.info?.technologyName ?: "",
                                     icon = getDirectionIcon(state.test?.info?.direction),
-                                    contentDescription = "Technology"
+                                    contentDescription = stringResource(R.string.technology)
                                 )
 
                                 TestInfoTag(
                                     text = state.test?.info?.level?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "",
                                     icon = getLevelIcon(state.test?.info?.level),
-                                    contentDescription = "Level"
+                                    contentDescription = stringResource(R.string.level)
                                 )
                             }
                         }
@@ -178,7 +182,7 @@ fun TestDetailsScreen(
                             modifier = Modifier.padding(16.dp)
                         ) {
                             Text(
-                                text = "Test Information",
+                                text = "Информация о тесте",
                                 style = TextStyle.TitleMedium.value,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -190,7 +194,7 @@ fun TestDetailsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Questions:",
+                                    text = "Вопросы:",
                                     style = TextStyle.BodyMedium.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -209,13 +213,13 @@ fun TestDetailsScreen(
                                 test.questions.sumOf { it.points }.toFloat() / test.questions.size
                             } else 0f
                             val totalPoints = (avgPointsPerQuestion * questionsCount).toInt()
-                            
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Total Points:",
+                                    text = "Всего очков:",
                                     style = TextStyle.BodyMedium.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -251,19 +255,19 @@ fun TestDetailsScreen(
                                         style = TextStyle.TitleMedium.value,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
-                                    
+
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    
+
                                     Text(
-                                        text = "У вас есть начатый тест на вопросе ${state.lastSavedQuestionIndex + 1}",
+                                        text = stringResource(R.string.continued_test_message, state.lastSavedQuestionIndex + 1),
                                         style = TextStyle.BodyMedium.value,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
-                            
+
                             Button(
                                 onClick = { viewModel.continueTest() },
                                 modifier = Modifier.fillMaxWidth(),
@@ -273,12 +277,12 @@ fun TestDetailsScreen(
                                 )
                             ) {
                                 Text(
-                                    "Продолжить тест", 
+                                    "Продолжить тест",
                                     style = TextStyle.LabelLarge.value,
                                     color = MaterialTheme.colorScheme.onTertiary
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -296,8 +300,8 @@ fun TestDetailsScreen(
                             )
                         } else {
                             Text(
-                                if (state.hasUnfinishedSession) "Начать заново" else "Начать тест", 
-                                style = TextStyle.LabelLarge.value, 
+                                if (state.hasUnfinishedSession) "Начать заново" else stringResource(R.string.start_test),
+                                style = TextStyle.LabelLarge.value,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
@@ -314,7 +318,8 @@ fun TestInfoTag(
     icon: ImageVector,
     contentDescription: String,
     modifier: Modifier = Modifier
-) {    Surface(
+) {
+    Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.secondaryContainer,
         shape = RoundedCornerShape(4.dp)

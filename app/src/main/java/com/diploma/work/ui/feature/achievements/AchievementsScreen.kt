@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.diploma.work.R
 import com.diploma.work.data.models.Achievement
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
@@ -51,21 +53,21 @@ fun AchievementsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing = uiState.isLoading
     val state = rememberPullToRefreshState()
-    
+
     LaunchedEffect(key1 = uiState.errorMessage) {
         if (uiState.errorMessage != null) {
             Logger.e("Error displayed: ${uiState.errorMessage}")
         }
     }
-    
+
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Achievements", style = TextStyle.HeadlineMedium.value) },
+                title = { Text(stringResource(R.string.achievements), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                     }
                 }
             )
@@ -91,30 +93,32 @@ fun AchievementsScreen(
                         .padding(16.dp)
                 ) {
                     when {
-                    isRefreshing && uiState.achievements.isEmpty() -> {
-                        LoadingCard(
-                            message = "Loading achievements...",
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }                    uiState.errorMessage != null -> {
-                        ErrorCard(
-                            error = uiState.errorMessage ?: "Unknown error",
-                            onRetry = { viewModel.loadAchievements() }
-                        )
-                    }
-                    uiState.achievements.isEmpty() -> {
-                        EmptyAchievementsView(onRefresh = { viewModel.loadAchievements() })
-                    }
-                    else -> {
-                        AchievementsGrid(
-                            achievements = uiState.achievements,
-                            onAchievementClick = { viewModel.showAchievementDetails(it) }
-                        )
+                        isRefreshing && uiState.achievements.isEmpty() -> {
+                            LoadingCard(
+                                message = stringResource(R.string.loading_achievements),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        uiState.errorMessage != null -> {
+                            ErrorCard(
+                                error = uiState.errorMessage ?: "Unknown error",
+                                onRetry = { viewModel.loadAchievements() }
+                            )
+                        }
+                        uiState.achievements.isEmpty() -> {
+                            EmptyAchievementsView(onRefresh = { viewModel.loadAchievements() })
+                        }
+                        else -> {
+                            AchievementsGrid(
+                                achievements = uiState.achievements,
+                                onAchievementClick = { viewModel.showAchievementDetails(it) }
+                            )
+                        }
                     }
                 }
             }
         }
-        
+
         if (uiState.showAchievementDetails && uiState.selectedAchievement != null) {
             AchievementDetailsDialog(
                 achievement = uiState.selectedAchievement!!,
@@ -123,14 +127,14 @@ fun AchievementsScreen(
         }
     }
 }
-}
 
 @Composable
 fun AchievementsGrid(
     achievements: List<Achievement>,
     onAchievementClick: (Achievement) -> Unit,
     modifier: Modifier = Modifier
-) {    LazyVerticalGrid(
+) {
+    LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(4.dp),
         modifier = modifier.fillMaxWidth()
@@ -242,7 +246,7 @@ fun AchievementCard(
                 }
                 
                 Text(
-                    text = "Earned $formattedDate",
+                    text = "Получено $formattedDate",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
@@ -343,7 +347,7 @@ fun AchievementDetailsDialog(
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            text = "Earned on $formattedDate",
+                            text = "Получено $formattedDate",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -352,14 +356,17 @@ fun AchievementDetailsDialog(
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
-                  Button(
-                      colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
-                          contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
+
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
                     onClick = onDismiss,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Close", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(text = stringResource(R.string.close), color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
@@ -378,7 +385,7 @@ fun EmptyAchievementsView(
     ) {
         Icon(
             imageVector = Icons.Default.EmojiEvents,
-            contentDescription = "No achievements",
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
             modifier = Modifier.size(64.dp)
         )
@@ -386,7 +393,7 @@ fun EmptyAchievementsView(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "No achievements yet",
+            text = stringResource(R.string.no_achievements),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
@@ -394,7 +401,7 @@ fun EmptyAchievementsView(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Complete tests and challenges to earn achievements",
+            text = "Проходите тесты и выполняйте задания, чтобы получить достижения",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             textAlign = TextAlign.Center,
@@ -409,7 +416,7 @@ fun EmptyAchievementsView(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             )
         ) {
-            Text(text = "Refresh", color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(text = stringResource(R.string.retry), color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }
