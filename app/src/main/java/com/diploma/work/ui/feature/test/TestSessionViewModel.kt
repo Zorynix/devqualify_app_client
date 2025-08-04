@@ -357,9 +357,10 @@ class TestSessionViewModel @Inject constructor(
     }
 
     private fun createAnswer(questionId: Long): Answer {
+        val selected = if (_uiState.value.selectedOptions.isEmpty()) listOf(-1) else _uiState.value.selectedOptions
         return Answer(
             questionId = questionId,
-            selectedOptions = _uiState.value.selectedOptions,
+            selectedOptions = selected,
             textAnswer = _uiState.value.textAnswer.takeIf { it.isNotBlank() },
             codeAnswer = _uiState.value.codeAnswer.takeIf { it.isNotBlank() }
         )

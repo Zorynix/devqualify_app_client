@@ -26,18 +26,25 @@ class AppSession(private val context: Context) {
         
     private val _avatarUrlFlow = MutableStateFlow<String?>(null)
     private val _usernameFlow = MutableStateFlow<String?>(null)
+    private val _tokenFlow = MutableStateFlow<String?>(null)
     
     init {
         _avatarUrlFlow.value = getAvatarUrl()
         _usernameFlow.value = getUsername()
+        _tokenFlow.value = getToken()
     }    fun storeToken(token: String) {
         sharedPrefs.edit {
             putString(Constants.PrefsKeys.ACCESS_TOKEN, token)
         }
+        _tokenFlow.value = token
     }
 
     fun getToken(): String? {
         return sharedPrefs.getString(Constants.PrefsKeys.ACCESS_TOKEN, null)
+    }
+    
+    fun observeToken(): StateFlow<String?> {
+        return _tokenFlow
     }
 
     fun clearToken() {
@@ -51,6 +58,7 @@ class AppSession(private val context: Context) {
         clearUserPreferences()
         _avatarUrlFlow.value = null
         _usernameFlow.value = null
+        _tokenFlow.value = null
     }
 
     fun setTheme(isDark: Boolean) {
