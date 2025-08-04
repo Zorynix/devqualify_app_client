@@ -47,8 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.QuestionType
 import com.diploma.work.ui.components.CodeHighlighterText
@@ -97,7 +99,7 @@ fun TestSessionScreen(
         Logger.d("TestSessionScreen: Loading session with ID: $sessionId")
         viewModel.loadSavedTestSession(sessionId)
     }
-    
+
     LaunchedEffect(state.testSession) {
         if (state.testSession != null) {
             startTime = if (state.elapsedTimeMillis > 0) {
@@ -124,16 +126,17 @@ fun TestSessionScreen(
     }
 
     LaunchedEffect(state.error) {
-        if (state.error?.contains("session already completed") == true) {
+        if (state.error?.contains("session already completed") == true && !state.isLeavingTest) {
             viewModel.loadTestSession(sessionId)
         }
     }
 
     LaunchedEffect(Unit) {
-        viewModel.navigationEvents.collect { event ->            when (event) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
                 is NavigationEvent.NavigateUp -> {
                     Logger.d("Navigation: Handling NavigateUp event from TestSessionScreen")
-                    navController.safeNavigateBack()
+                    navController.safeNavigate("Home", clearStack = true)
                 }
             }
         }
@@ -142,12 +145,12 @@ fun TestSessionScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Taking Test", style = TextStyle.TitleLarge.value) },
+                title = { Text(stringResource(R.string.taking_test_title), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     IconButton(onClick = { showConfirmDialog = true }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back_desc)
                         )
                     }
                 },
@@ -158,7 +161,7 @@ fun TestSessionScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Timer,
-                            contentDescription = "Time",
+                            contentDescription = stringResource(R.string.time_desc),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
@@ -173,87 +176,86 @@ fun TestSessionScreen(
             )
         }
     ) { paddingValues ->        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            if (state.isLoading) {
-                LoadingCard(
-                    message = "Loading test session..."
-                )            } else if (state.isCompletingTest) {
-                LoadingCard(
-                    message = "Finalizing your test... Please wait while we calculate your results"
-                )}
-            else if (state.error != null) {
-                ErrorCard(
-                    error = state.error!!,
-                    onRetry = { viewModel.loadTestSession(sessionId) }
-                )
-            } else if (state.testSession == null) {
-                Text(
-                    text = "Test session not found",
-                    style = TextStyle.BodyLarge.value,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                QuestionScreen(
-                    question = viewModel.getCurrentQuestion(),
-                    questionNumber = state.currentQuestionIndex + 1,
-                    totalQuestions = state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0,
-                    selectedOptions = state.selectedOptions,
-                    textAnswer = state.textAnswer,                    onOptionSelect = { viewModel.toggleOption(it) },
-                    onTextAnswerChange = { viewModel.setTextAnswer(it) },
-                    onPrevious = { viewModel.goToPreviousQuestion() },
-                    onNext = { viewModel.saveAnswer() },
-                    isSavingAnswer = state.isSavingAnswer,
-                    isCompletingTest = state.isCompletingTest,
-                    showPrevious = state.currentQuestionIndex > 0,
-                    isQuestionAnswered = state.isCurrentQuestionAnswered,
-                    isIncorrectlyAnswered = state.currentQuestionIndex >= 0 &&
-                                           viewModel.getCurrentQuestion()?.let {
-                                               state.incorrectlyAnsweredQuestions.contains(it.id)
-                                           } ?: false,
-                    isCorrectlyAnswered = state.currentQuestionIndex >= 0 &&
-                                          viewModel.getCurrentQuestion()?.let {
-                                              state.correctlyAnsweredQuestions.contains(it.id)
-                                          } ?: false,
-                    isLastQuestion = (state.currentQuestionIndex + 1) == (state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0)
-                )
-            }
-
-            if (state.showExplanation) {
-                ExplanationDialog(
-                    explanation = state.explanationText,
-                    onDismiss = { viewModel.dismissExplanation() }
-                )
-            }
-
-            if (showConfirmDialog) {
-                AlertDialog(
-                    onDismissRequest = { showConfirmDialog = false },
-                    title = { Text("Leave Test?", style = TextStyle.TitleMedium.value) },
-                    text = { Text("Are you sure you want to leave the test? Your progress will be saved, but the test will remain incomplete.", style = TextStyle.BodyMedium.value) },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showConfirmDialog = false
-                                viewModel.handleLeaveTest()
-                            }
-                        ) {
-                            Text("Leave", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showConfirmDialog = false }) {
-                            Text("Stay")
-                        }
-                    }
-                )
-            }
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentAlignment = Alignment.Center
+    ) {
+        if (state.isLoading) {
+            LoadingCard(
+                message = stringResource(R.string.loading_test_session)
+            )            } else if (state.isCompletingTest) {
+            LoadingCard(
+                message = stringResource(R.string.finalizing_test)
+            )}
+        else if (state.error != null) {
+            ErrorCard(
+                error = state.error!!,
+                onRetry = { viewModel.loadTestSession(sessionId) }
+            )
+        } else if (state.testSession == null) {
+            Text(
+                text = stringResource(R.string.test_session_not_found),
+                style = TextStyle.BodyLarge.value,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            QuestionScreen(
+                question = viewModel.getCurrentQuestion(),
+                questionNumber = state.currentQuestionIndex + 1,
+                totalQuestions = state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0,
+                selectedOptions = state.selectedOptions,
+                textAnswer = state.textAnswer,                    onOptionSelect = { viewModel.toggleOption(it) },
+                onTextAnswerChange = { viewModel.setTextAnswer(it) },
+                onPrevious = { viewModel.goToPreviousQuestion() },
+                onNext = { viewModel.saveAnswer() },
+                isSavingAnswer = state.isSavingAnswer,
+                isCompletingTest = state.isCompletingTest,
+                showPrevious = state.currentQuestionIndex > 0,
+                isQuestionAnswered = state.isCurrentQuestionAnswered,
+                isIncorrectlyAnswered = state.currentQuestionIndex >= 0 &&
+                        viewModel.getCurrentQuestion()?.let {
+                            state.incorrectlyAnsweredQuestions.contains(it.id)
+                        } ?: false,
+                isCorrectlyAnswered = state.currentQuestionIndex >= 0 &&
+                        viewModel.getCurrentQuestion()?.let {
+                            state.correctlyAnsweredQuestions.contains(it.id)
+                        } ?: false,
+                isLastQuestion = (state.currentQuestionIndex + 1) == (state.testSession?.testInfo?.questionsCount ?: state.testSession?.questions?.size ?: 0)
+            )
         }
+
+        if (state.showExplanation) {
+            ExplanationDialog(
+                explanation = state.explanationText,
+                onDismiss = { viewModel.dismissExplanation() }
+            )
+        }
+
+        if (showConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmDialog = false },
+                title = { Text(stringResource(R.string.leave_test_title), style = TextStyle.TitleMedium.value) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showConfirmDialog = false
+                            viewModel.handleLeaveTest()
+                        }
+                    ) {
+                        Text(stringResource(R.string.leave), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirmDialog = false }) {
+                        Text(stringResource(R.string.stay))
+                    }
+                }
+            )
+        }
+    }
     }
 }
 
@@ -278,41 +280,41 @@ fun QuestionScreen(
     modifier: Modifier = Modifier
 ) {
     if (question == null) {        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.CheckCircle,
+            contentDescription = stringResource(R.string.complete_desc),
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.ready_to_submit),
+            style = TextStyle.TitleMedium.value,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = onNext,
+            enabled = !isSavingAnswer && !isCompletingTest
         ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = "Complete",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Ready to submit your test?",
-                style = TextStyle.TitleMedium.value,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onNext,
-                enabled = !isSavingAnswer && !isCompletingTest
-            ) {
-                if (isSavingAnswer || isCompletingTest) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Complete Test", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                }
+            if (isSavingAnswer || isCompletingTest) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(stringResource(R.string.complete_test_button), style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
+    }
         return
     }
 
@@ -327,7 +329,7 @@ fun QuestionScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Question $questionNumber of $totalQuestions",
+                text = stringResource(R.string.question_of, questionNumber, totalQuestions),
                 style = TextStyle.BodySmall.value,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -342,7 +344,7 @@ fun QuestionScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "${(questionNumber.toFloat() / totalQuestions * 100).toInt()}%",
+                text = stringResource(R.string.progress_percent, (questionNumber.toFloat() / totalQuestions * 100).toInt()),
                 style = TextStyle.BodySmall.value,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -361,13 +363,13 @@ fun QuestionScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Error,
-                        contentDescription = "Incorrect",
+                        contentDescription = stringResource(R.string.incorrect_desc),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "This question was answered incorrectly",
+                        text = stringResource(R.string.question_incorrect),
                         style = TextStyle.BodyMedium.value,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
@@ -386,13 +388,13 @@ fun QuestionScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Correct",
+                        contentDescription = stringResource(R.string.correct),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Great job! You answered this question correctly",
+                        text = stringResource(R.string.question_correct),
                         style = TextStyle.BodyMedium.value,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -446,7 +448,7 @@ fun QuestionScreen(
                                 isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                            
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -454,9 +456,10 @@ fun QuestionScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(backgroundColor)
                                     .selectable(
-                                        selected = isSelected,                                        onClick = { 
+                                        selected = isSelected,
+                                        onClick = {
                                             if (!isQuestionAnswered) {
-                                                onOptionSelect(index) 
+                                                onOptionSelect(index)
                                             }
                                         },
                                         role = Role.Checkbox,
@@ -466,7 +469,8 @@ fun QuestionScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
-                                    checked = isSelected,                                    onCheckedChange = { 
+                                    checked = isSelected,
+                                    onCheckedChange = {
                                         if (!isQuestionAnswered) {
                                             onOptionSelect(index)
                                         }
@@ -482,7 +486,7 @@ fun QuestionScreen(
                             }
                         }
                     }
-                    QuestionType.SINGLE_CHOICE, QuestionType.CODE -> {
+                    QuestionType.SINGLE_CHOICE, QuestionType.CODE, QuestionType.UNSPECIFIED -> {
                         question.options.forEachIndexed { index, option ->
                             val isSelected = selectedOptions.contains(index)
                             val backgroundColor = when {
@@ -497,7 +501,7 @@ fun QuestionScreen(
                                 isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                            
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -506,7 +510,7 @@ fun QuestionScreen(
                                     .background(backgroundColor)
                                     .selectable(
                                         selected = isSelected,
-                                        onClick = { 
+                                        onClick = {
                                             if (!isQuestionAnswered) {
                                                 onOptionSelect(index)
                                             }
@@ -517,14 +521,14 @@ fun QuestionScreen(
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = { 
-                                        if (!isQuestionAnswered) {
-                                            onOptionSelect(index)
-                                        }
-                                    },
-                                    enabled = !isQuestionAnswered
-                                )
+                                selected = isSelected,
+                                onClick = {
+                                    if (!isQuestionAnswered) {
+                                        onOptionSelect(index)
+                                    }
+                                },
+                                enabled = !isQuestionAnswered
+                            )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = option,
@@ -550,12 +554,12 @@ fun QuestionScreen(
                         } else {
                             OutlinedTextFieldDefaults.colors()
                         }
-                        
+
                         OutlinedTextField(
                             value = textAnswer,
                             onValueChange = onTextAnswerChange,
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Your Answer") },
+                            label = { Text("Ваш ответ") },
                             minLines = 3,
                             enabled = !isQuestionAnswered,
                             colors = textFieldColors
@@ -587,10 +591,10 @@ fun QuestionScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Previous"
+                        contentDescription = "Назад"
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Previous", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("Назад", style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
             }
@@ -609,7 +613,7 @@ fun QuestionScreen(
                     )
                 } else {
                     Text(
-                        text = if (isLastQuestion) "Finish" else "Next",
+                        text = if (isLastQuestion) "Закончить" else "Далее",
                         style = TextStyle.LabelLarge.value,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -633,7 +637,7 @@ fun ExplanationDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Hint",
+                text = "Пояснение",
                 style = TextStyle.TitleMedium.value,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -641,7 +645,7 @@ fun ExplanationDialog(
         text = {
             Column {
                 Text(
-                    text = "Your answer was not correct. Here's a hint:",
+                    text = "Ваш ответ неверен. Объяснение:",
                     style = TextStyle.BodyMedium.value,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -665,7 +669,7 @@ fun ExplanationDialog(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )) {
-                Text("Understand", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text("Понял", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
     )

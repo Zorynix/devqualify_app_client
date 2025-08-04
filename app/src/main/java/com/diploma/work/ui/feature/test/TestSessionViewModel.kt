@@ -45,7 +45,8 @@ data class TestSessionUiState(
     val correctlyAnsweredQuestions: Set<Long> = emptySet(),
     val isCurrentQuestionAnswered: Boolean = false,
     val isTestCompletionInProgress: Boolean = false,
-    val elapsedTimeMillis: Long = 0
+    val elapsedTimeMillis: Long = 0,
+    val isLeavingTest: Boolean = false
 )
 
 @HiltViewModel
@@ -59,7 +60,6 @@ class TestSessionViewModel @Inject constructor(
     val uiState: StateFlow<TestSessionUiState> = _uiState
     
     private var completeTestDeferred: CompletableDeferred<Boolean>? = null
-    private var isLeavingTest = false
 
     private val _navigationEvents = Channel<NavigationEvent>(Channel.BUFFERED)
     val navigationEvents = _navigationEvents.receiveAsFlow()
@@ -153,7 +153,8 @@ class TestSessionViewModel @Inject constructor(
 
         when (currentQuestion.type) {
             com.diploma.work.data.models.QuestionType.SINGLE_CHOICE,
-            com.diploma.work.data.models.QuestionType.CODE -> {
+            com.diploma.work.data.models.QuestionType.CODE,
+            com.diploma.work.data.models.QuestionType.UNSPECIFIED -> {
                 currentOptions.clear()
                 currentOptions.add(optionIndex)
             }
@@ -298,7 +299,8 @@ class TestSessionViewModel @Inject constructor(
                 answer.selectedOptions.sorted() == question.correctOptions.sorted()
             }
             com.diploma.work.data.models.QuestionType.SINGLE_CHOICE,
-            com.diploma.work.data.models.QuestionType.CODE -> {
+            com.diploma.work.data.models.QuestionType.CODE,
+            com.diploma.work.data.models.QuestionType.UNSPECIFIED -> {
                 answer.selectedOptions.firstOrNull() == question.correctOptions.firstOrNull()
             }
             com.diploma.work.data.models.QuestionType.TEXT -> {
@@ -355,9 +357,10 @@ class TestSessionViewModel @Inject constructor(
     }
 
     private fun createAnswer(questionId: Long): Answer {
+        val selected = if (_uiState.value.selectedOptions.isEmpty()) listOf(-1) else _uiState.value.selectedOptions
         return Answer(
             questionId = questionId,
-            selectedOptions = _uiState.value.selectedOptions,
+            selectedOptions = selected,
             textAnswer = _uiState.value.textAnswer.takeIf { it.isNotBlank() },
             codeAnswer = _uiState.value.codeAnswer.takeIf { it.isNotBlank() }
         )
@@ -482,6 +485,7 @@ class TestSessionViewModel @Inject constructor(
         val isCompletionInProgress = _uiState.value.isTestCompletionInProgress
         val elapsedTime = _uiState.value.elapsedTimeMillis
         val testCompleted = _uiState.value.testCompleted
+        val isLeavingTest = _uiState.value.isLeavingTest
         
         if (isLeavingTest || isCompletionInProgress) {
             Logger.d("$tag: Already leaving test or completion in progress, navigating up directly")
@@ -493,15 +497,15 @@ class TestSessionViewModel @Inject constructor(
         
         if (testCompleted) {
             Logger.d("$tag: Test already completed, not saving progress")
-            isLeavingTest = true
+            _uiState.value = _uiState.value.copy(isLeavingTest = true)
             viewModelScope.launch {
                 sendNavigationEvent(NavigationEvent.NavigateUp)
-                isLeavingTest = false
+                _uiState.value = _uiState.value.copy(isLeavingTest = false)
             }
             return
         }
         
-        isLeavingTest = true
+        _uiState.value = _uiState.value.copy(isLeavingTest = true)
         Logger.d("$tag: Handling leave test for session ID: $sessionId")
         
         viewModelScope.launch {
@@ -540,8 +544,7 @@ class TestSessionViewModel @Inject constructor(
                 Logger.e("$tag: Error when saving answer before leaving: ${e.message}")
                 sendNavigationEvent(NavigationEvent.NavigateUp)
             } finally {
-                isLeavingTest = false
-                _uiState.value = _uiState.value.copy(isSavingAnswer = false)
+                _uiState.value = _uiState.value.copy(isLeavingTest = false, isSavingAnswer = false)
             }
         }
     }

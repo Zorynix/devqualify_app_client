@@ -18,6 +18,8 @@ import com.diploma.work.data.models.UpdateUserAvatarRequest
 import com.diploma.work.data.models.UpdateUserAvatarResponse
 import com.diploma.work.data.models.GetUserAvatarRequest
 import com.diploma.work.data.models.GetUserAvatarResponse
+import com.diploma.work.data.models.SendFeedbackRequest
+import com.diploma.work.data.models.SendFeedbackResponse
 
 interface UserInfoRepository {
     suspend fun getUser(request: GetUserRequest): Result<GetUserResponse>
@@ -37,4 +39,6 @@ interface UserInfoRepository {
     suspend fun updateUserAvatar(request: UpdateUserAvatarRequest): Result<UpdateUserAvatarResponse>
     
     suspend fun getUserAvatar(request: GetUserAvatarRequest): Result<GetUserAvatarResponse>
+    
+    suspend fun sendFeedback(request: SendFeedbackRequest): Result<SendFeedbackResponse>
 }

@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.diploma.work"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -111,7 +111,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation("androidx.test:runner:1.6.1")
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.junit.ktx)
     debugImplementation(libs.androidx.compose.ui.ui.test.manifest)

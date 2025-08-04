@@ -91,6 +91,7 @@ class ErrorHandler @Inject constructor(
         LOGIN,
         REGISTRATION,
         EMAIL_CONFIRMATION,
+        FEEDBACK,
         TEST_SESSION,
         PROFILE_UPDATE,
         DATA_LOADING,
@@ -123,6 +124,21 @@ class ErrorHandler @Inject constructor(
                 error.message?.contains("invalid") == true -> this.context.getString(R.string.error_auth_invalid_code)
                 error.message?.contains("expired") == true -> this.context.getString(R.string.error_auth_code_expired)
                 else -> getErrorMessage(error)
+            }
+            ErrorContext.FEEDBACK -> when {
+                error.message?.contains("401") == true || error.message?.contains("unauthorized") == true -> 
+                    "Необходимо войти в систему для отправки обратной связи"
+                error.message?.contains("403") == true || error.message?.contains("forbidden") == true -> 
+                    "У вас нет прав для отправки обратной связи"
+                error.message?.contains("validation") == true || error.message?.contains("length") == true -> 
+                    "Проверьте правильность заполнения полей. Тема и описание не должны быть пустыми"
+                error.message?.contains("too long") == true -> 
+                    "Сообщение слишком длинное. Сократите текст и попробуйте снова"
+                error is ConnectException || error is UnknownHostException -> 
+                    "Проблема с подключением к интернету. Проверьте соединение и попробуйте снова"
+                error is SocketTimeoutException -> 
+                    "Время ожидания истекло. Попробуйте отправить сообщение позже"
+                else -> "Не удалось отправить сообщение. Попробуйте позже"
             }
             ErrorContext.TEST_SESSION -> when {
                 error.message?.contains("not found") == true -> this.context.getString(R.string.error_test_not_found)

@@ -35,9 +35,9 @@ data class LeaderboardUIState(
 )
 
 enum class LeaderboardSortType(val displayName: String) {
-    ACHIEVEMENTS("Achievements"),
-    CORRECT_ANSWERS("Correct Answers"),
-    COMPLETED_TESTS("Completed Tests")
+    ACHIEVEMENTS("Достижения"),
+    CORRECT_ANSWERS("Правильно отвечено"),
+    COMPLETED_TESTS("Завершенные тесты")
 }
 
 @HiltViewModel

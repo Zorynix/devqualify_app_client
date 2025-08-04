@@ -506,10 +506,13 @@ class TestsGrpcClient @Inject constructor(
     }
 
     private fun mapProtoQuestionToModel(protoQuestion: Question): com.diploma.work.data.models.Question {
+        val questionType = protoQuestion.type.toModelQuestionType()
+        Logger.d("TestsGrpcClient", "Question ID: ${protoQuestion.id}, Proto type: ${protoQuestion.type}, Mapped type: $questionType")
+        
         return Question(
             id = protoQuestion.id,
             text = protoQuestion.text,
-            type = protoQuestion.type.toModelQuestionType(),
+            type = questionType,
             options = protoQuestion.optionsList,
             correctOptions = protoQuestion.correctOptionsList,
             sampleCode = if (protoQuestion.sampleCode.isNotEmpty()) protoQuestion.sampleCode else null,
@@ -578,6 +581,8 @@ fun com.diploma.work.grpc.tests.QuestionType.toModelQuestionType(): QuestionType
         com.diploma.work.grpc.tests.QuestionType.SINGLE_CHOICE -> QuestionType.SINGLE_CHOICE
         com.diploma.work.grpc.tests.QuestionType.TEXT -> QuestionType.TEXT
         com.diploma.work.grpc.tests.QuestionType.CODE -> QuestionType.CODE
-        else -> QuestionType.UNSPECIFIED
+        com.diploma.work.grpc.tests.QuestionType.QUESTION_TYPE_UNSPECIFIED -> QuestionType.SINGLE_CHOICE
+        com.diploma.work.grpc.tests.QuestionType.UNRECOGNIZED -> QuestionType.SINGLE_CHOICE
+        else -> QuestionType.SINGLE_CHOICE
     }
 }

@@ -37,6 +37,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -61,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -71,6 +74,7 @@ import com.diploma.work.data.models.User
 import com.diploma.work.grpc.userinfo.Direction
 import com.diploma.work.grpc.userinfo.Level
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.ui.components.AvatarImage
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.AppThemeType
@@ -101,10 +105,12 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val errorOccurredText = stringResource(R.string.error_occurred)
+    
     LaunchedEffect(updateSuccess) {
         if (updateSuccess) {
             snackbarHostState.showSnackbar(
-                message = "Profile updated successfully!",
+                message = context.getString(R.string.profile_updated_successfully),
                 duration = SnackbarDuration.Short
             )
             viewModel.resetUpdateStatus()
@@ -114,7 +120,7 @@ fun ProfileScreen(
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(
-                message = errorMessage ?: "An error occurred",
+                message = errorMessage ?: errorOccurredText,
                 duration = SnackbarDuration.Short
             )
             viewModel.resetUpdateStatus()
@@ -131,7 +137,7 @@ fun ProfileScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Profile", style = TextStyle.HeadlineMedium.value) }
+                title = { Text(stringResource(R.string.profile), style = TextStyle.TitleLarge.value) }
             )
         }
     ) { paddingValues ->
@@ -142,7 +148,7 @@ fun ProfileScreen(
                 .padding(paddingValues)        ) {
             if (isLoading) {
                 LoadingCard(
-                    message = "Loading profile...",
+                    message = stringResource(R.string.loading_profile),
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else if (user != null) {
@@ -175,7 +181,7 @@ fun ProfileScreen(
                     )
                 }            } else {
                 ErrorCard(
-                    error = "Failed to load user data. Please try again.",
+                    error = stringResource(R.string.failed_load_user_data),
                     onRetry = { viewModel.loadProfile() },
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -195,6 +201,7 @@ fun AppDrawerContent(
     session: AppSession,
     onThemeToggle: () -> Unit,
     onInterestsClick: () -> Unit,
+    onFeedbackClick: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -214,7 +221,7 @@ fun AppDrawerContent(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
-                    ) {                        com.diploma.work.ui.components.AvatarImage(
+                    ) {                        AvatarImage(
                             avatarUrl = avatarUrl,
                             session = session,
                             size = 60.dp,
@@ -232,7 +239,7 @@ fun AppDrawerContent(
                 }
                 
                 HorizontalDivider()
-                  Row(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onThemeToggle() }
@@ -244,13 +251,13 @@ fun AppDrawerContent(
                             id = if (theme == AppThemeType.Dark) R.drawable.light_mode
                             else R.drawable.dark_mode
                         ),
-                        contentDescription = "Toggle theme",
+                        contentDescription = stringResource(R.string.toggle_theme),
                         modifier = Modifier.size(24.dp),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                     )
                     
                     Text(
-                        text = if (theme == AppThemeType.Dark) "Light Mode" else "Dark Mode",
+                        text = if (theme == AppThemeType.Dark) stringResource(R.string.light_mode) else stringResource(R.string.dark_mode),
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
@@ -265,13 +272,34 @@ fun AppDrawerContent(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_interests),
-                        contentDescription = "Interests",
+                        contentDescription = stringResource(R.string.interests),
                         modifier = Modifier.size(24.dp),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                     )
                     
                     Text(
-                        text = "Interests",
+                        text = stringResource(R.string.interests),
+                        style = TextStyle.BodyLarge.value,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onFeedbackClick() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Feedback,
+                        contentDescription = "Обратная связь",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Text(
+                        text = "Обратная связь",
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
@@ -289,13 +317,13 @@ fun AppDrawerContent(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.logout),
-                        contentDescription = "Logout",
+                        contentDescription = stringResource(R.string.logout),
                         modifier = Modifier.size(24.dp),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                     )
                     
                     Text(
-                        text = "Logout",
+                        text = stringResource(R.string.logout),
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
@@ -355,7 +383,7 @@ private fun UserProfileContent(
                     modifier = Modifier
                         .padding(bottom = 16.dp)
                 ) {
-                    com.diploma.work.ui.components.AvatarImage(
+                    AvatarImage(
                         avatarUrl = avatarUrl,
                         session = session,
                         size = 120.dp,
@@ -372,7 +400,7 @@ private fun UserProfileContent(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_edit), 
-                            contentDescription = "Change Avatar",
+                            contentDescription = stringResource(R.string.change_avatar),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(18.dp)
                         )
@@ -383,7 +411,7 @@ private fun UserProfileContent(
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
-        Text("Personal Information", style = TextStyle.TitleMedium.value)
+        Text("Персональная информация", style = TextStyle.TitleMedium.value)
         Spacer(modifier = Modifier.height(16.dp))
         Text("Email", style = TextStyle.BodyMedium.value)
         Text(
@@ -394,7 +422,7 @@ private fun UserProfileContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Username", style = TextStyle.BodyMedium.value)
+        Text(stringResource(R.string.username), style = TextStyle.BodyMedium.value)
         DiplomTextField(
             value = username,
             onValueChange = onUsernameChange,
@@ -402,7 +430,7 @@ private fun UserProfileContent(
         )
           Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Direction", style = TextStyle.BodyMedium.value)
+        Text(stringResource(R.string.direction), style = TextStyle.BodyMedium.value)
         ExposedDropdownMenuBox(
             expanded = directionMenuExpanded,
             onExpandedChange = { directionMenuExpanded = it },
@@ -435,7 +463,7 @@ private fun UserProfileContent(
         }
           Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Level", style = TextStyle.BodyMedium.value)
+        Text(stringResource(R.string.level), style = TextStyle.BodyMedium.value)
         ExposedDropdownMenuBox(
             expanded = levelMenuExpanded,
             onExpandedChange = { levelMenuExpanded = it },
@@ -469,13 +497,13 @@ private fun UserProfileContent(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
         
-        Text("Statistics", style = TextStyle.TitleMedium.value)
+        Text(stringResource(R.string.statistics), style = TextStyle.TitleMedium.value)
         Spacer(modifier = Modifier.height(8.dp))
         
-        StatisticRow("Completed Tests", "${user.completedTestsCount}")
-        StatisticRow("Correct Answers", "${user.totalCorrectAnswers}")
-        StatisticRow("Incorrect Answers", "${user.totalIncorrectAnswers}")
-        StatisticRow("Achievements", "${user.achievementsCount}")
+        StatisticRow(stringResource(R.string.completed_tests), "${user.completedTestsCount}")
+        StatisticRow(stringResource(R.string.correct_answers_stat), "${user.totalCorrectAnswers}")
+        StatisticRow(stringResource(R.string.incorrect_answers_stat), "${user.totalIncorrectAnswers}")
+        StatisticRow(stringResource(R.string.achievements_stat), "${user.achievementsCount}")
         
         Spacer(modifier = Modifier.height(24.dp))
         
@@ -493,7 +521,7 @@ private fun UserProfileContent(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Update Profile", color = MaterialTheme.colorScheme.onPrimary)
+                Text(stringResource(R.string.update_profile), color = MaterialTheme.colorScheme.onPrimary)
             }
         }
         
@@ -511,16 +539,16 @@ private fun UserProfileContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Change Avatar",
+                            stringResource(R.string.change_avatar_desc),
                             style = TextStyle.TitleLarge.value,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                          com.diploma.work.ui.components.AvatarImage(
-                            avatarUrl = avatarUrl,
-                            session = session,
-                            size = 120.dp,
-                            borderWidth = 2.dp
-                        )
+                        AvatarImage(
+                          avatarUrl = avatarUrl,
+                          session = session,
+                          size = 120.dp,
+                          borderWidth = 2.dp
+                      )
                         
                         Spacer(modifier = Modifier.height(24.dp))
                         
@@ -535,7 +563,7 @@ private fun UserProfileContent(
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         ) {
-                            Text("Choose from Gallery", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(stringResource(R.string.choose_from_gallery), color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -543,7 +571,7 @@ private fun UserProfileContent(
                             onClick = { showAvatarDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 }
@@ -565,21 +593,23 @@ private fun StatisticRow(label: String, value: String) {
     }
 }
 
+@Composable
 private fun directionToString(direction: Direction): String {
     return when (direction) {
-        Direction.BACKEND -> "Backend"
-        Direction.FRONTEND -> "Frontend"
-        Direction.DEVOPS -> "DevOps"
-        Direction.DATA_SCIENCE -> "Data Science"
-        else -> "Select Direction"
+        Direction.BACKEND -> stringResource(R.string.backend)
+        Direction.FRONTEND -> stringResource(R.string.frontend)
+        Direction.DEVOPS -> stringResource(R.string.devops)
+        Direction.DATA_SCIENCE -> stringResource(R.string.data_science)
+        else -> stringResource(R.string.select_direction_placeholder)
     }
 }
 
+@Composable
 private fun levelToString(level: Level): String {
     return when (level) {
-        Level.JUNIOR -> "Junior"
-        Level.MIDDLE -> "Middle"
-        Level.SENIOR -> "Senior"
-        else -> "Select Level"
+        Level.JUNIOR -> stringResource(R.string.junior)
+        Level.MIDDLE -> stringResource(R.string.middle)
+        Level.SENIOR -> stringResource(R.string.senior)
+        else -> stringResource(R.string.select_level_placeholder)
     }
 }

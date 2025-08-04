@@ -54,60 +54,49 @@ class UserInterestsViewModel @Inject constructor(
                 if (technologiesResult.isSuccess) {
                     val technologies = technologiesResult.getOrNull()?.technologies ?: emptyList()
                     
-                    val cachedPreferences = session.getUserPreferences()
+                    val userId = session.getUserId()
+                    var preferences: UserPreferences? = null
                     
-                    if (cachedPreferences != null) {
-                        Logger.d("$tag: Loaded preferences from cache")
-                        Logger.d("$tag: Cached technology IDs: ${cachedPreferences.technologyIds}")
-                        Logger.d("$tag: Cached directions: ${cachedPreferences.directions}")
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            technologies = technologies,
-                            selectedTechnologyIds = cachedPreferences.technologyIds.toSet(),
-                            selectedDirections = cachedPreferences.directions.toSet(),
-                            deliveryFrequency = cachedPreferences.deliveryFrequency,
-                            emailNotifications = cachedPreferences.emailNotifications,
-                            pushNotifications = cachedPreferences.pushNotifications,
-                            articlesPerDay = cachedPreferences.articlesPerDay
+                    if (userId != null) {
+                        Logger.d("$tag: Loading preferences from server for user: $userId")
+                        val preferencesResult = articlesRepository.getUserPreferences(
+                            GetUserPreferencesRequest(userId)
                         )
-                    } else {
-                        val userId = session.getUserId()
-                        if (userId != null) {
-                            val preferencesResult = articlesRepository.getUserPreferences(
-                                GetUserPreferencesRequest(userId)
-                            )
+                        
+                        if (preferencesResult.isSuccess) {
+                            preferences = preferencesResult.getOrNull()?.preferences
                             
-                            if (preferencesResult.isSuccess) {
-                                val preferences = preferencesResult.getOrNull()?.preferences
-                                
-                                if (preferences != null) {
-                                    session.storeUserPreferences(preferences)
-                                    Logger.d("$tag: Loaded preferences from server and cached")
-                                }
-                                
-                                _uiState.value = _uiState.value.copy(
-                                    isLoading = false,
-                                    technologies = technologies,
-                                    selectedTechnologyIds = preferences?.technologyIds?.toSet() ?: emptySet(),
-                                    selectedDirections = preferences?.directions?.toSet() ?: emptySet(),
-                                    deliveryFrequency = preferences?.deliveryFrequency ?: DeliveryFrequency.WEEKLY,
-                                    emailNotifications = preferences?.emailNotifications ?: true,
-                                    pushNotifications = preferences?.pushNotifications ?: true,
-                                    articlesPerDay = preferences?.articlesPerDay ?: 20
-                                )
+                            if (preferences != null) {
+                                session.storeUserPreferences(preferences)
+                                Logger.d("$tag: Loaded preferences from server and cached")
+                                Logger.d("$tag: Server technology IDs: ${preferences.technologyIds}")
+                                Logger.d("$tag: Server directions: ${preferences.directions}")
                             } else {
-                                _uiState.value = _uiState.value.copy(
-                                    isLoading = false,
-                                    technologies = technologies
-                                )
+                                Logger.d("$tag: Server returned no preferences")
                             }
                         } else {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                technologies = technologies
-                            )
+                            Logger.e("$tag: Failed to load preferences from server, trying cache")
+                            preferences = session.getUserPreferences()
+                            if (preferences != null) {
+                                Logger.d("$tag: Using cached preferences as fallback")
+                                Logger.d("$tag: Cached technology IDs: ${preferences.technologyIds}")
+                                Logger.d("$tag: Cached directions: ${preferences.directions}")
+                            }
                         }
+                    } else {
+                        Logger.w("$tag: No user ID found, cannot load preferences")
                     }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        technologies = technologies,
+                        selectedTechnologyIds = preferences?.technologyIds?.toSet() ?: emptySet(),
+                        selectedDirections = preferences?.directions?.toSet() ?: emptySet(),
+                        deliveryFrequency = preferences?.deliveryFrequency ?: DeliveryFrequency.WEEKLY,
+                        emailNotifications = preferences?.emailNotifications ?: true,
+                        pushNotifications = preferences?.pushNotifications ?: true,
+                        articlesPerDay = preferences?.articlesPerDay ?: 20
+                    )
                 } else {
                     val error = technologiesResult.exceptionOrNull()?.message ?: "Failed to load technologies"
                     Logger.e("$tag: $error")
@@ -177,6 +166,14 @@ class UserInterestsViewModel @Inject constructor(
                     return@launch
                 }
 
+                Logger.d("$tag: Saving preferences for user: $userId")
+                Logger.d("$tag: Technology IDs: ${_uiState.value.selectedTechnologyIds}")
+                Logger.d("$tag: Directions: ${_uiState.value.selectedDirections}")
+                Logger.d("$tag: Delivery frequency: ${_uiState.value.deliveryFrequency}")
+                Logger.d("$tag: Email notifications: ${_uiState.value.emailNotifications}")
+                Logger.d("$tag: Push notifications: ${_uiState.value.pushNotifications}")
+                Logger.d("$tag: Articles per day: ${_uiState.value.articlesPerDay}")
+
                 val request = UpdateUserPreferencesRequest(
                     userId = userId,
                     technologyIds = _uiState.value.selectedTechnologyIds.toList(),
@@ -190,7 +187,7 @@ class UserInterestsViewModel @Inject constructor(
 
                 val result = articlesRepository.updateUserPreferences(request)
                 if (result.isSuccess) {
-                    Logger.d("$tag: User preferences saved successfully")
+                    Logger.d("$tag: User preferences saved successfully on server")
                       val savedPreferences = UserPreferences(
                         userId = userId,
                         technologyIds = _uiState.value.selectedTechnologyIds.toList(),
@@ -203,6 +200,10 @@ class UserInterestsViewModel @Inject constructor(
                         updatedAt = java.time.Instant.now()
                     )
                     session.storeUserPreferences(savedPreferences)
+                    Logger.d("$tag: User preferences cached locally")
+                    
+                    kotlinx.coroutines.delay(500)
+                    verifyPreferencesSaved(userId)
                     
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -210,7 +211,7 @@ class UserInterestsViewModel @Inject constructor(
                     )
                 } else {
                     val error = result.exceptionOrNull()?.message ?: "Failed to save preferences"
-                    Logger.e("$tag: $error")
+                    Logger.e("$tag: Failed to save preferences on server: $error")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = error
@@ -225,6 +226,38 @@ class UserInterestsViewModel @Inject constructor(
             }
         }
     }
+
+    private suspend fun verifyPreferencesSaved(userId: Long) {
+        try {
+            Logger.d("$tag: Verifying preferences saved on server...")
+            val verifyResult = articlesRepository.getUserPreferences(
+                GetUserPreferencesRequest(userId)
+            )
+            
+            if (verifyResult.isSuccess) {
+                val serverPreferences = verifyResult.getOrNull()?.preferences
+                if (serverPreferences != null) {
+                    Logger.d("$tag: Verification successful - server has preferences")
+                    Logger.d("$tag: Verified technology IDs: ${serverPreferences.technologyIds}")
+                    Logger.d("$tag: Verified directions: ${serverPreferences.directions}")
+                    
+                    session.storeUserPreferences(serverPreferences)
+                } else {
+                    Logger.w("$tag: Verification failed - server returned empty preferences")
+                }
+            } else {
+                Logger.e("$tag: Verification failed - could not get preferences from server")
+            }
+        } catch (e: Exception) {
+            Logger.e("$tag: Exception during verification: ${e.message}")
+        }
+    }
+
+    fun reloadData() {
+        Logger.d("$tag: Manual reload requested")
+        loadData()
+    }
+
     override fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -239,5 +272,10 @@ class UserInterestsViewModel @Inject constructor(
 
     fun getDirections(): List<ArticleDirection> {
         return ArticleDirection.entries.filter { it != ArticleDirection.UNSPECIFIED }
+    }
+
+    fun manualReload() {
+        Logger.d("Manual reload triggered by user")
+        loadData()
     }
 }

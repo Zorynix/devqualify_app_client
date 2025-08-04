@@ -43,3 +43,6 @@ object UserInterests : NavRoute
 
 @Serializable
 object Articles : NavRoute
+
+@Serializable
+object Feedback : NavRoute

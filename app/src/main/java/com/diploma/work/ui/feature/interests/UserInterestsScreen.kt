@@ -9,13 +9,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import com.diploma.work.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.diploma.work.data.models.ArticleDirection
@@ -34,12 +37,17 @@ fun UserInterestsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Interests", style = TextStyle.TitleLarge.value) },
+                title = { Text("Интересы", style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.manualReload() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Синхронизировать")
                     }
                 }
             )
@@ -58,7 +66,7 @@ fun UserInterestsScreen(
         }    ) { padding ->
         if (state.isLoading) {
             LoadingCard(
-                message = "Loading user interests...",
+                message = stringResource(R.string.loading_user_interests),
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -149,13 +157,9 @@ fun UserInterestsScreen(
                     Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = { viewModel.savePreferences() },
-                        enabled = !state.isLoading
+                        enabled = true
                     ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(Modifier.size(20.dp))
-                        } else {
-                            Text("Сохранить")
-                        }
+                        Text("Сохранить")
                     }
                     if (state.saveSuccess) {
                         Text("Сохранено!", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))

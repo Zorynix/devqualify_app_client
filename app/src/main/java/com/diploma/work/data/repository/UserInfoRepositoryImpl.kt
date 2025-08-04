@@ -54,4 +54,9 @@ class UserInfoRepositoryImpl @Inject constructor(
         Logger.d("Getting avatar for userId: ${request.userId}")
         return userInfoGrpcClient.getUserAvatar(request)
     }
+    
+    override suspend fun sendFeedback(request: SendFeedbackRequest): Result<SendFeedbackResponse> {
+        Logger.d("Sending feedback from userId: ${request.userId}")
+        return userInfoGrpcClient.sendFeedback(request)
+    }
 }

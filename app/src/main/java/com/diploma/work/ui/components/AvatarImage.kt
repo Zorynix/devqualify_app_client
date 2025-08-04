@@ -35,7 +35,7 @@ fun AvatarImage(
     val context = LocalContext.current
     
     if (avatarUrl == "data:avatar") {
-        val bitmap = remember { session.getAvatarBitmap() }
+        val bitmap = remember(avatarUrl) { session.getAvatarBitmap() }
         
         if (bitmap != null) {            Image(
                 bitmap = bitmap.asImageBitmap(),

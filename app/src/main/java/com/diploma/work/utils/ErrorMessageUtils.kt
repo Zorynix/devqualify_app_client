@@ -22,7 +22,13 @@ object ErrorMessageUtils {
             
             Status.Code.DEADLINE_EXCEEDED -> "Время ожидания истекло. Попробуйте еще раз."
             
-            Status.Code.UNAUTHENTICATED -> "Сессия истекла. Необходимо войти в систему заново."
+            Status.Code.UNAUTHENTICATED -> when {
+                description.contains("invalid email or password") -> "Неверный email или пароль."
+                description.contains("invalid credentials") -> "Неверные учетные данные."
+                description.contains("password") -> "Неверный пароль."
+                description.contains("email") -> "Неверный email."
+                else -> "Сессия истекла. Необходимо войти в систему заново."
+            }
             
             Status.Code.PERMISSION_DENIED -> "У вас нет прав для выполнения этого действия."
             
@@ -123,11 +129,22 @@ object ErrorMessageUtils {
         }
     }
       fun getContextualErrorMessage(error: Throwable, context: ErrorContext): String {
+        if (context == ErrorContext.LOGIN && error is StatusRuntimeException && 
+            error.status.code == Status.Code.UNAUTHENTICATED) {
+            val description = error.status.description?.lowercase() ?: ""
+            if (description.contains("invalid email or password") || 
+                description.contains("invalid credentials")) {
+                return "Неверный email или пароль. Проверьте правильность ввода."
+            }
+        }
+        
         val baseMessage = getReadableErrorMessage(error)
         
         return when (context) {
             ErrorContext.LOGIN -> when {
+                baseMessage.contains("Неверный email или пароль") -> baseMessage
                 baseMessage.contains("Неверный пароль") -> "Неверный email или пароль. Проверьте правильность ввода."
+                baseMessage.contains("Неверные учетные данные") -> "Неверный email или пароль. Проверьте правильность ввода."
                 baseMessage.contains("не найден") -> "Пользователь с таким email не найден."
                 else -> baseMessage
             }
@@ -164,6 +181,14 @@ object ErrorMessageUtils {
                 else -> "Ошибка сети. Проверьте подключение к интернету."
             }
             
+            ErrorContext.FEEDBACK -> when {
+                baseMessage.contains("unauthorized") || baseMessage.contains("unauthenticated") -> "Необходимо войти в систему для отправки обратной связи."
+                baseMessage.contains("invalid") -> "Проверьте правильность заполнения полей формы."
+                baseMessage.contains("too long") -> "Сообщение слишком длинное. Сократите текст."
+                baseMessage.contains("empty") || baseMessage.contains("required") -> "Заполните все обязательные поля."
+                else -> "Не удалось отправить сообщение. Попробуйте позже."
+            }
+            
             ErrorContext.GENERIC -> when {
                 baseMessage.contains("неизвестная ошибка") -> "Произошла неожиданная ошибка. Попробуйте позже."
                 else -> baseMessage.ifEmpty { "Произошла ошибка. Попробуйте еще раз." }
@@ -180,5 +205,6 @@ enum class ErrorContext {
     PROFILE_UPDATE,
     DATA_LOADING,
     NETWORK,
+    FEEDBACK,
     GENERIC
 }

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.ui.res.stringResource
+import com.diploma.work.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -53,7 +55,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
-import com.diploma.work.R
 import com.diploma.work.ui.theme.Theme
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -188,7 +189,7 @@ fun DiplomPasswordTextField(
                     painter = painterResource(
                         id = if (isPasswordVisible) R.drawable.ic_eye_off else R.drawable.ic_eye,
                     ),
-                    contentDescription = "Toggle password visibility",
+                    contentDescription = stringResource(R.string.toggle_password_visibility),
                     modifier = Modifier.size(24.dp),
                     tint = Theme.extendedColorScheme.onBackgroundHint
                 )

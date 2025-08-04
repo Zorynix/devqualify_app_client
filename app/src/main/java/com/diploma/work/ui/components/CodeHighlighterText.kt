@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.stringResource
+import com.diploma.work.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -52,7 +54,7 @@ fun CodeHighlighterText(
         ) {
             Icon(
                 imageVector = Icons.Default.Code,
-                contentDescription = "Code",
+                contentDescription = stringResource(R.string.code),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(16.dp)
             )

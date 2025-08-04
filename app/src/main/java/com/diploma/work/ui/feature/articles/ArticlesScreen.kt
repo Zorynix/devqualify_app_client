@@ -19,14 +19,17 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.diploma.work.R
 import com.diploma.work.data.models.*
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
+import com.orhanobut.logger.Logger
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -39,79 +42,87 @@ fun ArticlesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showFilters by remember { mutableStateOf(false) }
+    
     LaunchedEffect(Unit) {
         viewModel.refreshUserPreferences()
     }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        TopAppBar(
-            title = { Text("Articles") },
-            navigationIcon = {
-                IconButton(onClick = onOpenDrawer) {
-                    Icon(Icons.Default.Menu, contentDescription = "Open menu")
+    
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.articles)) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showFilters = !showFilters }) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = stringResource(R.string.filter)
+                        )
+                    }
                 }
-            },
-            actions = {                IconButton(onClick = { showFilters = !showFilters }) {
-                    Icon(
-                        Icons.Default.Tune,
-                        contentDescription = "Filters",
-                        tint = if (uiState.searchQuery.isNotBlank() ||
-                                  uiState.selectedTimePeriod != TimePeriod.WEEK ||
-                                  uiState.selectedSortType != SortType.RELEVANCE) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                }
-            }
-        )
-
-        SearchBar(
-            query = uiState.searchQuery,
-            onQueryChange = viewModel::setSearchQuery,
-            onSearch = { viewModel.loadArticles() },
-            placeholder = "Search articles...")
-        if (showFilters) {
-            FiltersPanel(
-                uiState = uiState,
-                onTimePeriodChange = viewModel::setTimePeriod,
-                onSortByChange = viewModel::setSortBy,
-                onSourceChange = viewModel::toggleSource,
-                onClearFilters = viewModel::clearFilters,
-                onApplyUserPreferences = viewModel::applyUserPreferencesToFilters
             )
         }
-        
-        PullToRefreshBox(
-            isRefreshing = uiState.isRefreshing,
-            onRefresh = { viewModel.refreshArticles() },
-            modifier = Modifier.fillMaxSize()
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            when {
-                uiState.isLoading && uiState.articles.isEmpty() -> {
-                    LoadingCard(
-                        message = "Loading articles...",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }            uiState.error != null -> {
-                    ErrorCard(
-                        error = uiState.error!!,
-                        onRetry = { viewModel.loadArticles() }
-                    )
-                }uiState.articles.isEmpty() -> {
-                    EmptyStateCard()
-                }            else -> {
-                    ArticlesList(
-                        articles = uiState.articles,
-                        onArticleClick = { /* TODO: Navigate to article detail */ },
-                        onLoadMore = { viewModel.loadMoreArticles() },
-                        isLoading = uiState.isLoading,
-                        hasMore = uiState.hasMore
-                    )
+            SearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = viewModel::setSearchQuery,
+                onSearch = { viewModel.loadArticles() },
+                placeholder = stringResource(R.string.search_articles)
+            )
+            
+            if (showFilters) {
+                FiltersPanel(
+                    uiState = uiState,
+                    onTimePeriodChange = viewModel::setTimePeriod,
+                    onSortByChange = viewModel::setSortBy,
+                    onSourceChange = viewModel::toggleSource,
+                    onClearFilters = viewModel::clearFilters,
+                    onApplyUserPreferences = viewModel::applyUserPreferencesToFilters
+                )
+            }
+            
+            PullToRefreshBox(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { viewModel.refreshArticles() },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when {
+                    uiState.isLoading && uiState.articles.isEmpty() -> {
+                        LoadingCard(
+                            message = stringResource(R.string.loading_articles),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    uiState.error != null -> {
+                        ErrorCard(
+                            error = uiState.error!!,
+                            onRetry = { viewModel.loadArticles() },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    uiState.articles.isEmpty() -> {
+                        EmptyStateCard()
+                    }
+                    else -> {
+                        ArticlesList(
+                            articles = uiState.articles,
+                            onArticleClick = { /* TODO: Navigate to article detail */ },
+                            onLoadMore = { viewModel.loadMoreArticles() },
+                            isLoading = uiState.isLoading,
+                            hasMore = uiState.hasMore
+                        )
+                    }
                 }
             }
         }
@@ -130,12 +141,12 @@ private fun SearchBar(
         onValueChange = onQueryChange,
         placeholder = { Text(placeholder) },
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = "Search")
+            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_desc))
         },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_desc))
                 }
             }
         },
@@ -171,21 +182,21 @@ private fun FiltersPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Filters",
+                    stringResource(R.string.filters),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Row {                    TextButton(onClick = onApplyUserPreferences) {
-                        Text("My Interests")
+                        Text(stringResource(R.string.my_interests))
                     }
                     TextButton(onClick = onClearFilters) {
-                        Text("Clear All")
+                        Text(stringResource(R.string.clear_all))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            FilterSection(title = "Time Period") {
+            FilterSection(title = stringResource(R.string.time_period)) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -193,13 +204,13 @@ private fun FiltersPanel(
                         FilterChip(
                             selected = uiState.selectedTimePeriod == period,
                             onClick = { onTimePeriodChange(period) },
-                            label = { Text(period.displayName) }
+                            label = { Text(period.getDisplayName()) }
                         )
                     }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            FilterSection(title = "Sort By") {
+            FilterSection(title = stringResource(R.string.sort_by)) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -207,7 +218,7 @@ private fun FiltersPanel(
                         FilterChip(
                             selected = uiState.selectedSortType == sortType,
                             onClick = { onSortByChange(sortType) },
-                            label = { Text(sortType.displayName) }
+                            label = { Text(sortType.getDisplayName()) }
                         )
                     }
                 }
@@ -292,6 +303,8 @@ private fun ArticleCard(
     onClick: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
+    
+    Logger.d("ArticleCard: title='${article.title}', rssSourceName='${article.rssSourceName}'")
 
     Card(
         modifier = Modifier
@@ -324,11 +337,13 @@ private fun ArticleCard(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    Text(
-                        text = article.rssSourceName,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (article.rssSourceName.isNotEmpty()) {
+                        Text(
+                            text = article.rssSourceName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -373,19 +388,19 @@ private fun EmptyStateCard() {
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.Article,
-                contentDescription = "No articles",
+                contentDescription = stringResource(R.string.no_articles_desc),
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No articles found",
+                text = stringResource(R.string.no_articles_found),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Try adjusting your filters or check back later for new content",
+                text = stringResource(R.string.no_articles_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -393,24 +408,24 @@ private fun EmptyStateCard() {
     }
 }
 
-private val TimePeriod.displayName: String
-    get() = when (this) {
-        TimePeriod.DAY -> "24 Hours"
-        TimePeriod.WEEK -> "Week"
-        TimePeriod.MONTH -> "Month"
-        TimePeriod.QUARTER -> "3 Months"
-        TimePeriod.YEAR -> "Year"
-        TimePeriod.ALL -> "All Time"
-    }
+@Composable
+private fun TimePeriod.getDisplayName(): String = when (this) {
+    TimePeriod.DAY -> stringResource(R.string.time_24_hours)
+    TimePeriod.WEEK -> stringResource(R.string.time_week)
+    TimePeriod.MONTH -> stringResource(R.string.time_month)
+    TimePeriod.QUARTER -> stringResource(R.string.time_3_months)
+    TimePeriod.YEAR -> stringResource(R.string.time_year)
+    TimePeriod.ALL -> stringResource(R.string.time_all)
+}
 
-private val SortType.displayName: String
-    get() = when (this) {
-        SortType.RELEVANCE -> "Relevance"
-        SortType.DATE_DESC -> "Newest First"
-        SortType.DATE_ASC -> "Oldest First"
-        SortType.RATING_DESC -> "Highest Rated"
-        SortType.RATING_ASC -> "Lowest Rated"
-    }
+@Composable
+private fun SortType.getDisplayName(): String = when (this) {
+    SortType.RELEVANCE -> stringResource(R.string.sort_relevance)
+    SortType.DATE_DESC -> stringResource(R.string.sort_newest)
+    SortType.DATE_ASC -> stringResource(R.string.sort_oldest)
+    SortType.RATING_DESC -> stringResource(R.string.sort_highest_rated)
+    SortType.RATING_ASC -> stringResource(R.string.sort_lowest_rated)
+}
 
 private val ArticleDirection.displayName: String
     get() = when (this) {
@@ -420,5 +435,3 @@ private val ArticleDirection.displayName: String
         ArticleDirection.DATA_SCIENCE -> "Data Science"
         ArticleDirection.UNSPECIFIED -> "All"
     }
-
-

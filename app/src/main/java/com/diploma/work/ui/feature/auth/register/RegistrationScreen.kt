@@ -2,6 +2,7 @@ package com.diploma.work.ui.feature.auth.register
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,15 +27,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.ThemeToggleButton
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
@@ -60,22 +64,33 @@ fun RegistrationScreen(
             navController.safeNavigate(destination, clearStack = true)
         }
     }
-    Column(
+    
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
-        IconButton(onClick = { navController.safeNavigateBack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-        }
-        Text("Регистрация", style = TextStyle.TitleLarge.value)
+        ThemeToggleButton(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        )
         
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            IconButton(onClick = { navController.safeNavigateBack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+            }
+            Text(stringResource(R.string.registration), style = TextStyle.TitleLarge.value)
+
         DiplomTextField(
             value = email,
             onValueChange = { viewModel.onEmailChanged(it) },
-            label = { Text("Email", style = TextStyle.BodyLarge.value) },
+            label = { Text(stringResource(R.string.email), style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
         
@@ -94,16 +109,16 @@ fun RegistrationScreen(
         DiplomPasswordTextField(
             value = password,
             onValueChange = { viewModel.onPasswordChanged(it) },
-            label = { Text("Пароль", style = TextStyle.BodyLarge.value) },
+            label = { Text(stringResource(R.string.password), style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )        
         if (password.isNotBlank()) {
             val passwordValidation = ValidationUtils.validateStrongPassword(password)
             if (!passwordValidation.isValid) {
                 Text(
-                    text = "Пароль: мин. 8 символов, цифра, заглавная/строчная буквы, спецсимвол (@#$%^&+=)",
+                    text = stringResource(R.string.password_requirements),
                     color = Color.Red,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     modifier = Modifier
                         .padding(top = 4.dp)
                         .align(Alignment.Start)
@@ -163,6 +178,7 @@ fun RegistrationScreen(
                     navController.safeNavigate("Login")
                 }
             )
+        }
         }
     }
 }

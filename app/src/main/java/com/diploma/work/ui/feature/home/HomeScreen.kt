@@ -43,11 +43,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.diploma.work.R
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.data.models.Technology
@@ -58,6 +60,7 @@ import com.diploma.work.ui.navigation.TestDetails
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.orhanobut.logger.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,22 +71,27 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     var showFilterDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Available Tests", style = TextStyle.TitleLarge.value) },
+                title = { Text(stringResource(R.string.available_tests), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Default.Menu, contentDescription = "Open menu")
+                    IconButton(onClick = {
+                        Logger.d("Navigation: Menu button clicked in Home screen")
+                        onOpenDrawer()
+                    }) {
+                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showFilterDialog = !showFilterDialog }) {
                         Icon(
                             imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filter",
+                            contentDescription = stringResource(R.string.filter),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -99,11 +107,13 @@ fun HomeScreen(
             if (showFilterDialog) {
                 AlertDialog(
                     onDismissRequest = { showFilterDialog = false },
-                    title = { Text("Filter", style = TextStyle.TitleLarge.value) },
+                    title = { Text(stringResource(R.string.filter), style = TextStyle.TitleLarge.value) },
                     text = {
                         Column {
+                            val allText = stringResource(R.string.all)
+
                             Text(
-                                text = "Filter by Direction",
+                                text = stringResource(R.string.filter_by_direction),
                                 style = TextStyle.LabelMedium.value,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp)
@@ -114,13 +124,13 @@ fun HomeScreen(
                                 onSelectChange = { direction ->
                                     viewModel.selectDirection(direction?.toProtoDirection())
                                 },
-                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
+                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "Filter by Level",
+                                text = stringResource(R.string.filter_by_level),
                                 style = TextStyle.LabelMedium.value,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp)
@@ -131,14 +141,14 @@ fun HomeScreen(
                                 onSelectChange = { level ->
                                     viewModel.selectLevel(level?.toProtoLevel())
                                 },
-                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: "All" }
+                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
                             )
 
                             if (state.technologies.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Text(
-                                    text = "Filter by Technology",
+                                    text = stringResource(R.string.filter_by_technology),
                                     style = TextStyle.LabelMedium.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 8.dp)
@@ -149,7 +159,7 @@ fun HomeScreen(
                                     onSelectChange = { technology ->
                                         viewModel.selectTechnology(technology)
                                     },
-                                    chipLabel = { it?.name ?: "All" }
+                                    chipLabel = { it?.name ?: allText }
                                 )
                             }
                         }
@@ -158,18 +168,20 @@ fun HomeScreen(
                         TextButton(
                             onClick = { showFilterDialog = false }
                         ) {
-                            Text("Close")
+                            Text(stringResource(R.string.close))
                         }
                     }
                 )
             }
-            if (viewModel.isLoading.collectAsState().value) {
+            if (isLoading) {
                 LoadingCard(
-                    message = "Loading tests...",
+                    message = stringResource(R.string.loading_tests),
                     modifier = Modifier.fillMaxSize()
-                )            }            else if (viewModel.errorMessage.collectAsState().value != null) {
+                )
+            }
+            else if (errorMessage != null) {
                 ErrorCard(
-                    error = viewModel.errorMessage.collectAsState().value!!,
+                    error = errorMessage!!,
                     onRetry = { viewModel.loadTests() },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -179,14 +191,15 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tests available for the selected filters",
+                        text = stringResource(R.string.no_tests_available),
                         style = TextStyle.BodyLarge.value,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-            } else {                TestsList(
+            } else {
+                TestsList(
                     tests = state.tests,
                     onTestSelect = { test ->
                         navController.safeNavigate("TestDetails/${test.id}")
@@ -217,7 +230,7 @@ private fun <T> ChipGroup(
                     {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = "Selected",
+                            contentDescription = stringResource(R.string.selected),
                             modifier = Modifier.size(FilterChipDefaults.IconSize)
                         )
                     }
@@ -232,7 +245,8 @@ fun TestsList(
     tests: List<TestInfo>,
     onTestSelect: (TestInfo) -> Unit,
     modifier: Modifier = Modifier
-) {    LazyColumn(
+) {
+    LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -248,7 +262,8 @@ fun TestCard(
     test: TestInfo,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
-) {    Card(
+) {
+    Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),

@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">DiplomaWork</string>
-	<string name="ok">OK</string>
+    <string name="ok">OK</string>
     <string name="skip">Пропустить</string>
     <string name="app_name_new">DevQualify</string>
     <string name="retry">Повторить</string>
-    
+
     <string name="error_generic">Произошла ошибка</string>
     <string name="error_network_connection">Ошибка подключения к сети</string>
     <string name="error_network_timeout">Время ожидания истекло</string>
@@ -33,4 +33,211 @@
     
     <string name="empty_state_title">Данные отсутствуют</string>
     <string name="empty_state_message">Здесь пока ничего нет</string>
+
+    <string name="login">Войти</string>
+    <string name="register">Зарегистрироваться</string>
+    <string name="registration">Регистрация</string>
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="confirm_password">Подтвердите пароль</string>
+    <string name="password_requirements">Пароль: мин. 8 символов, цифра, заглавная/строчная буквы, спецсимвол (@#$%^&amp;+=)</string>
+    <string name="passwords_dont_match">Пароли не совпадают</string>
+    <string name="no_account">Нет аккаунта? </string>
+    <string name="already_registered">Уже зарегистрированы? </string>
+    <string name="back">Назад</string>
+
+    <string name="open_menu">Открыть меню</string>
+    <string name="back_navigation">Назад</string>
+
+    <string name="available_tests">Доступные тесты</string>
+    <string name="filter">Фильтр</string>
+    <string name="filter_by_direction">Фильтр по направлению</string>
+    <string name="filter_by_level">Фильтр по уровню</string>
+    <string name="filter_by_technology">Фильтр по технологии</string>
+    <string name="all">Все</string>
+    <string name="close">Закрыть</string>
+    <string name="loading_tests">Загрузка тестов…</string>
+    <string name="no_tests_available">Нет доступных тестов для выбранных фильтров</string>
+
+    <string name="profile">Профиль</string>
+    <string name="toggle_theme">Переключить тему</string>
+    <string name="light_mode">Светлая тема</string>
+    <string name="dark_mode">Темная тема</string>
+    <string name="interests">Интересы</string>
+    <string name="logout">Выйти</string>
+    <string name="edit_profile">Редактировать профиль</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="username">Имя пользователя</string>
+    <string name="direction">Направление</string>
+    <string name="level">Уровень</string>
+    <string name="select_direction">Выберите направление</string>
+    <string name="select_level">Выберите уровень</string>
+    <string name="change_avatar">Изменить аватар</string>
+    <string name="profile_updated">Профиль обновлен</string>
+    <string name="loading_profile">Загрузка профиля…</string>
+
+    <string name="test_details">Детали теста</string>
+    <string name="start_test">Начать тест</string>
+    <string name="loading_test_details">Загрузка деталей теста…</string>
+    <string name="duration">Продолжительность</string>
+    <string name="questions_count">Количество вопросов</string>
+    <string name="difficulty">Сложность</string>
+    <string name="description">Описание</string>
+    <string name="minutes">мин</string>
+
+    <string name="test_session">Тестирование</string>
+    <string name="question">Вопрос</string>
+    <string name="of">из</string>
+    <string name="next">Далее</string>
+    <string name="finish">Завершить</string>
+    <string name="time_remaining">Осталось времени</string>
+    <string name="confirm_finish">Подтвердить завершение</string>
+    <string name="finish_test_confirmation">Вы уверены, что хотите завершить тест?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="taking_test_title">Прохождение теста</string>
+    <string name="loading_test_session">Загрузка тестовой сессии…</string>
+    <string name="test_session_not_found">Тестовая сессия не найдена</string>
+    <string name="leave_test_title">Выйти из теста?</string>
+    <string name="leave_test_message">Как вы хотите выйти из теста?</string>
+    <string name="save_and_continue_later">Сохранить и продолжить позже</string>
+    <string name="exit_without_saving">Выйти без сохранения</string>
+    <string name="ready_to_submit">Готовы отправить ваш тест?</string>
+    <string name="complete_test_button">Завершить тест</string>
+    <string name="question_of">Вопрос %1$d из %2$d</string>
+    <string name="progress_percent">%1$d%%</string>
+    <string name="question_incorrect">Ответ был дан неверно</string>
+    <string name="question_correct">Ответ был дан верно</string>
+
+    <string name="score">Счет</string>
+    <string name="correct_answers">Правильных ответов</string>
+    <string name="time_spent">Время выполнения</string>
+    <string name="back_to_home">Вернуться на главную</string>
+    <string name="loading_test_results_message">Загрузка результатов теста…</string>
+    <string name="no_results_found">Результаты для этой тестовой сессии не найдены</string>
+    <string name="feedback">Обратная связь</string>
+    <string name="question_results">Результаты вопросов</string>
+    <string name="your_score">Ваш результат</string>
+    <string name="points_format">Баллы: %1$d / %2$d</string>
+    <string name="time_format">Время: %1$s</string>
+    <string name="seconds_format">(%1$d секунд)</string>
+    <string name="points_earned">%1$d балл%2$s</string>
+    <string name="points_single"></string>
+    <string name="points_multiple">ов</string>
+    <string name="your_answer_format">Ваш ответ: %1$s</string>
+    <string name="correct_answer_format">Правильный ответ: %1$s</string>
+
+    <string name="achievements">Достижения</string>
+    <string name="loading_achievements">Загрузка достижений…</string>
+    <string name="no_achievements">У вас пока нет достижений</string>
+
+    <string name="articles">Статьи</string>
+    <string name="loading_articles">Загрузка статей…</string>
+    <string name="no_articles">Статьи не найдены</string>
+    <string name="search_desc">Поиск</string>
+    <string name="clear_desc">Очистить</string>
+    <string name="filters">Фильтры</string>
+    <string name="my_interests">Мои интересы</string>
+    <string name="clear_all">Очистить все</string>
+    <string name="time_period">Период времени</string>
+    <string name="sort_by">Сортировать по</string>
+    <string name="no_articles_desc">Нет статей</string>
+    <string name="no_articles_found">Статьи не найдены</string>
+    <string name="no_articles_message">Попробуйте изменить фильтры или загляните позже для нового контента</string>
+    <string name="time_24_hours">24 часа</string>
+    <string name="time_week">Неделя</string>
+    <string name="time_month">Месяц</string>
+    <string name="time_3_months">3 месяца</string>
+    <string name="time_year">Год</string>
+    <string name="time_all">Все время</string>
+    <string name="sort_relevance">Релевантность</string>
+    <string name="sort_newest">Сначала новые</string>
+    <string name="sort_oldest">Сначала старые</string>
+    <string name="sort_highest_rated">Самые высоко оцененные</string>
+    <string name="sort_lowest_rated">Самые низко оцененные</string>
+
+    <string name="leaderboard">Лидеры</string>
+    <string name="loading_leaderboard">Загрузка таблицы лидеров…</string>
+    <string name="no_leaderboard_data">Данные таблицы лидеров недоступны</string>
+    <string name="rank">Место</string>
+    <string name="points">Очки</string>
+
+    <string name="user_interests">Интересы пользователя</string>
+    <string name="select_interests">Выберите ваши интересы</string>
+    <string name="save_interests">Сохранить интересы</string>
+    <string name="loading_interests">Загрузка интересов…</string>
+
+    <string name="email_confirmation">Подтверждение email</string>
+    <string name="enter_confirmation_code">Введите код подтверждения</string>
+    <string name="confirmation_code">Код подтверждения</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="resend_code">Отправить код повторно</string>
+    <string name="enter_6_digit_code">Введите 6-значный код, отправленный на %1$s</string>
+    <string name="resend_code_with_timer">Отправить код повторно (%1$dс)</string>
+    <string name="resend_code_no_timer">Отправить код повторно</string>
+
+    <string name="loading">Загрузка…</string>
+    <string name="error">Ошибка</string>
+    <string name="try_again">Попробовать снова</string>
+    <string name="home">Главная</string>
+    <string name="back_desc">Назад</string>
+    <string name="time_desc">Время</string>
+    <string name="complete_desc">Завершить</string>
+    <string name="incorrect_desc">Неверно</string>
+
+    <string name="error_occurred">Произошла ошибка</string>
+    <string name="failed_load_user_data">Не удалось загрузить данные пользователя. Попробуйте снова.</string>
+    <string name="personal_info_title">Персональная информация</string>
+    <string name="email_label">Email</string>
+    <string name="completed_tests">Завершенные тесты</string>
+    <string name="correct_answers_stat">Правильные ответы</string>
+    <string name="incorrect_answers_stat">Неправильные ответы</string>
+    <string name="achievements_stat">Достижения</string>
+    <string name="change_avatar_desc">Изменить аватар</string>
+    <string name="backend">Backend</string>
+    <string name="frontend">Frontend</string>
+    <string name="devops">DevOps</string>
+    <string name="data_science">Data Science</string>
+    <string name="select_direction_placeholder">Выберите направление</string>
+    <string name="junior">Junior</string>
+    <string name="middle">Middle</string>
+    <string name="senior">Senior</string>
+    <string name="select_level_placeholder">Выберите уровень</string>
+
+    <string name="profile_updated_successfully">Профиль успешно обновлен!</string>
+    <string name="search_articles">Поиск статей…</string>
+    <string name="refresh">Обновить</string>
+    <string name="taking_test">Прохождение теста</string>
+    <string name="leave_test">Выйти из теста?</string>
+    <string name="leave_test_confirmation">Вы уверены, что хотите выйти из теста? Ваш прогресс будет сохранен, но тест останется незавершенным.</string>
+    <string name="leave">Выйти</string>
+    <string name="stay">Остаться</string>
+    <string name="complete_test">Завершить тест</string>
+    <string name="your_answer">Ваш ответ</string>
+    <string name="previous">Предыдущий</string>
+    <string name="understand">Понятно</string>
+    <string name="test_results">Результаты теста</string>
+    <string name="back_to_home_short">На главную</string>
+    <string name="personal_information">Персональная информация</string>
+    <string name="statistics">Статистика</string>
+    <string name="update_profile">Обновить профиль</string>
+    <string name="choose_from_gallery">Выбрать из галереи</string>
+    <string name="finalizing_test">Завершение теста… Пожалуйста, подождите, пока мы рассчитываем ваши результаты</string>
+    <string name="loading_user_interests">Загрузка интересов пользователя…</string>
+    <string name="toggle_password_visibility">Переключить видимость пароля</string>
+    <string name="error_short">Ошибка</string>
+    <string name="technology">Технология</string>
+    <string name="back_short">Назад</string>
+    <string name="home_short">Главная</string>
+    <string name="time">Время</string>
+    <string name="complete_short">Завершить</string>
+    <string name="incorrect">Неверно</string>
+    <string name="correct">Верно</string>
+    <string name="next_short">Далее</string>
+    <string name="code">Код</string>
+    <string name="sort">Сортировка</string>
+    <string name="selected">Выбрано</string>
+    <string name="continued_test_message">У вас есть начатый тест на вопросе %1$d</string>
+    <string name="email_confirmation_title">Подтверждение почты</string>
 </resources>

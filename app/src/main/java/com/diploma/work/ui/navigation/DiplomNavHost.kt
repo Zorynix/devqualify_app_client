@@ -6,6 +6,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Home
@@ -19,6 +27,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.diploma.work.R
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -44,6 +55,7 @@ import com.diploma.work.ui.feature.articles.ArticlesScreen
 import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
+import com.diploma.work.ui.feature.feedback.FeedbackScreen
 import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.feature.interests.UserInterestsScreen
 import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
@@ -67,17 +79,17 @@ fun NavController.safeNavigate(
 ) {
     try {
         val currentRoute = currentDestination?.route
-        
+
         if (currentRoute == route) {
             Logger.d("Navigation: Already on route $route, skipping navigation")
             return
         }
-        
+
         Logger.d("Navigation: Navigating from $currentRoute to $route")
-        
+
         navigate(route) {
             launchSingleTop = singleTop
-            
+
             if (clearStack || route == "Home") {
                 popUpTo(graph.startDestinationId) {
                     this.inclusive = true
@@ -132,7 +144,7 @@ fun NavController.safeNavigate(
     }
 
     Logger.d("Navigation: Converting NavRoute $route to string $routeName")
-    
+
     safeNavigate(
         route = routeName,
         singleTop = singleTop,
@@ -149,18 +161,23 @@ fun AppNavigation(
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
-    val shouldShowBottomNav = remember { mutableStateOf(session.getToken() != null) }
+    
+    val token by session.observeToken().collectAsState(initial = session.getToken())
+    val shouldShowBottomNav = remember { mutableStateOf(false) }
+    val isLoggedIn = token != null
+    
+    shouldShowBottomNav.value = isLoggedIn
+    
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    
-    val isLoggedIn = session.getToken() != null
-    Logger.d("Navigation: AppNavigation setup, user logged in: $isLoggedIn")
-    
+
+    Logger.d("Navigation: AppNavigation setup, user logged in: $isLoggedIn, token: ${token != null}")
+
     val username = session.observeUsername().collectAsState(initial = session.getUsername() ?: "User")
     val avatarUrl = session.observeAvatarUrl().collectAsState(
         initial = session.getAvatarUrl() ?: "https://ui-avatars.com/api/?name=User&background=random&size=200"
     )
-    
+
     val theme by themeManager.currentTheme.collectAsState()
     val navItems = listOf(
         BottomNavItem.Home,
@@ -170,63 +187,74 @@ fun AppNavigation(
         BottomNavItem.Articles
     )
     ModalNavigationDrawer(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         drawerState = drawerState,
         gesturesEnabled = isLoggedIn,
-        drawerContent = {            if (isLoggedIn) {                AppDrawerContent(
-                    username = username.value ?: "User",
-                    avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
-                    theme = theme,
-                    session = session,
-                    onThemeToggle = { 
-                        themeManager.toggleTheme()
-                    },                    onInterestsClick = {
-                        Logger.d("Navigation: Navigating to UserInterests")
-                        scope.launch {
-                            drawerState.close()
-                            navController.safeNavigate("UserInterests")
-                        }
-                    },
-                    onLogout = {
-                        Logger.d("Navigation: User logging out")
-                        session.clearToken()
-                        shouldShowBottomNav.value = false
-                        scope.launch {
-                            drawerState.close()
-                            navController.safeNavigate("Login", clearStack = true)
-                        }
+        drawerContent = {
+            Logger.d("Navigation: Drawer content rendering, isLoggedIn: $isLoggedIn")
+            if (isLoggedIn) {                AppDrawerContent(
+                username = username.value ?: "User",
+                avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
+                theme = theme,
+                session = session,
+                onThemeToggle = {
+                    themeManager.toggleTheme()
+                },                    onInterestsClick = {
+                    Logger.d("Navigation: Navigating to UserInterests")
+                    scope.launch {
+                        drawerState.close()
+                        navController.safeNavigate("UserInterests")
                     }
-                )
+                },
+                onFeedbackClick = {
+                    Logger.d("Navigation: Navigating to Feedback")
+                    scope.launch {
+                        drawerState.close()
+                        navController.safeNavigate("Feedback")
+                    }
+                },
+                onLogout = {
+                    Logger.d("Navigation: User logging out")
+                    session.clearToken()
+                    shouldShowBottomNav.value = false
+                    scope.launch {
+                        drawerState.close()
+                        navController.safeNavigate("Login", clearStack = true)
+                    }
+                }
+            )
             }
         }
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 if (shouldShowBottomNav.value) {
                     NavigationBar {
                         val currentRoute by navController.currentBackStackEntryAsState()
                         navItems.forEach { item ->                            val selected = currentRoute?.destination?.hierarchy?.any {
-                                it.route == when (item.route) {
-                                    is Home -> "Home"
-                                    is Profile -> "Profile"
-                                    is Achievements -> "Achievements"
-                                    is Leaderboard -> "Leaderboard"
-                                    is Articles -> "Articles"
-                                    else -> ""
-                                }
-                            } == true
+                            it.route == when (item.route) {
+                                is Home -> "Home"
+                                is Profile -> "Profile"
+                                is Achievements -> "Achievements"
+                                is Leaderboard -> "Leaderboard"
+                                is Articles -> "Articles"
+                                else -> ""
+                            }
+                        } == true
 
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
                                     val route = when (item.route) {
-                                        is Home -> "Home" 
+                                        is Home -> "Home"
                                         is Profile -> "Profile"
                                         is Achievements -> "Achievements"
                                         is Leaderboard -> "Leaderboard"
                                         is Articles -> "Articles"
-                                        else -> ""                                    }
+                                        else -> ""
+                                    }
                                     Logger.d("Navigation: Bottom nav bar click - $route")
                                     Logger.d("Navigation: Current destination: ${navController.currentDestination?.route}")
                                     val currentRoute = navController.currentDestination?.route
@@ -238,13 +266,25 @@ fun AppNavigation(
                                 },
                                 icon = {
                                     Icon(
-                                        imageVector = item.icon,                                        
+                                        imageVector = item.icon,
                                         contentDescription = when (item.route) {
-                                            is Home -> "Home"
-                                            is Profile -> "Profile"
-                                            is Achievements -> "Achievements"
-                                            is Leaderboard -> "Leaderboard"
-                                            is Articles -> "Articles"
+                                            is Home -> stringResource(R.string.home)
+                                            is Profile -> stringResource(R.string.profile)
+                                            is Achievements -> stringResource(R.string.achievements)
+                                            is Leaderboard -> stringResource(R.string.leaderboard)
+                                            is Articles -> stringResource(R.string.articles)
+                                            else -> ""
+                                        }
+                                    )
+                                },
+                                label = {
+                                    androidx.compose.material3.Text(
+                                        when (item.route) {
+                                            is Home -> stringResource(R.string.home)
+                                            is Profile -> stringResource(R.string.profile)
+                                            is Achievements -> stringResource(R.string.achievements)
+                                            is Leaderboard -> stringResource(R.string.leaderboard)
+                                            is Articles -> stringResource(R.string.articles)
                                             else -> ""
                                         }
                                     )
@@ -257,8 +297,11 @@ fun AppNavigation(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = if (session.getToken() != null) "Home" else "Login",
-                modifier = Modifier.padding(innerPadding),
+                startDestination = if (isLoggedIn) "Home" else "Login",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(innerPadding),
                 enterTransition = {
                     slideIntoContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -293,10 +336,10 @@ fun AppNavigation(
                     RegistrationScreen(navController, session)
                 }
                 composable("Home") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = isLoggedIn
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     HomeScreen(
                         navController = navController,
@@ -309,23 +352,23 @@ fun AppNavigation(
                     )
                 }
                 composable("Profile") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = isLoggedIn
                     val profileScreen = ProfileScreen(
                         navController = navController,
                         drawerState = drawerState,
                         themeManager = themeManager
                     )
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     profileScreen
                 }
                 composable("Achievements") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = isLoggedIn
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     AchievementsScreen(
                         onOpenDrawer = {
@@ -337,10 +380,10 @@ fun AppNavigation(
                     )
                 }
                 composable("Leaderboard") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = isLoggedIn
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     LeaderboardScreen(
                         navController = navController,
@@ -385,13 +428,13 @@ fun AppNavigation(
                     EmailConfirmationScreen(navController, email)
                 }
                 composable("UserInterests") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     UserInterestsScreen(
-                        onBack = { 
+                        onBack = {
                             Logger.d("Navigation: Going back from UserInterests")
                             Logger.d("Navigation: Current destination: ${navController.currentDestination?.route}")
                             if (!navController.safeNavigateBack()) {
@@ -401,19 +444,23 @@ fun AppNavigation(
                     )
                 }
                 composable("Articles") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
-                        session.getUsername()
-                        session.getAvatarUrl()
+                        session.refreshUsername()
+                        session.refreshAvatarUrl()
                     }
                     ArticlesScreen(
-                        onOpenDrawer = { 
+                        onOpenDrawer = {
                             Logger.d("Navigation: Opening drawer from Articles")
                             scope.launch {
                                 drawerState.open()
                             }
                         }
                     )
+                }
+                composable("Feedback") {
+                    shouldShowBottomNav.value = false
+                    FeedbackScreen(navController)
                 }
             }
         }

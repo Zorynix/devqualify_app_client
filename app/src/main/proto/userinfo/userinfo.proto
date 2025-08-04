@@ -6,7 +6,6 @@ option go_package = "diploma.userinfo.v1;userinfov1";
 option java_package = "com.diploma.work.grpc.userinfo";
 option java_multiple_files = true;
 
-
 enum Direction {
   DIRECTION_UNSPECIFIED = 0;
   BACKEND = 1;
@@ -87,6 +86,8 @@ service UserService {
   rpc UploadUserAvatar(UploadUserAvatarRequest) returns (UploadUserAvatarResponse);
   rpc UpdateUserAvatar(UpdateUserAvatarRequest) returns (UpdateUserAvatarResponse);
   rpc GetUserAvatar(GetUserAvatarRequest) returns (GetUserAvatarResponse);
+  
+  rpc SendFeedback(SendFeedbackRequest) returns (SendFeedbackResponse);
 }
 
 message GetUserRequest {
@@ -190,4 +191,15 @@ message CheckUserAchievementsResponse {
   bool success = 1;
   repeated Achievement achievements = 2;
   string message = 3;
+}
+
+message SendFeedbackRequest {
+  int64 user_id = 1;
+  string subject = 2;
+  string body = 3;
+}
+
+message SendFeedbackResponse {
+  bool success = 1;
+  string message = 2;
 }
