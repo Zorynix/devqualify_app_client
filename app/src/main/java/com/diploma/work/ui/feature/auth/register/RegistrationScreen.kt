@@ -2,6 +2,7 @@ package com.diploma.work.ui.feature.auth.register
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.ThemeToggleButton
 import com.diploma.work.ui.navigation.Login
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
@@ -62,17 +64,28 @@ fun RegistrationScreen(
             navController.safeNavigate(destination, clearStack = true)
         }
     }
-    Column(
+    
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
-        IconButton(onClick = { navController.safeNavigateBack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-        }
-        Text(stringResource(R.string.registration), style = TextStyle.TitleLarge.value)
+        ThemeToggleButton(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            IconButton(onClick = { navController.safeNavigateBack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+            }
+            Text(stringResource(R.string.registration), style = TextStyle.TitleLarge.value)
 
         DiplomTextField(
             value = email,
@@ -105,7 +118,7 @@ fun RegistrationScreen(
                 Text(
                     text = stringResource(R.string.password_requirements),
                     color = Color.Red,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     modifier = Modifier
                         .padding(top = 4.dp)
                         .align(Alignment.Start)
@@ -115,13 +128,13 @@ fun RegistrationScreen(
         DiplomPasswordTextField(
             value = confirmPassword,
             onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-            label = { Text(stringResource(R.string.confirm_password), style = TextStyle.BodyLarge.value) },
+            label = { Text("Подтвердите пароль", style = TextStyle.BodyLarge.value) },
             modifier = Modifier.padding(top = 8.dp)
         )
         
         if (confirmPassword.isNotBlank() && password != confirmPassword) {
             Text(
-                text = stringResource(R.string.passwords_dont_match),
+                text = "Пароли не совпадают",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier
@@ -152,19 +165,20 @@ fun RegistrationScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text(stringResource(R.string.register), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text("Зарегистрироваться", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
         Row(modifier = Modifier.padding(top = 16.dp)) {
-            Text(stringResource(R.string.already_registered), style = TextStyle.BodyMedium.value)
+            Text("Уже зарегистрированы? ", style = TextStyle.BodyMedium.value)
             Text(
-                stringResource(R.string.login),
+                "Войти",
                 style = TextStyle.Link.value,
                 color = Theme.extendedColorScheme.onBackgroundPositive,
                 modifier = Modifier.clickable {
                     navController.safeNavigate("Login")
                 }
             )
+        }
         }
     }
 }

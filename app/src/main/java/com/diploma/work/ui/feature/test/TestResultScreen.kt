@@ -53,6 +53,7 @@ import com.diploma.work.data.models.QuestionResult
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.components.CodeHighlighterText
+import com.diploma.work.ui.components.ClickableTextWithLinks
 import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
@@ -79,7 +80,11 @@ fun TestResultScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.test_results), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.safeNavigateBack() }) {
+                    IconButton(onClick = { 
+                        if (!navController.popBackStack()) {
+                            navController.safeNavigate(Home)
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back_short)
@@ -140,10 +145,8 @@ fun TestResultScreen(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
-                            Text(
+                            ClickableTextWithLinks(
                                 text = state.result?.feedback ?: "",
-                                style = TextStyle.BodyMedium.value,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
@@ -388,10 +391,9 @@ fun QuestionResultItem(
 
                     if (questionResult.feedback.isNotBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
+                        ClickableTextWithLinks(
                             text = questionResult.feedback,
-                            style = TextStyle.BodySmall.value,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            modifier = Modifier
                         )
                     }
                 }

@@ -215,7 +215,7 @@ class ArticlesViewModel @Inject constructor(
                     Logger.d("$tag: Server preferences: ${serverPreferences?.technologyIds}")
                     Logger.d("$tag: Server directions: ${serverPreferences?.directions}")
                     
-                    if (serverPreferences != null) {
+                    if (serverPreferences != null && (serverPreferences.technologyIds.isNotEmpty() || serverPreferences.directions.isNotEmpty())) {
                         session.storeUserPreferences(serverPreferences)
                         Logger.d("$tag: Refreshed user preferences from server")
                         
@@ -235,10 +235,16 @@ class ArticlesViewModel @Inject constructor(
                                 selectedDirections = cachedPreferences.directions.toSet()
                             )
                             
-                            Logger.d("$tag: Applied cached preferences to UI state")
+                            Logger.d("$tag: Applied cached preferences to UI state (server returned empty preferences)")
                             loadArticles(reset = true)
                         } else {
-                            Logger.w("$tag: No preferences found - neither server nor cache")
+                            val currentState = _uiState.value
+                            if (currentState.selectedTechnologyIds.isNotEmpty() || currentState.selectedDirections.isNotEmpty()) {
+                                Logger.d("$tag: Keeping current UI state - no server or cached preferences found")
+                                loadArticles(reset = true)
+                            } else {
+                                Logger.w("$tag: No preferences found - neither server nor cache")
+                            }
                         }
                     }
                 } else {

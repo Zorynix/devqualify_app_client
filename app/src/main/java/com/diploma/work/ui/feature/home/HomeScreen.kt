@@ -60,6 +60,7 @@ import com.diploma.work.ui.navigation.TestDetails
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
+import com.orhanobut.logger.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +71,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     var showFilterDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
@@ -77,7 +80,10 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.available_tests), style = TextStyle.TitleLarge.value) },
                 navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
+                    IconButton(onClick = {
+                        Logger.d("Navigation: Menu button clicked in Home screen")
+                        onOpenDrawer()
+                    }) {
                         Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                     }
                 },
@@ -167,15 +173,15 @@ fun HomeScreen(
                     }
                 )
             }
-            if (viewModel.isLoading.collectAsState().value) {
+            if (isLoading) {
                 LoadingCard(
                     message = stringResource(R.string.loading_tests),
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            else if (viewModel.errorMessage.collectAsState().value != null) {
+            else if (errorMessage != null) {
                 ErrorCard(
-                    error = viewModel.errorMessage.collectAsState().value!!,
+                    error = errorMessage!!,
                     onRetry = { viewModel.loadTests() },
                     modifier = Modifier.fillMaxSize()
                 )

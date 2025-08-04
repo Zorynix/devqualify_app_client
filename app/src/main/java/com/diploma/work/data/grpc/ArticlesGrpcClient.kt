@@ -89,6 +89,13 @@ class ArticlesGrpcClient @Inject constructor(
             
             val preferences = if (grpcResponse.hasPreferences()) {
                 val pref = grpcResponse.preferences
+                Logger.d("$tag: Server returned preferences - Technology IDs: ${pref.technologyIdsList}")
+                Logger.d("$tag: Server returned preferences - Directions: ${pref.directionsList}")
+                Logger.d("$tag: Server returned preferences - Delivery frequency: ${pref.deliveryFrequency}")
+                Logger.d("$tag: Server returned preferences - Email notifications: ${pref.emailNotifications}")
+                Logger.d("$tag: Server returned preferences - Push notifications: ${pref.pushNotifications}")
+                Logger.d("$tag: Server returned preferences - Articles per day: ${pref.articlesPerDay}")
+                
                 UserPreferences(
                     userId = pref.userId,
                     technologyIds = pref.technologyIdsList,
@@ -100,7 +107,10 @@ class ArticlesGrpcClient @Inject constructor(
                     articlesPerDay = pref.articlesPerDay,
                     updatedAt = Instant.ofEpochSecond(pref.updatedAt.seconds, pref.updatedAt.nanos.toLong())
                 )
-            } else null
+            } else {
+                Logger.d("$tag: Server returned no preferences")
+                null
+            }
             
             Logger.d("$tag: Retrieved user preferences: ${preferences != null}")
             Result.success(GetUserPreferencesResponse(preferences = preferences))        } catch (e: StatusRuntimeException) {
@@ -115,6 +125,12 @@ class ArticlesGrpcClient @Inject constructor(
     suspend fun updateUserPreferences(request: UpdateUserPreferencesRequest): Result<UpdateUserPreferencesResponse> = withContext(Dispatchers.IO) {
         try {
             Logger.d("$tag: Updating user preferences for user: ${request.userId}")
+            Logger.d("$tag: Technology IDs to save: ${request.technologyIds}")
+            Logger.d("$tag: Directions to save: ${request.directions}")
+            Logger.d("$tag: Delivery frequency: ${request.deliveryFrequency}")
+            Logger.d("$tag: Email notifications: ${request.emailNotifications}")
+            Logger.d("$tag: Push notifications: ${request.pushNotifications}")
+            Logger.d("$tag: Articles per day: ${request.articlesPerDay}")
             
             val grpcRequest = com.diploma.work.grpc.articles.UpdateUserPreferencesRequest.newBuilder()
                 .setUserId(request.userId)
@@ -127,9 +143,11 @@ class ArticlesGrpcClient @Inject constructor(
                 .setArticlesPerDay(request.articlesPerDay)
                 .build()
                 
+            Logger.d("$tag: Sending gRPC request to server...")
             val grpcResponse = stub.updateUserPreferences(grpcRequest)
             
-            Logger.d("$tag: User preferences updated successfully")
+            Logger.d("$tag: User preferences updated successfully on server")
+            Logger.d("$tag: Server response message: ${grpcResponse.message}")
             Result.success(UpdateUserPreferencesResponse(message = grpcResponse.message))        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Update user preferences failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.PROFILE_UPDATE)))        } catch (e: Exception) {
@@ -163,6 +181,12 @@ class ArticlesGrpcClient @Inject constructor(
                 .build()
                 
             val grpcResponse = stub.getArticles(grpcRequest)
+            
+            Logger.d("$tag: getArticles response - ${grpcResponse.articlesList.size} articles")
+            if (grpcResponse.articlesList.isNotEmpty()) {
+                val firstArticle = grpcResponse.articlesList.first()
+                Logger.d("$tag: First article - title: '${firstArticle.title}', rssSourceName: '${firstArticle.rssSourceName}'")
+            }
             
             val articles = grpcResponse.articlesList.map { article ->
                 Article(

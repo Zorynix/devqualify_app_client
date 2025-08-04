@@ -153,7 +153,8 @@ class TestSessionViewModel @Inject constructor(
 
         when (currentQuestion.type) {
             com.diploma.work.data.models.QuestionType.SINGLE_CHOICE,
-            com.diploma.work.data.models.QuestionType.CODE -> {
+            com.diploma.work.data.models.QuestionType.CODE,
+            com.diploma.work.data.models.QuestionType.UNSPECIFIED -> {
                 currentOptions.clear()
                 currentOptions.add(optionIndex)
             }
@@ -298,7 +299,8 @@ class TestSessionViewModel @Inject constructor(
                 answer.selectedOptions.sorted() == question.correctOptions.sorted()
             }
             com.diploma.work.data.models.QuestionType.SINGLE_CHOICE,
-            com.diploma.work.data.models.QuestionType.CODE -> {
+            com.diploma.work.data.models.QuestionType.CODE,
+            com.diploma.work.data.models.QuestionType.UNSPECIFIED -> {
                 answer.selectedOptions.firstOrNull() == question.correctOptions.firstOrNull()
             }
             com.diploma.work.data.models.QuestionType.TEXT -> {

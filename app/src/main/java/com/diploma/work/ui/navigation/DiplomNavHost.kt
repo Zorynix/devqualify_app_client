@@ -165,7 +165,7 @@ fun AppNavigation(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
-    val isLoggedIn = session.getToken() != null
+    val isLoggedIn = shouldShowBottomNav.value
     Logger.d("Navigation: AppNavigation setup, user logged in: $isLoggedIn")
     
     val username = session.observeUsername().collectAsState(initial = session.getUsername() ?: "User")
@@ -185,7 +185,9 @@ fun AppNavigation(
         modifier = modifier.fillMaxSize(),
         drawerState = drawerState,
         gesturesEnabled = isLoggedIn,
-        drawerContent = {            if (isLoggedIn) {                AppDrawerContent(
+        drawerContent = {
+            Logger.d("Navigation: Drawer content rendering, isLoggedIn: $isLoggedIn")
+            if (isLoggedIn) {                AppDrawerContent(
                     username = username.value ?: "User",
                     avatarUrl = avatarUrl.value ?: "https://ui-avatars.com/api/?name=User&background=random&size=200",
                     theme = theme,
@@ -329,7 +331,7 @@ fun AppNavigation(
                     RegistrationScreen(navController, session)
                 }
                 composable("Home") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
                         session.refreshUsername()
                         session.refreshAvatarUrl()
@@ -345,7 +347,7 @@ fun AppNavigation(
                     )
                 }
                 composable("Profile") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     val profileScreen = ProfileScreen(
                         navController = navController,
                         drawerState = drawerState,
@@ -358,7 +360,7 @@ fun AppNavigation(
                     profileScreen
                 }
                 composable("Achievements") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
                         session.refreshUsername()
                         session.refreshAvatarUrl()
@@ -373,7 +375,7 @@ fun AppNavigation(
                     )
                 }
                 composable("Leaderboard") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
                         session.refreshUsername()
                         session.refreshAvatarUrl()
@@ -421,7 +423,7 @@ fun AppNavigation(
                     EmailConfirmationScreen(navController, email)
                 }
                 composable("UserInterests") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
                         session.refreshUsername()
                         session.refreshAvatarUrl()
@@ -437,7 +439,7 @@ fun AppNavigation(
                     )
                 }
                 composable("Articles") {
-                    shouldShowBottomNav.value = true
+                    shouldShowBottomNav.value = session.getToken() != null
                     if (session.getUserId() != null) {
                         session.refreshUsername()
                         session.refreshAvatarUrl()

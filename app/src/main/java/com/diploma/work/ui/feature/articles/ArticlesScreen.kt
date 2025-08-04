@@ -29,6 +29,7 @@ import com.diploma.work.R
 import com.diploma.work.data.models.*
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
+import com.orhanobut.logger.Logger
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -302,6 +303,8 @@ private fun ArticleCard(
     onClick: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
+    
+    Logger.d("ArticleCard: title='${article.title}', rssSourceName='${article.rssSourceName}'")
 
     Card(
         modifier = Modifier
@@ -334,11 +337,13 @@ private fun ArticleCard(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    Text(
-                        text = article.rssSourceName,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (article.rssSourceName.isNotEmpty()) {
+                        Text(
+                            text = article.rssSourceName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 

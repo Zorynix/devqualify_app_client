@@ -456,7 +456,8 @@ fun QuestionScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(backgroundColor)
                                     .selectable(
-                                        selected = isSelected,                                        onClick = {
+                                        selected = isSelected,
+                                        onClick = {
                                             if (!isQuestionAnswered) {
                                                 onOptionSelect(index)
                                             }
@@ -468,7 +469,8 @@ fun QuestionScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
-                                    checked = isSelected,                                    onCheckedChange = {
+                                    checked = isSelected,
+                                    onCheckedChange = {
                                         if (!isQuestionAnswered) {
                                             onOptionSelect(index)
                                         }
@@ -484,7 +486,7 @@ fun QuestionScreen(
                             }
                         }
                     }
-                    QuestionType.SINGLE_CHOICE, QuestionType.CODE -> {
+                    QuestionType.SINGLE_CHOICE, QuestionType.CODE, QuestionType.UNSPECIFIED -> {
                         question.options.forEachIndexed { index, option ->
                             val isSelected = selectedOptions.contains(index)
                             val backgroundColor = when {

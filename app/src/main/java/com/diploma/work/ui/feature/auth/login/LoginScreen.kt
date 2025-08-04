@@ -2,6 +2,7 @@ package com.diploma.work.ui.feature.auth.login
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.ThemeToggleButton
 import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.navigation.safeNavigate
@@ -58,17 +60,27 @@ fun LoginScreen(
         navController.safeNavigate("Home", clearStack = true)
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
-        IconButton(onClick = { navController.safeNavigateBack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-        }
-        Text(stringResource(R.string.login), style = TextStyle.TitleLarge.value)
+        ThemeToggleButton(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            IconButton(onClick = { navController.safeNavigateBack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+            }
+            Text(stringResource(R.string.login), style = TextStyle.TitleLarge.value)
 
         DiplomTextField(
             value = username,
@@ -142,6 +154,7 @@ fun LoginScreen(
                     navController.safeNavigate("Register")
                 }
             )
+        }
         }
     }
 }
