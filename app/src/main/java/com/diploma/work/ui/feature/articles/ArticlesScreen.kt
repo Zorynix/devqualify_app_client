@@ -116,8 +116,13 @@ fun ArticlesScreen(
                     }
                     else -> {
                         ArticlesList(
-                            articles = uiState.articles,
-                            onArticleClick = { /* TODO: Navigate to article detail */ },
+                            articles = if (uiState.searchQuery.isNotBlank()) uiState.filteredArticles else uiState.articles,
+                            onArticleClick = { article -> 
+                                viewModel.markArticleAsViewed(article.id)
+                            },
+                            onArticleLike = { article -> viewModel.likeArticle(article.id) },
+                            onArticleDislike = { article -> viewModel.dislikeArticle(article.id) },
+                            onRemoveLikeDislike = { article -> viewModel.removeLikeDislike(article.id) },
                             onLoadMore = { viewModel.loadMoreArticles() },
                             isLoading = uiState.isLoading,
                             hasMore = uiState.hasMore
@@ -247,6 +252,9 @@ private fun FilterSection(
 private fun ArticlesList(
     articles: List<Article>,
     onArticleClick: (Article) -> Unit,
+    onArticleLike: (Article) -> Unit,
+    onArticleDislike: (Article) -> Unit,
+    onRemoveLikeDislike: (Article) -> Unit,
     onLoadMore: () -> Unit = {},
     isLoading: Boolean = false,
     hasMore: Boolean = true
@@ -275,7 +283,10 @@ private fun ArticlesList(
         items(articles) { article ->
             ArticleCard(
                 article = article,
-                onClick = { onArticleClick(article) }
+                onClick = { onArticleClick(article) },
+                onLike = { onArticleLike(article) },
+                onDislike = { onArticleDislike(article) },
+                onRemoveLikeDislike = { onRemoveLikeDislike(article) }
             )
         }
         
@@ -300,9 +311,13 @@ private fun ArticlesList(
 @Composable
 private fun ArticleCard(
     article: Article,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLike: () -> Unit,
+    onDislike: () -> Unit,
+    onRemoveLikeDislike: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
+    var showDislikeConfirm by remember { mutableStateOf(false) }
     
     Logger.d("ArticleCard: title='${article.title}', rssSourceName='${article.rssSourceName}'")
 
@@ -310,10 +325,9 @@ private fun ArticleCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { 
+                onClick()
                 if (article.url.isNotEmpty()) {
                     uriHandler.openUri(article.url)
-                } else {
-                    onClick()
                 }
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -327,13 +341,28 @@ private fun ArticleCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = article.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = article.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        if (article.isViewed) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.Visibility,
+                                contentDescription = "Просмотрено",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
@@ -360,9 +389,56 @@ private fun ArticleCard(
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            if (article.isLiked == true) {
+                                onRemoveLikeDislike()
+                            } else {
+                                onLike()
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbUp,
+                            contentDescription = "Лайк",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (article.isLiked == true) 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = {
+                            if (article.isLiked == false) {
+                                onRemoveLikeDislike()
+                            } else {
+                                showDislikeConfirm = true
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ThumbDown,
+                            contentDescription = "Дизлайк",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (article.isLiked == false) 
+                                MaterialTheme.colorScheme.error 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
                 Text(
                     text = article.publishedAt
                         .atZone(ZoneId.systemDefault())
@@ -372,6 +448,31 @@ private fun ArticleCard(
                 )
             }
         }
+    }
+    
+    if (showDislikeConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDislikeConfirm = false },
+            title = { Text("Скрыть статью?") },
+            text = { Text("Эта статья будет скрыта из списка и больше не будет показываться. Вы уверены?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDislikeConfirm = false
+                        onDislike()
+                    }
+                ) {
+                    Text("Да, скрыть")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDislikeConfirm = false }
+                ) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 }
 

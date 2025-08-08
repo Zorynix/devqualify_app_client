@@ -165,15 +165,25 @@ class ArticlesViewModel @Inject constructor(
                         currentState.articles + newArticles
                     }
                     
+                    val articlesWithUserData = updatedArticles.map { article ->
+                        article.copy(
+                            isViewed = session.isArticleViewed(article.id),
+                            isLiked = session.getArticleLikeStatus(article.id),
+                            isHidden = session.getDislikedArticles().contains(article.id)
+                        )
+                    }.filter { !it.isHidden }
+                    
+                    session.cacheArticles(articlesWithUserData)
+                    
                     val filteredArticles = if (currentState.searchQuery.isNotBlank()) {
-                        applySearchFilter(updatedArticles, currentState.searchQuery)
+                        applySearchFilter(articlesWithUserData, currentState.searchQuery)
                     } else {
-                        updatedArticles
+                        articlesWithUserData
                     }
                     
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        articles = updatedArticles,
+                        articles = articlesWithUserData,
                         filteredArticles = filteredArticles,
                         currentPage = page,
                         hasMore = newArticles.size == pageSize
@@ -324,7 +334,62 @@ class ArticlesViewModel @Inject constructor(
             Logger.d("$tag: Applied directions: ${preferences.directions}")
         } else {
             Logger.w("$tag: No user preferences found to apply")
-        }    }
+        }    
+    }
+
+fun markArticleAsViewed(articleId: Long) {
+    Logger.d("$tag: Marking article $articleId as viewed")
+    session.markArticleAsViewed(articleId)
+    updateArticleInList(articleId) { article ->
+        Logger.d("$tag: Updated article ${article.id} isViewed to true")
+        article.copy(isViewed = true)
+    }
+}    fun likeArticle(articleId: Long) {
+        session.likeArticle(articleId)
+        updateArticleInList(articleId) { it.copy(isLiked = true) }
+    }
+
+    fun dislikeArticle(articleId: Long) {
+        session.dislikeArticle(articleId)
+        removeArticleFromList(articleId)
+    }
+
+    fun removeLikeDislike(articleId: Long) {
+        session.removeLikeDislike(articleId)
+        updateArticleInList(articleId) { it.copy(isLiked = null) }
+    }
+
+    private fun updateArticleInList(articleId: Long, transform: (Article) -> Article) {
+        val currentState = _uiState.value
+        val updatedArticles = currentState.articles.map { article ->
+            if (article.id == articleId) transform(article) else article
+        }
+        val updatedFilteredArticles = if (currentState.searchQuery.isNotBlank()) {
+            applySearchFilter(updatedArticles, currentState.searchQuery)
+        } else {
+            updatedArticles
+        }
+        
+        _uiState.value = currentState.copy(
+            articles = updatedArticles,
+            filteredArticles = updatedFilteredArticles
+        )
+    }
+
+    private fun removeArticleFromList(articleId: Long) {
+        val currentState = _uiState.value
+        val updatedArticles = currentState.articles.filter { it.id != articleId }
+        val updatedFilteredArticles = if (currentState.searchQuery.isNotBlank()) {
+            applySearchFilter(updatedArticles, currentState.searchQuery)
+        } else {
+            updatedArticles
+        }
+        
+        _uiState.value = currentState.copy(
+            articles = updatedArticles,
+            filteredArticles = updatedFilteredArticles
+        )
+    }
 
     private fun calculateDateRange(timePeriod: TimePeriod): Pair<Instant?, Instant?> {
         val now = Instant.now()

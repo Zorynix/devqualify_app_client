@@ -56,6 +56,7 @@ import com.diploma.work.ui.feature.auth.confirmation.EmailConfirmationScreen
 import com.diploma.work.ui.feature.auth.login.LoginScreen
 import com.diploma.work.ui.feature.auth.register.RegistrationScreen
 import com.diploma.work.ui.feature.feedback.FeedbackScreen
+import com.diploma.work.ui.feature.history.HistoryScreen
 import com.diploma.work.ui.feature.home.HomeScreen
 import com.diploma.work.ui.feature.interests.UserInterestsScreen
 import com.diploma.work.ui.feature.leaderboard.LeaderboardScreen
@@ -204,6 +205,13 @@ fun AppNavigation(
                     scope.launch {
                         drawerState.close()
                         navController.safeNavigate("UserInterests")
+                    }
+                },
+                onHistoryClick = {
+                    Logger.d("Navigation: Navigating to History")
+                    scope.launch {
+                        drawerState.close()
+                        navController.safeNavigate("History")
                     }
                 },
                 onFeedbackClick = {
@@ -454,6 +462,17 @@ fun AppNavigation(
                             Logger.d("Navigation: Opening drawer from Articles")
                             scope.launch {
                                 drawerState.open()
+                            }
+                        }
+                    )
+                }
+                composable("History") {
+                    shouldShowBottomNav.value = false
+                    HistoryScreen(
+                        onBack = {
+                            Logger.d("Navigation: Back from History")
+                            if (!navController.safeNavigateBack()) {
+                                navController.safeNavigate("Home", clearStack = true)
                             }
                         }
                     )

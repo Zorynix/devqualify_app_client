@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import com.diploma.work.data.models.UserPreferences
+import com.diploma.work.data.models.Article
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.DeliveryFrequency
 import com.diploma.work.utils.Constants
@@ -27,6 +28,8 @@ class AppSession(private val context: Context) {
     private val _avatarUrlFlow = MutableStateFlow<String?>(null)
     private val _usernameFlow = MutableStateFlow<String?>(null)
     private val _tokenFlow = MutableStateFlow<String?>(null)
+    
+    private val articlesCache = mutableMapOf<Long, Article>()
     
     init {
         _avatarUrlFlow.value = getAvatarUrl()
@@ -47,21 +50,20 @@ class AppSession(private val context: Context) {
         return _tokenFlow
     }
 
-    fun clearToken() {
-        sharedPrefs.edit {
-            remove(Constants.PrefsKeys.ACCESS_TOKEN)
-            remove(Constants.PrefsKeys.USER_ID)
-            remove(Constants.PrefsKeys.USERNAME)
-            remove(Constants.PrefsKeys.AVATAR_URL)
-            remove(Constants.PrefsKeys.AVATAR_DATA)
-        }
-        clearUserPreferences()
-        _avatarUrlFlow.value = null
-        _usernameFlow.value = null
-        _tokenFlow.value = null
+fun clearToken() {
+    sharedPrefs.edit {
+        remove(Constants.PrefsKeys.ACCESS_TOKEN)
+        remove(Constants.PrefsKeys.USER_ID)
+        remove(Constants.PrefsKeys.USERNAME)
+        remove(Constants.PrefsKeys.AVATAR_URL)
+        remove(Constants.PrefsKeys.AVATAR_DATA)
     }
-
-    fun setTheme(isDark: Boolean) {
+    clearUserPreferences()
+    clearViewsAndRatings()
+    _avatarUrlFlow.value = null
+    _usernameFlow.value = null
+    _tokenFlow.value = null
+}    fun setTheme(isDark: Boolean) {
         sharedPrefs.edit {
             putBoolean("is_dark_theme", isDark)
         }
@@ -246,5 +248,122 @@ class AppSession(private val context: Context) {
             remove(Constants.PrefsKeys.PUSH_NOTIFICATIONS)
             remove(Constants.PrefsKeys.ARTICLES_PER_DAY)
         }
+    }
+    
+    fun markArticleAsViewed(articleId: Long) {
+        val viewedArticles = getViewedArticles().toMutableSet()
+        viewedArticles.add(articleId)
+        sharedPrefs.edit {
+            putStringSet(Constants.PrefsKeys.VIEWED_ARTICLES, viewedArticles.map { it.toString() }.toSet())
+        }
+        Logger.d("AppSession: Marked article $articleId as viewed. Total viewed: ${viewedArticles.size}")
+    }
+    
+    fun getViewedArticles(): Set<Long> {
+        val articles = sharedPrefs.getStringSet(Constants.PrefsKeys.VIEWED_ARTICLES, emptySet())
+            ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet()
+        Logger.d("AppSession: getViewedArticles returning ${articles.size} articles: $articles")
+        return articles
+    }
+    
+    fun isArticleViewed(articleId: Long): Boolean {
+        val isViewed = getViewedArticles().contains(articleId)
+        Logger.d("AppSession: Article $articleId viewed status: $isViewed")
+        return isViewed
+    }
+    
+    fun likeArticle(articleId: Long) {
+        val likedArticles = getLikedArticles().toMutableSet()
+        val dislikedArticles = getDislikedArticles().toMutableSet()
+        
+        likedArticles.add(articleId)
+        dislikedArticles.remove(articleId)
+        
+        sharedPrefs.edit {
+            putStringSet(Constants.PrefsKeys.LIKED_ARTICLES, likedArticles.map { it.toString() }.toSet())
+            putStringSet(Constants.PrefsKeys.DISLIKED_ARTICLES, dislikedArticles.map { it.toString() }.toSet())
+        }
+    }
+    
+    fun dislikeArticle(articleId: Long) {
+        val likedArticles = getLikedArticles().toMutableSet()
+        val dislikedArticles = getDislikedArticles().toMutableSet()
+        
+        likedArticles.remove(articleId)
+        dislikedArticles.add(articleId)
+        
+        sharedPrefs.edit {
+            putStringSet(Constants.PrefsKeys.LIKED_ARTICLES, likedArticles.map { it.toString() }.toSet())
+            putStringSet(Constants.PrefsKeys.DISLIKED_ARTICLES, dislikedArticles.map { it.toString() }.toSet())
+        }
+    }
+    
+    fun removeLikeDislike(articleId: Long) {
+        val likedArticles = getLikedArticles().toMutableSet()
+        val dislikedArticles = getDislikedArticles().toMutableSet()
+        
+        likedArticles.remove(articleId)
+        dislikedArticles.remove(articleId)
+        
+        sharedPrefs.edit {
+            putStringSet(Constants.PrefsKeys.LIKED_ARTICLES, likedArticles.map { it.toString() }.toSet())
+            putStringSet(Constants.PrefsKeys.DISLIKED_ARTICLES, dislikedArticles.map { it.toString() }.toSet())
+        }
+    }
+    
+    fun getLikedArticles(): Set<Long> {
+        val articles = sharedPrefs.getStringSet(Constants.PrefsKeys.LIKED_ARTICLES, emptySet())
+            ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet()
+        Logger.d("AppSession: getLikedArticles returning ${articles.size} articles: $articles")
+        return articles
+    }
+    
+    fun getDislikedArticles(): Set<Long> {
+        val articles = sharedPrefs.getStringSet(Constants.PrefsKeys.DISLIKED_ARTICLES, emptySet())
+            ?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet()
+        Logger.d("AppSession: getDislikedArticles returning ${articles.size} articles: $articles")
+        return articles
+    }
+    
+    fun getArticleLikeStatus(articleId: Long): Boolean? {
+        return when {
+            getLikedArticles().contains(articleId) -> true
+            getDislikedArticles().contains(articleId) -> false
+            else -> null
+        }
+    }
+    
+    fun clearViewsAndRatings() {
+        sharedPrefs.edit {
+            remove(Constants.PrefsKeys.VIEWED_ARTICLES)
+            remove(Constants.PrefsKeys.LIKED_ARTICLES)
+            remove(Constants.PrefsKeys.DISLIKED_ARTICLES)
+        }
+        articlesCache.clear()
+    }
+    
+    // Методы для работы с кешем статей
+    fun cacheArticles(articles: List<Article>) {
+        articles.forEach { article ->
+            articlesCache[article.id] = article
+        }
+        Logger.d("AppSession: Cached ${articles.size} articles. Total in cache: ${articlesCache.size}")
+    }
+    
+    fun getCachedArticle(articleId: Long): Article? {
+        return articlesCache[articleId]
+    }
+    
+    fun getCachedArticles(articleIds: Set<Long>): List<Article> {
+        return articleIds.mapNotNull { id -> articlesCache[id] }
+    }
+    
+    fun getAllCachedArticles(): List<Article> {
+        return articlesCache.values.toList()
+    }
+    
+    fun clearArticlesCache() {
+        articlesCache.clear()
+        Logger.d("AppSession: Articles cache cleared")
     }
 }
