@@ -45,4 +45,7 @@ object UserInterests : NavRoute
 object Articles : NavRoute
 
 @Serializable
+object History : NavRoute
+
+@Serializable
 object Feedback : NavRoute

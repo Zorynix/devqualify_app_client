@@ -35,6 +35,9 @@ object Constants {
         const val EMAIL_NOTIFICATIONS = "email_notifications"
         const val PUSH_NOTIFICATIONS = "push_notifications"
         const val ARTICLES_PER_DAY = "articles_per_day"
+        const val VIEWED_ARTICLES = "viewed_articles"
+        const val LIKED_ARTICLES = "liked_articles"
+        const val DISLIKED_ARTICLES = "disliked_articles"
     }
     
     object UI {

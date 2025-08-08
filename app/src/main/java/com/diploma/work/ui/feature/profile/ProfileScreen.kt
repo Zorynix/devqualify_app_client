@@ -201,6 +201,7 @@ fun AppDrawerContent(
     session: AppSession,
     onThemeToggle: () -> Unit,
     onInterestsClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     onFeedbackClick: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
@@ -278,6 +279,28 @@ fun AppDrawerContent(
                     )
                     
                     Text(
+                        text = stringResource(R.string.interests),
+                        style = TextStyle.BodyLarge.value,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onHistoryClick() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.timer),
+                        contentDescription = "История",
+                        modifier = Modifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
+                    )
+                    
+                    Text(
+                        text = "История",
                         text = stringResource(R.string.interests),
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)

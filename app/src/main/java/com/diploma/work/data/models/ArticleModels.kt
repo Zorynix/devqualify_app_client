@@ -25,7 +25,10 @@ data class Article(
     val tags: List<String>,
     val status: ArticleStatus,
     val imageUrl: String,
-    val readTimeMinutes: Int
+    val readTimeMinutes: Int,
+    val isViewed: Boolean = false,
+    val isLiked: Boolean? = null,
+    val isHidden: Boolean = false
 )
 
 data class UserPreferences(
