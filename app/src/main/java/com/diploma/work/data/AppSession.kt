@@ -48,6 +48,7 @@ class AppSession(private val context: Context) {
     
     fun observeToken(): StateFlow<String?> {
         return _tokenFlow
+
     }
 
 fun clearToken() {
@@ -342,7 +343,6 @@ fun clearToken() {
         articlesCache.clear()
     }
     
-    // Методы для работы с кешем статей
     fun cacheArticles(articles: List<Article>) {
         articles.forEach { article ->
             articlesCache[article.id] = article
