@@ -13,7 +13,7 @@ import com.diploma.work.data.models.RegisterResponse
 import com.diploma.work.data.models.SendConfirmationCodeRequest
 import com.diploma.work.data.models.SendConfirmationCodeResponse
 import com.diploma.work.grpc.auth.AuthServiceGrpc
-import com.diploma.work.utils.ErrorContext
+import com.diploma.work.utils.ErrorHandler.ErrorContext
 import com.diploma.work.utils.ErrorMessageUtils
 import com.orhanobut.logger.Logger
 import io.grpc.ManagedChannel
@@ -53,7 +53,8 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.register(grpcRequest)
             Logger.d("$tag: Registration successful for email: ${request.email}, userId: ${grpcResponse.userId}")
-            Result.success(RegisterResponse(userId = grpcResponse.userId))        } catch (e: StatusRuntimeException) {
+            Result.success(RegisterResponse(userId = grpcResponse.userId))
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Registration failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.REGISTRATION)))
         } catch (e: Exception) {
@@ -71,13 +72,13 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.login(grpcRequest)
             Logger.d("$tag: Login successful for email: ${request.email}")
-            Logger.v("$tag: Token received: ${grpcResponse.accessToken.take(10)}...")
             Result.success(
                 LoginResponse(
                     accessToken = grpcResponse.accessToken,
                     refreshToken = grpcResponse.refreshToken
                 )
-            )        } catch (e: StatusRuntimeException) {
+            )
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Login failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.LOGIN)))
         } catch (e: Exception) {
@@ -94,7 +95,8 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.logout(grpcRequest)
             Logger.d("$tag: Logout ${if (grpcResponse.success) "successful" else "failed"}")
-            Result.success(LogoutResponse(success = grpcResponse.success))        } catch (e: StatusRuntimeException) {
+            Result.success(LogoutResponse(success = grpcResponse.success))
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Logout failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.GENERIC))))
         } catch (e: Exception) {
@@ -111,7 +113,8 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.isAdmin(grpcRequest)
             Logger.d("$tag: User ${request.userId} is admin: ${grpcResponse.isAdmin}")
-            Result.success(IsAdminResponse(isAdmin = grpcResponse.isAdmin))        } catch (e: StatusRuntimeException) {
+            Result.success(IsAdminResponse(isAdmin = grpcResponse.isAdmin))
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Admin check failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, getErrorContext(e, ErrorContext.GENERIC))))
         } catch (e: Exception) {
@@ -129,7 +132,8 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.confirmEmail(grpcRequest)
             Logger.d("$tag: Email confirmation ${if (grpcResponse.confirmed) "successful" else "failed"} for: ${request.email}")
-            Result.success(ConfirmEmailResponse(confirmed = grpcResponse.confirmed))        } catch (e: StatusRuntimeException) {
+            Result.success(ConfirmEmailResponse(confirmed = grpcResponse.confirmed))
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Email confirmation failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.EMAIL_CONFIRMATION)))
         } catch (e: Exception) {
@@ -146,7 +150,8 @@ class AuthGrpcClient @Inject constructor(
                 .build()
             val grpcResponse = stub.sendConfirmationCode(grpcRequest)
             Logger.d("$tag: Confirmation code ${if (grpcResponse.success) "sent successfully" else "failed to send"} to: ${request.email}")
-            Result.success(SendConfirmationCodeResponse(success = grpcResponse.success))        } catch (e: StatusRuntimeException) {
+            Result.success(SendConfirmationCodeResponse(success = grpcResponse.success))
+        } catch (e: StatusRuntimeException) {
             Logger.e("$tag: Sending confirmation code failed with gRPC error: ${e.status.code} - ${e.status.description}")
             Result.failure(Exception(ErrorMessageUtils.getContextualErrorMessage(e, ErrorContext.EMAIL_CONFIRMATION)))
         } catch (e: Exception) {

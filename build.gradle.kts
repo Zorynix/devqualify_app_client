@@ -42,6 +42,35 @@ subprojects {
             include("**/*.kt")
         }
     }
+
+    tasks.withType<Test> {
+        testLogging {
+            events("passed", "skipped", "failed", "standardOut", "standardError")
+            outputs.upToDateWhen { false }
+            showStandardStreams = true
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+
+            showStandardStreams = true
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+        }
+        
+        afterSuite(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+            if (desc.parent == null) {
+                println("\nTest summary:")
+                println("  Total: ${result.testCount}")
+                println("  Passed: ${result.successfulTestCount}")
+                println("  Failed: ${result.failedTestCount}")
+                println("  Skipped: ${result.skippedTestCount}")
+                println("  Success rate: ${if (result.testCount > 0) "%.2f".format((result.successfulTestCount.toDouble() / result.testCount) * 100) else "0"}%")
+                println("  Time: ${result.endTime - result.startTime}ms\n")
+            }
+        }))
+    }
 }
 
 tasks {
@@ -55,5 +84,16 @@ tasks {
         description = "Checks code with ktlint and Detekt"
         group = "verification"
         dependsOn(":ktlintCheck", ":detekt")
+    }
+    
+    register("uiTests") {
+        description = "Runs UI tests (androidTest) with detailed output"
+        group = "verification"
+        dependsOn(":app:connectedDebugAndroidTest")
+        doLast {
+            println("\n=== UI Tests Summary ===")
+            println("Check the test reports in app/build/reports/androidTests/connected/")
+            println("========================\n")
+        }
     }
 }

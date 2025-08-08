@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 
 object ValidationUtils {
     
-    private const val MIN_PASSWORD_LENGTH = 6
+    private const val MIN_PASSWORD_LENGTH = 8
     private const val MAX_PASSWORD_LENGTH = 128
     private const val MIN_USERNAME_LENGTH = 3
     private const val MAX_USERNAME_LENGTH = 30

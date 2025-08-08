@@ -23,7 +23,7 @@ class AuthRepositoryImpl @Inject constructor(
     private val tag = "repo.auth"
     
     override suspend fun register(request: RegisterRequest): Result<RegisterResponse> {
-        Logger.d("$tag: Registering new user with email: ${request.email}")
+        Logger.d("$tag: Registering new user")
         return authGrpcClient.register(request).also { result ->
             result.fold(
                 onSuccess = { response -> 
@@ -37,11 +37,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun login(request: LoginRequest): Result<LoginResponse> {
-        Logger.d("$tag: Attempting login for user: ${request.email}")
+        Logger.d("$tag: Attempting login")
         return authGrpcClient.login(request).also { result ->
             result.fold(
                 onSuccess = { 
-                    Logger.d("$tag: User login successful for: ${request.email}") 
+                    Logger.d("$tag: User login successful") 
                 },
                 onFailure = { error -> 
                     Logger.e("$tag: Login failed: ${error.message}") 
@@ -65,11 +65,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isAdmin(request: IsAdminRequest): Result<IsAdminResponse> {
-        Logger.d("$tag: Checking if user ${request.userId} is admin")
+        Logger.d("$tag: Checking if user is admin")
         return authGrpcClient.isAdmin(request).also { result ->
             result.fold(
                 onSuccess = { response -> 
-                    Logger.d("$tag: User ${request.userId} is admin check result: ${response.isAdmin}") 
+                    Logger.d("$tag: Admin check result: ${response.isAdmin}") 
                 },
                 onFailure = { error -> 
                     Logger.e("$tag: Admin check failed: ${error.message}") 
@@ -79,11 +79,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun confirmEmail(request: ConfirmEmailRequest): Result<ConfirmEmailResponse> {
-        Logger.d("$tag: Confirming email for: ${request.email}")
+        Logger.d("$tag: Confirming email")
         return authGrpcClient.confirmEmail(request).also { result ->
             result.fold(
                 onSuccess = { response -> 
-                    Logger.d("$tag: Email confirmation ${if (response.confirmed) "successful" else "failed"} for: ${request.email}") 
+                    Logger.d("$tag: Email confirmation ${if (response.confirmed) "successful" else "failed"}") 
                 },
                 onFailure = { error -> 
                     Logger.e("$tag: Email confirmation failed: ${error.message}") 
@@ -93,14 +93,14 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun sendConfirmationCode(request: SendConfirmationCodeRequest): Result<SendConfirmationCodeResponse> {
-        Logger.d("[36m$tag: Sending confirmation code to email: ${request.email}")
+        Logger.d("$tag: Sending confirmation code")
         return authGrpcClient.sendConfirmationCode(request).also { result ->
             result.fold(
                 onSuccess = { response -> 
-                    Logger.d("[36m$tag: Confirmation code ${if (response.success) "sent successfully" else "failed to send"} to: ${request.email}") 
+                    Logger.d("$tag: Confirmation code ${if (response.success) "sent successfully" else "failed to send"}") 
                 },
                 onFailure = { error -> 
-                    Logger.e("[36m$tag: Sending confirmation code failed: ${error.message}") 
+                    Logger.e("$tag: Sending confirmation code failed: ${error.message}") 
                 }
             )
         }

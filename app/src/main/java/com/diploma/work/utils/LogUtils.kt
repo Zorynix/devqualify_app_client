@@ -1,6 +1,6 @@
 package com.diploma.work.utils
 
-import com.orhanobut.logger.BuildConfig
+import com.diploma.work.BuildConfig
 import com.orhanobut.logger.Logger
 
 object LogUtils {
@@ -65,4 +65,4 @@ object LogUtils {
     private fun shouldLog(): Boolean {
         return BuildConfig.DEBUG
     }
-} 
+}

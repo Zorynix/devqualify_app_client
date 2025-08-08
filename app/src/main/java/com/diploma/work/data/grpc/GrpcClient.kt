@@ -13,7 +13,8 @@ class GrpcClient @Inject constructor() {
 
     fun getChannel(): ManagedChannel {
         if (channel == null || channel!!.isShutdown) {
-            channel = ManagedChannelBuilder.forTarget("${Constants.Network.AUTH_SERVER_HOST}:${Constants.Network.AUTH_SERVER_PORT}")
+            channel = ManagedChannelBuilder
+                .forAddress(Constants.Network.AUTH_SERVER_HOST, Constants.Network.AUTH_SERVER_PORT)
                 .usePlaintext()
                 .build()
         }
@@ -21,6 +22,9 @@ class GrpcClient @Inject constructor() {
     }
 
     fun shutdown() {
-        channel?.shutdown()?.awaitTermination(5, TimeUnit.SECONDS)
+        try {
+            channel?.shutdown()?.awaitTermination(5, TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+        }
     }
 }

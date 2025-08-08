@@ -2,6 +2,7 @@ package com.diploma.work.utils
 
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import com.diploma.work.utils.ErrorHandler.ErrorContext
 
 object ErrorMessageUtils {
     
@@ -189,22 +190,7 @@ object ErrorMessageUtils {
                 else -> "Не удалось отправить сообщение. Попробуйте позже."
             }
             
-            ErrorContext.GENERIC -> when {
-                baseMessage.contains("неизвестная ошибка") -> "Произошла неожиданная ошибка. Попробуйте позже."
-                else -> baseMessage.ifEmpty { "Произошла ошибка. Попробуйте еще раз." }
-            }
+            ErrorContext.GENERIC -> baseMessage.ifEmpty { "Произошла ошибка. Попробуйте еще раз." }
         }
     }
-}
-
-enum class ErrorContext {
-    LOGIN,
-    REGISTRATION,
-    EMAIL_CONFIRMATION,
-    TEST_SESSION,
-    PROFILE_UPDATE,
-    DATA_LOADING,
-    NETWORK,
-    FEEDBACK,
-    GENERIC
 }

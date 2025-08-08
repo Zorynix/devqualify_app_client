@@ -19,6 +19,7 @@ mockitoCoreVersion = "5.18.0"
 mockitoKotlinVersion = "5.4.0"
 mockkAndroidVersion = "1.14.4"
 mockkVersion = "1.14.4"
+orchestratorVersion = "1.6.1"
 protobufGradlePluginVersion = "0.9.5"
 protobufVersion = "4.31.1"
 accompanistSystemuicontrollerVersion = "0.36.0"
@@ -60,6 +61,7 @@ composeMaterial = "1.4.1"
 robolectricVersion = "4.15.1"
 rulesVersion = "1.6.1"
 runnerVersion = "1.6.2"
+testServicesVersion = "1.6.0"
 turbineVersion = "1.2.1"
 uiTestManifestVersion = "1.8.3"
 uiVersion = "1.8.3"
@@ -73,8 +75,10 @@ androidx-compose-ui-ui-test-manifest = { module = "androidx.compose.ui:ui-test-m
 androidx-core = { module = "androidx.test:core", version.ref = "coreVersion" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTestingVersion" }
 androidx-junit-ktx = { module = "androidx.test.ext:junit-ktx", version.ref = "junitKtxVersion" }
+androidx-orchestrator = { module = "androidx.test:orchestrator", version.ref = "orchestratorVersion" }
 androidx-rules = { module = "androidx.test:rules", version.ref = "rulesVersion" }
 androidx-runner = { module = "androidx.test:runner", version.ref = "runnerVersion" }
+androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "testServicesVersion" }
 coil-compose-v310 = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilComposeVersion" }
 compose-markdown = { module = "com.github.jeziellago:compose-markdown", version.ref = "composeMarkdownVersion" }
 highlights = { module = "dev.snipme:highlights", version.ref = "highlightsVersion" }

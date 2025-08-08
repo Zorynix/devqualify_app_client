@@ -2,7 +2,7 @@ package com.diploma.work
 
 import android.app.Application
 import android.os.Build
-import android.util.Log
+import com.diploma.work.BuildConfig
 import com.orhanobut.logger.AndroidLogAdapter
 import com.orhanobut.logger.FormatStrategy
 import com.orhanobut.logger.Logger
@@ -11,58 +11,58 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class MyApplication : Application() {
-    
     override fun onCreate() {
         super.onCreate()
-        
+
         val formatStrategy: FormatStrategy = PrettyFormatStrategy.newBuilder()
-            .showThreadInfo(true)
-            .methodCount(2)
+            .showThreadInfo(BuildConfig.DEBUG)
+            .methodCount(if (BuildConfig.DEBUG) 2 else 0)
             .methodOffset(5)
             .tag("DiplomaWork")
             .build()
-            
+
         Logger.addLogAdapter(object : AndroidLogAdapter(formatStrategy) {
             override fun isLoggable(priority: Int, tag: String?): Boolean {
-                return true
+                return BuildConfig.DEBUG
             }
         })
-        
-        Log.d("DiplomaWork", "Application started (Android Log)")
-        Logger.d("Application started (Logger)")
-        logDeviceInfo()
-        logAppVersion()
+
+        if (BuildConfig.DEBUG) {
+            Logger.d("Application started")
+            logDeviceInfo()
+            logAppVersion()
+        }
     }
-    
+
     private fun logDeviceInfo() {
-        Logger.i("Device Info: " +
+        Logger.i(
+            "Device Info: " +
                 "Model: ${Build.MODEL}, " +
                 "Brand: ${Build.BRAND}, " +
                 "Manufacturer: ${Build.MANUFACTURER}, " +
-                "Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+                "Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
+        )
     }
-    
+
     private fun logAppVersion() {
         try {
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val versionName = packageInfo.versionName
-            val versionCode =
-                packageInfo.longVersionCode
-
+            val versionCode = packageInfo.longVersionCode
             Logger.i("App Version: $versionName ($versionCode)")
         } catch (e: Exception) {
             Logger.e("Failed to get app version: ${e.message}")
         }
     }
-    
+
     override fun onLowMemory() {
         super.onLowMemory()
-        Logger.w("System is running low on memory")
+        if (BuildConfig.DEBUG) Logger.w("System is running low on memory")
     }
-    
+
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        
+        if (!BuildConfig.DEBUG) return
         when (level) {
             TRIM_MEMORY_COMPLETE -> Logger.w("Memory Trim: TRIM_MEMORY_COMPLETE")
             TRIM_MEMORY_MODERATE -> Logger.w("Memory Trim: TRIM_MEMORY_MODERATE")
