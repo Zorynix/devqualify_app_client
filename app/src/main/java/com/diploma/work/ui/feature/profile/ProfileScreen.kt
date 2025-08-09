@@ -301,6 +301,7 @@ fun AppDrawerContent(
                     
                     Text(
                         text = "История",
+                        text = stringResource(R.string.interests),
                         style = TextStyle.BodyLarge.value,
                         modifier = Modifier.padding(start = 16.dp)
                     )
