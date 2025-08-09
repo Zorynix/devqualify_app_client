@@ -70,7 +70,7 @@ fun setTheme(isDark: Boolean) {
         sharedPrefs.edit {
             putBoolean("is_dark_theme", isDark)
         }
-    }
+}
 
     fun getTheme(): Boolean {
         return sharedPrefs.getBoolean("is_dark_theme", false)
