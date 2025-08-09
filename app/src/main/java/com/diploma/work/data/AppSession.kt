@@ -35,7 +35,8 @@ class AppSession(private val context: Context) {
         _avatarUrlFlow.value = getAvatarUrl()
         _usernameFlow.value = getUsername()
         _tokenFlow.value = getToken()
-    }    fun storeToken(token: String) {
+    }    
+    fun storeToken(token: String) {
         sharedPrefs.edit {
             putString(Constants.PrefsKeys.ACCESS_TOKEN, token)
         }
@@ -63,7 +64,8 @@ fun clearToken() {
     _avatarUrlFlow.value = null
     _usernameFlow.value = null
     _tokenFlow.value = null
-}    fun setTheme(isDark: Boolean) {
+}    
+fun setTheme(isDark: Boolean) {
         sharedPrefs.edit {
             putBoolean("is_dark_theme", isDark)
         }
