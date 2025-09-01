@@ -70,7 +70,7 @@ dependencies {
 
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.espresso.remote)
-    val composeBom = platform("androidx.compose:compose-bom:2025.06.01")
+    val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
     debugImplementation(libs.ui.tooling)
@@ -139,8 +139,6 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging.ktx)
 
     kapt(libs.kotlinx.metadata.jvm)
     implementation(libs.android.maps.utils)

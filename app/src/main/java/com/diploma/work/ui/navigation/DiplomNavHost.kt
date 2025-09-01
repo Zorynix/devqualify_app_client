@@ -221,15 +221,6 @@ fun AppNavigation(
                         navController.safeNavigate("Feedback")
                     }
                 },
-                    }
-                },
-                onFeedbackClick = {
-                    Logger.d("Navigation: Navigating to Feedback")
-                    scope.launch {
-                        drawerState.close()
-                        navController.safeNavigate("Feedback")
-                    }
-                },
                 onLogout = {
                     Logger.d("Navigation: User logging out")
                     session.clearToken()
