@@ -434,55 +434,110 @@ fun QuestionScreen(
 
                 when (question.type) {
                     QuestionType.MULTIPLE_CHOICE -> {
-                        question.options.forEachIndexed { index, option ->
-                            val isSelected = selectedOptions.contains(index)
-                            val backgroundColor = when {
-                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
-                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
-                                isSelected -> MaterialTheme.colorScheme.primaryContainer
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            }
-                            val textColor = when {
-                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
-                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
+                        if (question.sampleCode != null) {
+                            question.options.forEachIndexed { index, option ->
+                                val isSelected = selectedOptions.contains(index)
+                                val backgroundColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                                val textColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(backgroundColor)
-                                    .selectable(
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(backgroundColor)
+                                        .selectable(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (!isQuestionAnswered) {
+                                                    onOptionSelect(index)
+                                                }
+                                            },
+                                            role = Role.RadioButton,
+                                            enabled = !isQuestionAnswered
+                                        )
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
                                         selected = isSelected,
                                         onClick = {
                                             if (!isQuestionAnswered) {
                                                 onOptionSelect(index)
                                             }
                                         },
-                                        role = Role.Checkbox,
                                         enabled = !isQuestionAnswered
                                     )
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = {
-                                        if (!isQuestionAnswered) {
-                                            onOptionSelect(index)
-                                        }
-                                    },
-                                    enabled = !isQuestionAnswered
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = option,
-                                    style = TextStyle.BodyMedium.value,
-                                    color = textColor
-                                )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = option,
+                                        style = TextStyle.BodyMedium.value,
+                                        color = textColor
+                                    )
+                                }
+                            }
+                        } else {
+                            // Обычные вопросы с множественным выбором используют чекбоксы
+                            question.options.forEachIndexed { index, option ->
+                                val isSelected = selectedOptions.contains(index)
+                                val backgroundColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                                val textColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(backgroundColor)
+                                        .selectable(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (!isQuestionAnswered) {
+                                                    onOptionSelect(index)
+                                                }
+                                            },
+                                            role = Role.Checkbox,
+                                            enabled = !isQuestionAnswered
+                                        )
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = {
+                                            if (!isQuestionAnswered) {
+                                                onOptionSelect(index)
+                                            }
+                                        },
+                                        enabled = !isQuestionAnswered
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = option,
+                                        style = TextStyle.BodyMedium.value,
+                                        color = textColor
+                                    )
+                                }
                             }
                         }
                     }
@@ -520,15 +575,16 @@ fun QuestionScreen(
                                     )
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
-                            ) {                                RadioButton(
-                                selected = isSelected,
-                                onClick = {
-                                    if (!isQuestionAnswered) {
-                                        onOptionSelect(index)
-                                    }
-                                },
-                                enabled = !isQuestionAnswered
-                            )
+                            ) {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = {
+                                        if (!isQuestionAnswered) {
+                                            onOptionSelect(index)
+                                        }
+                                    },
+                                    enabled = !isQuestionAnswered
+                                )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = option,
