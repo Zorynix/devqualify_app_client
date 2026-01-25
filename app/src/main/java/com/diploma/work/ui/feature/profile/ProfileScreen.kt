@@ -174,7 +174,6 @@ fun ProfileScreen(
                     onImagePickerClick = { uri -> 
                         uri?.let { 
                             viewModel.uploadAvatar(it)
-                            viewModel.onAvatarChanged(it.toString())
                         }
                     },                        onUpdateClick = { viewModel.updateUserProfile() },
                         isLoading = isLoading

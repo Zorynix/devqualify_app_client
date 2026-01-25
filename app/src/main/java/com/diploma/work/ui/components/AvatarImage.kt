@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,11 +36,15 @@ fun AvatarImage(
     borderWidth: Dp = 2.dp
 ) {
     val context = LocalContext.current
-    
-    if (avatarUrl == "data:avatar") {
+
+    val isLocalAvatar = avatarUrl == "data:avatar" || avatarUrl.startsWith("/data/") || avatarUrl.contains("user_avatar")
+
+    if (isLocalAvatar) {
         var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
-        LaunchedEffect(avatarUrl) {
+        val avatarPath by session.observeAvatarUrl().collectAsState()
+
+        LaunchedEffect(avatarUrl, avatarPath) {
             bitmap = session.getAvatarBitmap()?.asImageBitmap()
         }
 
@@ -79,10 +84,14 @@ fun AvatarImage(
             )
         }
     } else {
+        val cacheKey = remember(avatarUrl) { "$avatarUrl-${System.currentTimeMillis()}" }
+
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(avatarUrl)
                 .crossfade(true)
+                .memoryCacheKey(cacheKey)
+                .diskCacheKey(cacheKey)
                 .build(),
             contentDescription = "User Avatar",
             contentScale = ContentScale.Crop,
