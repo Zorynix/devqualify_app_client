@@ -33,7 +33,6 @@ fun ClickableTextWithLinks(
             """(https?://|www\.)[\w\-._~:/?#@!$&'()*+,;=%]+"""
         )
     }
-
     val annotatedString = remember(text, linkColor) {
         buildAnnotatedString {
             var lastIndex = 0

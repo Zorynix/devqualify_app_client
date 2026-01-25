@@ -3,13 +3,15 @@ package com.diploma.work.utils
 object Constants {
     
     object Network {
-        const val AUTH_SERVER_HOST = "10.0.2.2"
+        const val USE_PLAINTEXT = true
+
+        const val AUTH_SERVER_HOST = "172.22.233.86"
         const val AUTH_SERVER_PORT = 50051
-        const val USER_INFO_SERVER_HOST = "10.0.2.2"
+        const val USER_INFO_SERVER_HOST = "172.22.233.86"
         const val USER_INFO_SERVER_PORT = 50052
-        const val TESTS_SERVER_HOST = "10.0.2.2"
+        const val TESTS_SERVER_HOST = "172.22.233.86"
         const val TESTS_SERVER_PORT = 50053
-        const val ARTICLES_SERVER_HOST = "10.0.2.2"
+        const val ARTICLES_SERVER_HOST = "172.22.233.86"
         const val ARTICLES_SERVER_PORT = 50054
         
         const val CONNECTION_TIMEOUT_SECONDS = 30L
@@ -18,7 +20,7 @@ object Constants {
         
         const val TIMEOUT_SECONDS = 30L
         const val GRPC_PORT = 50051
-        const val BASE_URL = "http://10.0.2.2"
+        const val BASE_URL = "http://172.22.233.86"
     }
     
     object PrefsKeys {
