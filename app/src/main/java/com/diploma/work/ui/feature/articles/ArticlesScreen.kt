@@ -2,22 +2,60 @@ package com.diploma.work.ui.feature.articles
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.diploma.work.R
-import com.diploma.work.data.models.*
+import com.diploma.work.data.models.Article
+import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.LoadingCard
 import com.orhanobut.logger.Logger
@@ -321,6 +360,21 @@ private fun ArticleCard(
     
     Logger.d("ArticleCard: title='${article.title}', rssSourceName='${article.rssSourceName}'")
 
+    val accentColor = remember(article.rssSourceName) {
+        val hash = article.rssSourceName.hashCode()
+        val colors = listOf(
+            Color(0xFF4CAF50), // Green
+            Color(0xFF2196F3), // Blue
+            Color(0xFFFF9800), // Orange
+            Color(0xFF9C27B0), // Purple
+            Color(0xFFE91E63), // Pink
+            Color(0xFF00BCD4), // Cyan
+            Color(0xFFFF5722), // Deep Orange
+            Color(0xFF3F51B5)  // Indigo
+        )
+        colors[kotlin.math.abs(hash) % colors.size]
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -330,122 +384,179 @@ private fun ArticleCard(
                     uriHandler.openUri(article.url)
                 }
             },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+        Row(modifier = Modifier.fillMaxWidth()) {
+
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(IntrinsicSize.Max)
+                    .background(accentColor)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = article.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        if (article.isViewed) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = "Просмотрено",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (article.rssSourceName.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = accentColor.copy(alpha = 0.1f)
+                        ) {
+                            Text(
+                                text = article.rssSourceName,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = accentColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    if (article.rssSourceName.isNotEmpty()) {
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (article.isViewed) {
+                            Icon(
+                                imageVector = Icons.Default.Visibility,
+                                contentDescription = "Просмотрено",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
                         Text(
-                            text = article.rssSourceName,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            text = article.publishedAt
+                                .atZone(ZoneId.systemDefault())
+                                .format(DateTimeFormatter.ofPattern("dd MMM")),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-            }
 
-            if (article.description.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+
+
                 Text(
-                    text = article.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 3,
+                    text = article.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+
+
+                if (article.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = article.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = {
-                            if (article.isLiked == true) {
-                                onRemoveLikeDislike()
-                            } else {
-                                onLike()
-                            }
-                        },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ThumbUp,
-                            contentDescription = "Лайк",
-                            modifier = Modifier.size(18.dp),
-                            tint = if (article.isLiked == true) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    if (article.readTimeMinutes > 0) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = "${article.readTimeMinutes} мин",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
                     }
-                    
-                    IconButton(
-                        onClick = {
-                            if (article.isLiked == false) {
-                                onRemoveLikeDislike()
-                            } else {
-                                showDislikeConfirm = true
-                            }
-                        },
-                        modifier = Modifier.size(32.dp)
+
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ThumbDown,
-                            contentDescription = "Дизлайк",
-                            modifier = Modifier.size(18.dp),
-                            tint = if (article.isLiked == false) 
-                                MaterialTheme.colorScheme.error 
-                            else 
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        Surface(
+                            onClick = {
+                                if (article.isLiked == true) {
+                                    onRemoveLikeDislike()
+                                } else {
+                                    onLike()
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (article.isLiked == true)
+                                Color(0xFF4CAF50).copy(alpha = 0.15f)
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbUp,
+                                contentDescription = "Лайк",
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(18.dp),
+                                tint = if (article.isLiked == true)
+                                    Color(0xFF2E7D32)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+
+                        Surface(
+                            onClick = {
+                                if (article.isLiked == false) {
+                                    onRemoveLikeDislike()
+                                } else {
+                                    showDislikeConfirm = true
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (article.isLiked == false)
+                                Color(0xFFF44336).copy(alpha = 0.15f)
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbDown,
+                                contentDescription = "Дизлайк",
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(18.dp),
+                                tint = if (article.isLiked == false)
+                                    Color(0xFFC62828)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-                
-                Text(
-                    text = article.publishedAt
-                        .atZone(ZoneId.systemDefault())
-                        .format(DateTimeFormatter.ofPattern("MMM dd")),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

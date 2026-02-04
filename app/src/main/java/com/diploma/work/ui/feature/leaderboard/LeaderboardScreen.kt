@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -254,13 +255,21 @@ fun CompactFilterSortSection(
                           selectedLevel != Level.LEVEL_UNSPECIFIED
 
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         FilterChip(
             selected = hasActiveFilters,
             onClick = { showFilterDialog = !showFilterDialog },
-            label = { Text(filterLabel) },
+            label = {
+                Text(
+                    text = filterLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.FilterList,
@@ -275,7 +284,13 @@ fun CompactFilterSortSection(
         FilterChip(
             selected = false,
             onClick = { showSortDialog = !showSortDialog },
-            label = { Text("Сортировка: ${selectedSortType.displayName}") },
+            label = {
+                Text(
+                    text = selectedSortType.shortName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Sort,

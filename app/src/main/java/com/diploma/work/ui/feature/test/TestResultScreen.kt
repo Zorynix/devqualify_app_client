@@ -201,87 +201,107 @@ fun ScoreSection(
 ) {
     val percentage = if (totalPoints > 0) (score.toFloat() / totalPoints) * 100 else 0f
     val scoreColor = when {
-        percentage >= 80 -> MaterialTheme.colorScheme.primary
-        percentage >= 60 -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.error    }
+        percentage >= 80 -> Color(0xFF4CAF50) // Green
+        percentage >= 60 -> Color(0xFFFFA726) // Orange
+        else -> Color(0xFFF44336) // Red
+    }
+    val scoreBgColor = when {
+        percentage >= 80 -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+        percentage >= 60 -> Color(0xFFFFA726).copy(alpha = 0.1f)
+        else -> Color(0xFFF44336).copy(alpha = 0.1f)
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            val emoji = when {
+                percentage >= 80 -> "🎉"
+                percentage >= 60 -> "👍"
+                else -> "💪"
+            }
             Text(
-                text = stringResource(R.string.your_score),
-                style = TextStyle.TitleMedium.value,
-                color = MaterialTheme.colorScheme.onSurface
+                text = emoji,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = androidx.compose.ui.unit.TextUnit(48f, androidx.compose.ui.unit.TextUnitType.Sp)
+                ),
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = when {
+                    percentage >= 80 -> "Отлично!"
+                    percentage >= 60 -> "Хороший результат"
+                    else -> "Есть над чем поработать"
+                },
+                style = TextStyle.TitleMedium.value,
+                color = scoreColor,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Surface(
-                modifier = Modifier.size(120.dp),
+                modifier = Modifier.size(140.dp),
                 shape = CircleShape,
-                color = scoreColor.copy(alpha = 0.1f)
+                color = scoreBgColor
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "${percentage.toInt()}%",
-                        style = TextStyle.HeadlineLarge.value,
-                        color = scoreColor,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${percentage.toInt()}%",
+                            style = TextStyle.HeadlineLarge.value,
+                            color = scoreColor,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = stringResource(R.string.points_format, score, totalPoints),
+                            style = TextStyle.BodySmall.value,
+                            color = scoreColor.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Text(
-                    text = stringResource(R.string.points_format, score, totalPoints),
-                    style = TextStyle.BodyLarge.value,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Timer,
-                    contentDescription = stringResource(R.string.time),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = stringResource(R.string.time_format, formatTime(durationMillis)),
-                    style = TextStyle.BodyMedium.value,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (durationMillis > 0) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.seconds_format, durationMillis / 1000),
-                    style = TextStyle.BodySmall.value,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Timer,
+                        contentDescription = stringResource(R.string.time),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Время: ${formatTime(durationMillis)}",
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -308,14 +328,23 @@ fun formatTime(millis: Long): String {
 fun QuestionResultItem(
     questionResult: QuestionResult,
     modifier: Modifier = Modifier
-) {    Card(
+) {
+    val bgColor = if (questionResult.isCorrect)
+        Color(0xFF4CAF50).copy(alpha = 0.1f)
+    else
+        Color(0xFFF44336).copy(alpha = 0.1f)
+
+    val accentColor = if (questionResult.isCorrect)
+        Color(0xFF2E7D32)
+    else
+        Color(0xFFC62828)
+
+    Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (questionResult.isCorrect)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.errorContainer
+            containerColor = bgColor
         )
     ) {
         Row(
@@ -326,13 +355,13 @@ fun QuestionResultItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
                     .background(
                         if (questionResult.isCorrect)
-                            MaterialTheme.colorScheme.primaryContainer
+                            Color(0xFF4CAF50).copy(alpha = 0.2f)
                         else
-                            MaterialTheme.colorScheme.error
+                            Color(0xFFF44336).copy(alpha = 0.2f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -343,13 +372,13 @@ fun QuestionResultItem(
                         Icons.Default.Error,
                     contentDescription = if (questionResult.isCorrect) "Correct" else "Incorrect",
                     modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = accentColor
                 )
             }
 
             Spacer(modifier = Modifier.size(12.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -359,20 +388,24 @@ fun QuestionResultItem(
                         text = if (questionResult.isCorrect) stringResource(R.string.correct) else stringResource(R.string.incorrect),
                         style = TextStyle.LabelLarge.value,
                         fontWeight = FontWeight.Bold,
-                        color = if (questionResult.isCorrect)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else
-                            MaterialTheme.colorScheme.error
+                        color = accentColor
                     )
 
-                    Text(
-                        text = stringResource(R.string.points_earned, questionResult.pointsEarned, if (questionResult.pointsEarned != 1) stringResource(R.string.points_multiple) else stringResource(R.string.points_single)),
-                        style = TextStyle.LabelMedium.value,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = accentColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "+${questionResult.pointsEarned}",
+                            style = TextStyle.LabelMedium.value,
+                            color = accentColor,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (!questionResult.isCorrect) {
                     Text(
@@ -386,7 +419,8 @@ fun QuestionResultItem(
                     Text(
                         text = stringResource(R.string.correct_answer_format, questionResult.correctAnswer),
                         style = TextStyle.BodySmall.value,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFF2E7D32),
+                        fontWeight = FontWeight.Medium
                     )
 
                     if (questionResult.feedback.isNotBlank()) {

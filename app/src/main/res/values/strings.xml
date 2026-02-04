@@ -35,7 +35,9 @@
     <string name="empty_state_message">Здесь пока ничего нет</string>
 
     <string name="login">Войти</string>
+    <string name="login_subtitle">Войдите в свой аккаунт</string>
     <string name="register">Зарегистрироваться</string>
+    <string name="registration_subtitle">Создайте новый аккаунт</string>
     <string name="registration">Регистрация</string>
     <string name="email">Email</string>
     <string name="password">Пароль</string>
