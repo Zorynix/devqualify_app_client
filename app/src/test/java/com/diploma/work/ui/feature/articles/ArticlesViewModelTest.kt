@@ -49,7 +49,11 @@ class ArticlesViewModelTest {
         coEvery { session.getUserId() } returns 1L
         coEvery { session.getUserPreferences() } returns null
         coEvery { articlesRepository.getUserPreferences(any()) } returns Result.success(GetUserPreferencesResponse(null))
-        
+        coEvery { session.isArticleViewed(any()) } returns false
+        coEvery { session.getArticleLikeStatus(any()) } returns null
+        coEvery { session.getDislikedArticles() } returns emptySet()
+        coEvery { session.cacheArticles(any()) } returns Unit
+
         viewModel = ArticlesViewModel(articlesRepository, session, errorHandler)
         
     }

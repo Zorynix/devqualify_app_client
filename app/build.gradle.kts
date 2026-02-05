@@ -1,10 +1,8 @@
-apply(plugin = "com.google.protobuf")
-
 plugins {
     alias(libs.plugins.android.application)
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
     id(libs.plugins.jetbrains.kotlin.android.get().pluginId)
+    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.hilt.android)
     id("org.jetbrains.kotlin.plugin.serialization")
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
@@ -70,7 +68,7 @@ dependencies {
 
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.espresso.remote)
-    val composeBom = platform("androidx.compose:compose-bom:2025.06.01")
+    val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
     debugImplementation(libs.ui.tooling)
@@ -88,6 +86,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    implementation(libs.androidx.security.crypto)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
@@ -119,7 +119,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.core.splashscreen)
     implementation(libs.hilt.android)
-    kapt(libs.hilt.android.compiler)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
@@ -139,10 +139,8 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging.ktx)
 
-    kapt(libs.kotlinx.metadata.jvm)
+    ksp(libs.kotlinx.metadata.jvm)
     implementation(libs.android.maps.utils)
     implementation(libs.androidx.compose.material3.material3)
     implementation(libs.grpc.okhttp)
@@ -167,9 +165,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.grpc.stub)
     testImplementation(kotlin("test"))
-}
-kapt {
-    correctErrorTypes = true
 }
 
 

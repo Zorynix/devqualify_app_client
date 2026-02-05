@@ -4,9 +4,12 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,16 +18,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.ui.res.stringResource
-import com.diploma.work.R
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
@@ -34,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,20 +48,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
+import com.diploma.work.R
 import com.diploma.work.ui.theme.Theme
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -317,3 +335,155 @@ fun DiplomNavHost(
         builder = builder,
     )
 }
+
+
+@Composable
+fun OtpTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    length: Int = 6,
+    onComplete: ((String) -> Unit)? = null,
+    enabled: Boolean = true,
+    isError: Boolean = false,
+) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    LaunchedEffect(value) {
+        if (value.length == length) {
+            keyboardController?.hide()
+            onComplete?.invoke(value)
+        }
+    }
+
+    Box(modifier = modifier) {
+        BasicTextField(
+            value = TextFieldValue(text = value, selection = TextRange(value.length)),
+            onValueChange = { newValue ->
+                val filtered = newValue.text.filter { it.isDigit() }.take(length)
+                if (filtered != value) {
+                    onValueChange(filtered)
+                }
+            },
+            enabled = enabled,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.NumberPassword,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide()
+                    if (value.length == length) {
+                        onComplete?.invoke(value)
+                    }
+                }
+            ),
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .size(1.dp)
+                .padding(0.dp),
+            cursorBrush = SolidColor(Color.Transparent),
+        )
+
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(length) { index ->
+                OtpCell(
+                    digit = value.getOrNull(index),
+                    isFocused = value.length == index && enabled,
+                    isError = isError,
+                    enabled = enabled,
+                    onClick = { focusRequester.requestFocus() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OtpCell(
+    digit: Char?,
+    isFocused: Boolean,
+    isError: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    cellSize: Dp = 56.dp,
+) {
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isError -> MaterialTheme.colorScheme.error
+            isFocused -> MaterialTheme.colorScheme.primary
+            digit != null -> MaterialTheme.colorScheme.outline
+            else -> MaterialTheme.colorScheme.outlineVariant
+        },
+        animationSpec = tween(150),
+        label = "borderColor"
+    )
+
+    val backgroundColor by animateColorAsState(
+        targetValue = when {
+            !enabled -> MaterialTheme.colorScheme.surfaceContainerLow
+            isError -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+            isFocused -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+            else -> MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(150),
+        label = "backgroundColor"
+    )
+
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.size(cellSize),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        border = BorderStroke(
+            width = if (isFocused) 2.dp else 1.dp,
+            color = borderColor
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isFocused) 2.dp else 0.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .size(cellSize),
+            contentAlignment = Alignment.Center
+        ) {
+            if (digit != null) {
+                com.diploma.work.ui.theme.Text(
+                    text = digit.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = if (isError) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    textAlign = TextAlign.Center
+                )
+            } else if (isFocused) {
+
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(24.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
+    }
+}
+

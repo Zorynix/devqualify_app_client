@@ -324,79 +324,98 @@ fun QuestionScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Row(
+
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Text(
-                text = stringResource(R.string.question_of, questionNumber, totalQuestions),
-                style = TextStyle.BodySmall.value,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            LinearProgressIndicator(
-                progress = { questionNumber.toFloat() / totalQuestions },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                strokeCap = StrokeCap.Round
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.progress_percent, (questionNumber.toFloat() / totalQuestions * 100).toInt()),
-                style = TextStyle.BodySmall.value,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.question_of, questionNumber, totalQuestions),
+                        style = TextStyle.TitleSmall.value,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(R.string.progress_percent, (questionNumber.toFloat() / totalQuestions * 100).toInt()),
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { questionNumber.toFloat() / totalQuestions },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    strokeCap = StrokeCap.Round,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                )
+            }
         }
 
         if (isIncorrectlyAnswered) {
             Spacer(modifier = Modifier.height(12.dp))
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Error,
                         contentDescription = stringResource(R.string.incorrect_desc),
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.question_incorrect),
                         style = TextStyle.BodyMedium.value,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
         } else if (isCorrectlyAnswered) {
             Spacer(modifier = Modifier.height(12.dp))
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(8.dp),
+                color = androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.15f),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = stringResource(R.string.correct),
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(20.dp)
+                        tint = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                        modifier = Modifier.size(24.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.question_correct),
                         style = TextStyle.BodyMedium.value,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = androidx.compose.ui.graphics.Color(0xFF1B5E20),
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -404,22 +423,24 @@ fun QuestionScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+
         Card(
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(20.dp)
             ) {
                 Text(
                     text = question.text,
                     style = TextStyle.TitleMedium.value,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 24.sp
                 )
 
                 if (question.sampleCode != null) {
@@ -434,55 +455,110 @@ fun QuestionScreen(
 
                 when (question.type) {
                     QuestionType.MULTIPLE_CHOICE -> {
-                        question.options.forEachIndexed { index, option ->
-                            val isSelected = selectedOptions.contains(index)
-                            val backgroundColor = when {
-                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
-                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
-                                isSelected -> MaterialTheme.colorScheme.primaryContainer
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            }
-                            val textColor = when {
-                                isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
-                                isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
+                        if (question.sampleCode != null) {
+                            question.options.forEachIndexed { index, option ->
+                                val isSelected = selectedOptions.contains(index)
+                                val backgroundColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                                val textColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(backgroundColor)
-                                    .selectable(
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(backgroundColor)
+                                        .selectable(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (!isQuestionAnswered) {
+                                                    onOptionSelect(index)
+                                                }
+                                            },
+                                            role = Role.RadioButton,
+                                            enabled = !isQuestionAnswered
+                                        )
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
                                         selected = isSelected,
                                         onClick = {
                                             if (!isQuestionAnswered) {
                                                 onOptionSelect(index)
                                             }
                                         },
-                                        role = Role.Checkbox,
                                         enabled = !isQuestionAnswered
                                     )
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = {
-                                        if (!isQuestionAnswered) {
-                                            onOptionSelect(index)
-                                        }
-                                    },
-                                    enabled = !isQuestionAnswered
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = option,
-                                    style = TextStyle.BodyMedium.value,
-                                    color = textColor
-                                )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = option,
+                                        style = TextStyle.BodyMedium.value,
+                                        color = textColor
+                                    )
+                                }
+                            }
+                        } else {
+
+                            question.options.forEachIndexed { index, option ->
+                                val isSelected = selectedOptions.contains(index)
+                                val backgroundColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.errorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                }
+                                val textColor = when {
+                                    isIncorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onErrorContainer
+                                    isCorrectlyAnswered && isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(backgroundColor)
+                                        .selectable(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (!isQuestionAnswered) {
+                                                    onOptionSelect(index)
+                                                }
+                                            },
+                                            role = Role.Checkbox,
+                                            enabled = !isQuestionAnswered
+                                        )
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = {
+                                            if (!isQuestionAnswered) {
+                                                onOptionSelect(index)
+                                            }
+                                        },
+                                        enabled = !isQuestionAnswered
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = option,
+                                        style = TextStyle.BodyMedium.value,
+                                        color = textColor
+                                    )
+                                }
                             }
                         }
                     }
@@ -520,15 +596,16 @@ fun QuestionScreen(
                                     )
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
-                            ) {                                RadioButton(
-                                selected = isSelected,
-                                onClick = {
-                                    if (!isQuestionAnswered) {
-                                        onOptionSelect(index)
-                                    }
-                                },
-                                enabled = !isQuestionAnswered
-                            )
+                            ) {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = {
+                                        if (!isQuestionAnswered) {
+                                            onOptionSelect(index)
+                                        }
+                                    },
+                                    enabled = !isQuestionAnswered
+                                )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = option,

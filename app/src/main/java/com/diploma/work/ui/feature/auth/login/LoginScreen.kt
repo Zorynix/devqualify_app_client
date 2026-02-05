@@ -1,48 +1,60 @@
 package com.diploma.work.ui.feature.auth.login
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.R
 import com.diploma.work.data.AppSession
 import com.diploma.work.ui.DiplomPasswordTextField
 import com.diploma.work.ui.DiplomTextField
-import com.diploma.work.ui.components.ErrorCard
 import com.diploma.work.ui.components.ThemeToggleButton
-import com.diploma.work.ui.navigation.Home
-import com.diploma.work.ui.navigation.Register
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
-import com.diploma.work.ui.theme.Theme
 import com.diploma.work.utils.ValidationUtils
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -56,105 +68,233 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val username by viewModel.username.collectAsState()
     val loginSuccess by viewModel.loginSuccess.collectAsState()
+
     if (loginSuccess) {
         navController.safeNavigate("Home", clearStack = true)
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-    ) {
-        ThemeToggleButton(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
-        
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(onClick = { navController.safeNavigateBack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                actions = {
+                    ThemeToggleButton()
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
-            IconButton(onClick = { navController.safeNavigateBack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-            }
-            Text(stringResource(R.string.login), style = TextStyle.TitleLarge.value)
+            Spacer(modifier = Modifier.height(32.dp))
 
-        DiplomTextField(
-            value = username,
-            onValueChange = { viewModel.onUsernameChanged(it) },
-            label = { Text(stringResource(R.string.email), style = TextStyle.BodyLarge.value) },
-            modifier = Modifier.padding(top = 16.dp)
-        )
-        
-        val emailValidation = ValidationUtils.validateEmail(username)
-        if (!emailValidation.isValid && username.isNotBlank()) {
-            Text(
-                text = emailValidation.errorMessage ?: "",
-                color = Color.Red,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .align(Alignment.Start)
-            )
-        }
-        
-        DiplomPasswordTextField(
-            value = password,
-            onValueChange = { viewModel.onPasswordChanged(it) },
-            label = { Text(stringResource(R.string.password), style = TextStyle.BodyLarge.value) },
-            modifier = Modifier.padding(top = 8.dp)
-        )
-          val passwordValidation = ValidationUtils.validateStrongPassword(password)
-        if (!passwordValidation.isValid && password.isNotBlank()) {
-            Text(
-                text = stringResource(R.string.password_requirements),
-                color = Color.Red,
-                fontSize = 11.sp,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .align(Alignment.Start)
-            )
-        }
-        if (errorMessage != null) {
-            ErrorCard(
-                error = errorMessage!!,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-        
-        Button(
-            onClick = { viewModel.onLoginClicked(session) },
-            enabled = loginEnabled && !isLoading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier.padding(top = 16.dp)
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Text(stringResource(R.string.login), color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
-        Row(modifier = Modifier.padding(top = 16.dp)) {
-            Text(stringResource(R.string.no_account), style = TextStyle.BodyMedium.value)
-            Text(
-                stringResource(R.string.register),
-                style = TextStyle.Link.value,
-                color = Theme.extendedColorScheme.onBackgroundPositive,                
-                modifier = Modifier.clickable {
-                    navController.safeNavigate("Register")
+
+            Surface(
+                modifier = Modifier.size(80.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            Text(
+                text = stringResource(R.string.login),
+                style = TextStyle.TitleLarge.value,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
-        }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            Text(
+                text = stringResource(R.string.login_subtitle),
+                style = TextStyle.BodyMedium.value,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+
+            DiplomTextField(
+                value = username,
+                onValueChange = { viewModel.onUsernameChanged(it) },
+                label = {
+                    Text(
+                        text = stringResource(R.string.email),
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                isError = username.isNotBlank() && !ValidationUtils.validateEmail(username).isValid,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+
+            val emailValidation = ValidationUtils.validateEmail(username)
+            AnimatedVisibility(
+                visible = !emailValidation.isValid && username.isNotBlank(),
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Text(
+                    text = emailValidation.errorMessage ?: "",
+                    style = TextStyle.BodySmall.value,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 4.dp)
+                )
+            }
+
+
+            DiplomPasswordTextField(
+                value = password,
+                onValueChange = { viewModel.onPasswordChanged(it) },
+                label = {
+                    Text(
+                        text = stringResource(R.string.password),
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                isError = password.isNotBlank() && !ValidationUtils.validateStrongPassword(password).isValid,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            val passwordValidation = ValidationUtils.validateStrongPassword(password)
+            AnimatedVisibility(
+                visible = !passwordValidation.isValid && password.isNotBlank(),
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Text(
+                    text = stringResource(R.string.password_requirements),
+                    style = TextStyle.BodySmall.value,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, top = 4.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = errorMessage != null,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        style = TextStyle.BodySmall.value,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            Button(
+                onClick = { viewModel.onLoginClicked(session) },
+                enabled = loginEnabled && !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.login),
+                        style = TextStyle.ButtonText.value,
+                        color = if (loginEnabled) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.no_account),
+                    style = TextStyle.BodyMedium.value,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = { navController.safeNavigate("Register") }
+                ) {
+                    Text(
+                        text = stringResource(R.string.register),
+                        style = TextStyle.BodyMedium.value,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

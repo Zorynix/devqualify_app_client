@@ -34,10 +34,10 @@ data class LeaderboardUIState(
     val isUserDetailDialogVisible: Boolean = false
 )
 
-enum class LeaderboardSortType(val displayName: String) {
-    ACHIEVEMENTS("Достижения"),
-    CORRECT_ANSWERS("Правильно отвечено"),
-    COMPLETED_TESTS("Завершенные тесты")
+enum class LeaderboardSortType(val displayName: String, val shortName: String) {
+    ACHIEVEMENTS("Достижения", "Достижения"),
+    CORRECT_ANSWERS("Правильно отвечено", "Ответы"),
+    COMPLETED_TESTS("Завершенные тесты", "Тесты")
 }
 
 @HiltViewModel

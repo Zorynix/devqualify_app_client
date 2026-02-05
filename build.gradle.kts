@@ -2,12 +2,13 @@ plugins {
     kotlin("jvm") version "2.1.10"
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.android.application) apply false
-    id("com.google.dagger.hilt.android") version "2.56.2" apply false
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0" apply false
+    alias(libs.plugins.google.devtools.ksp) apply false
+    alias(libs.plugins.hilt.android) apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.0" apply false
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
-    id("com.google.gms.google-services") version "4.4.3" apply false
-    id("com.google.protobuf") version "0.9.5" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
+    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.protobuf") version "0.9.6" apply false
 }
 
 detekt {

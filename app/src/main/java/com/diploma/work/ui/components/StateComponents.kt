@@ -74,8 +74,8 @@ fun ErrorCard(
 
 @Composable
 fun LoadingCard(
-    message: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    message: String? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),

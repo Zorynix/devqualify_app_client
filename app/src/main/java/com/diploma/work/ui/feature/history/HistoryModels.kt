@@ -12,7 +12,7 @@ data class HistoryUiState(
 )
 
 enum class HistoryTab(val displayName: String) {
-    VIEWED("Просмотренные"),
-    LIKED("Понравившиеся"),
-    DISLIKED("Не понравившиеся")
+    VIEWED("Просмотры"),
+    LIKED("Лайки"),
+    DISLIKED("Дизлайки")
 }

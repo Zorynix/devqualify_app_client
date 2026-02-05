@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "DiplomaWork"
-include(":app", ":protobuf")
+include(":app")

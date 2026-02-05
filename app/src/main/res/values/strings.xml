@@ -35,7 +35,9 @@
     <string name="empty_state_message">Здесь пока ничего нет</string>
 
     <string name="login">Войти</string>
+    <string name="login_subtitle">Войдите в свой аккаунт</string>
     <string name="register">Зарегистрироваться</string>
+    <string name="registration_subtitle">Создайте новый аккаунт</string>
     <string name="registration">Регистрация</string>
     <string name="email">Email</string>
     <string name="password">Пароль</string>
@@ -204,6 +206,8 @@
     <string name="middle">Middle</string>
     <string name="senior">Senior</string>
     <string name="select_level_placeholder">Выберите уровень</string>
+    <string name="level_description">Выберите ваш уровень опыта для получения подходящих тестов</string>
+    <string name="direction_description">Выберите направление разработки для персонализации контента</string>
 
     <string name="profile_updated_successfully">Профиль успешно обновлен!</string>
     <string name="search_articles">Поиск статей…</string>
