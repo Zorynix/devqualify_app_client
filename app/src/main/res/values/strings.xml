@@ -206,6 +206,8 @@
     <string name="middle">Middle</string>
     <string name="senior">Senior</string>
     <string name="select_level_placeholder">Выберите уровень</string>
+    <string name="level_description">Выберите ваш уровень опыта для получения подходящих тестов</string>
+    <string name="direction_description">Выберите направление разработки для персонализации контента</string>
 
     <string name="profile_updated_successfully">Профиль успешно обновлен!</string>
     <string name="search_articles">Поиск статей…</string>

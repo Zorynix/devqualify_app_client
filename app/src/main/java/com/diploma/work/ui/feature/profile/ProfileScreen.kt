@@ -123,6 +123,7 @@ fun ProfileScreen(
 
     var showStatisticsDialog by remember { mutableStateOf(false) }
     var showGradeDialog by remember { mutableStateOf(false) }
+    var showDirectionDialog by remember { mutableStateOf(false) }
     var showAchievementsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(updateSuccess) {
@@ -256,7 +257,7 @@ fun ProfileScreen(
                                 Color(0xFF66BB6A), // Green 400
                                 Color(0xFF388E3C)  // Green 700
                             ),
-                            onClick = { showGradeDialog = true },
+                            onClick = { showDirectionDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -271,15 +272,25 @@ fun ProfileScreen(
                 }
 
                 if (showGradeDialog) {
-                    GradeSelectionDialog(
-                        currentDirection = direction,
+                    LevelSelectionDialog(
                         currentLevel = level,
-                        onDirectionChange = { viewModel.onDirectionChanged(it) },
                         onLevelChange = { viewModel.onLevelChanged(it) },
                         onDismiss = { showGradeDialog = false },
                         onSave = {
                             viewModel.updateUserProfile()
                             showGradeDialog = false
+                        }
+                    )
+                }
+
+                if (showDirectionDialog) {
+                    DirectionSelectionDialog(
+                        currentDirection = direction,
+                        onDirectionChange = { viewModel.onDirectionChanged(it) },
+                        onDismiss = { showDirectionDialog = false },
+                        onSave = {
+                            viewModel.updateUserProfile()
+                            showDirectionDialog = false
                         }
                     )
                 }
@@ -648,15 +659,12 @@ private fun StatisticItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GradeSelectionDialog(
-    currentDirection: Direction,
+private fun LevelSelectionDialog(
     currentLevel: Level,
-    onDirectionChange: (Direction) -> Unit,
     onLevelChange: (Level) -> Unit,
     onDismiss: () -> Unit,
     onSave: () -> Unit
 ) {
-    var directionExpanded by remember { mutableStateOf(false) }
     var levelExpanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -671,53 +679,20 @@ private fun GradeSelectionDialog(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "Выбор грейда",
+                    text = stringResource(R.string.select_level),
                     style = TextStyle.TitleLarge.value,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = stringResource(R.string.direction),
+                    text = stringResource(R.string.level_description),
                     style = TextStyle.BodyMedium.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(8.dp))
 
-                ExposedDropdownMenuBox(
-                    expanded = directionExpanded,
-                    onExpandedChange = { directionExpanded = it }
-                ) {
-                    DiplomTextField(
-                        value = directionToString(currentDirection),
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = directionExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = directionExpanded,
-                        onDismissRequest = { directionExpanded = false }
-                    ) {
-                        Direction.entries.filter { it != Direction.UNRECOGNIZED }.forEach { dir ->
-                            DropdownMenuItem(
-                                text = { Text(directionToString(dir)) },
-                                onClick = {
-                                    onDirectionChange(dir)
-                                    directionExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
                     text = stringResource(R.string.level),
@@ -750,6 +725,108 @@ private fun GradeSelectionDialog(
                                 onClick = {
                                     onLevelChange(lvl)
                                     levelExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onSave,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.save),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DirectionSelectionDialog(
+    currentDirection: Direction,
+    onDirectionChange: (Direction) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
+    var directionExpanded by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.select_direction),
+                    style = TextStyle.TitleLarge.value,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.direction_description),
+                    style = TextStyle.BodyMedium.value,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = stringResource(R.string.direction),
+                    style = TextStyle.BodyMedium.value,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = directionExpanded,
+                    onExpandedChange = { directionExpanded = it }
+                ) {
+                    DiplomTextField(
+                        value = directionToString(currentDirection),
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = directionExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = directionExpanded,
+                        onDismissRequest = { directionExpanded = false }
+                    ) {
+                        Direction.entries.filter { it != Direction.UNRECOGNIZED }.forEach { dir ->
+                            DropdownMenuItem(
+                                text = { Text(directionToString(dir)) },
+                                onClick = {
+                                    onDirectionChange(dir)
+                                    directionExpanded = false
                                 }
                             )
                         }
