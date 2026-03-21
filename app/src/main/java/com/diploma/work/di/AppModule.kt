@@ -2,11 +2,15 @@ package com.diploma.work.di
 
 import android.content.Context
 import com.diploma.work.data.AppSession
+import com.diploma.work.data.api.ArticlesApi
+import com.diploma.work.data.api.AuthApi
+import com.diploma.work.data.api.AuthInterceptor
+import com.diploma.work.data.api.InstantTypeAdapter
+import com.diploma.work.data.api.IntTypeAdapter
+import com.diploma.work.data.api.LongTypeAdapter
+import com.diploma.work.data.api.TestsApi
+import com.diploma.work.data.api.UserInfoApi
 import com.diploma.work.data.cache.ArticlesCacheManager
-import com.diploma.work.data.grpc.ArticlesGrpcClient
-import com.diploma.work.data.grpc.AuthGrpcClient
-import com.diploma.work.data.grpc.TestsGrpcClient
-import com.diploma.work.data.grpc.UserInfoGrpcClient
 import com.diploma.work.data.preferences.UserPreferencesManager
 import com.diploma.work.data.repository.ArticlesRepository
 import com.diploma.work.data.repository.ArticlesRepositoryImpl
@@ -21,92 +25,75 @@ import com.diploma.work.data.security.SecureTokenManager
 import com.diploma.work.ui.theme.ThemeManager
 import com.diploma.work.utils.Constants
 import com.diploma.work.utils.ErrorHandler
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
-import javax.inject.Qualifier
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class AuthChannel
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class UserInfoChannel
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class TestsChannel
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ArticlesChannel
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+        .registerTypeAdapter(Long::class.java, LongTypeAdapter())
+        .registerTypeAdapter(Long::class.javaPrimitiveType, LongTypeAdapter())
+        .registerTypeAdapter(Int::class.java, IntTypeAdapter())
+        .registerTypeAdapter(Int::class.javaPrimitiveType, IntTypeAdapter())
+        .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
+        .create()
 
-    private fun createSecureChannel(host: String, port: Int): ManagedChannel {
-        val builder = ManagedChannelBuilder.forTarget("$host:$port")
-            .keepAliveTime(Constants.Network.CONNECTION_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-            .keepAliveTimeout(Constants.Network.READ_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-            .keepAliveWithoutCalls(true)
-
-        // TODO: В продакшене переключить USE_PLAINTEXT на false
-        if (Constants.Network.USE_PLAINTEXT) {
-            builder.usePlaintext()
-        } else {
-            builder.useTransportSecurity()
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
         }
-
-        return builder.build()
+        return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .addInterceptor(logging)
+            .connectTimeout(Constants.Network.CONNECTION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(Constants.Network.READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(Constants.Network.WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
     }
 
-    @AuthChannel
     @Provides
     @Singleton
-    fun provideAuthManagedChannel(): ManagedChannel {
-        return createSecureChannel(
-            Constants.Network.AUTH_SERVER_HOST,
-            Constants.Network.AUTH_SERVER_PORT
-        )
-    }
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit = Retrofit.Builder()
+        .baseUrl(Constants.Network.GATEWAY_BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create(gson))
+        .build()
 
-    @UserInfoChannel
     @Provides
     @Singleton
-    fun provideUserInfoManagedChannel(): ManagedChannel {
-        return createSecureChannel(
-            Constants.Network.USER_INFO_SERVER_HOST,
-            Constants.Network.USER_INFO_SERVER_PORT
-        )
-    }
+    fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
 
-    @TestsChannel
     @Provides
     @Singleton
-    fun provideTestsManagedChannel(): ManagedChannel {
-        return createSecureChannel(
-            Constants.Network.TESTS_SERVER_HOST,
-            Constants.Network.TESTS_SERVER_PORT
-        )
-    }
+    fun provideUserInfoApi(retrofit: Retrofit): UserInfoApi = retrofit.create(UserInfoApi::class.java)
 
-    @ArticlesChannel
     @Provides
     @Singleton
-    fun provideArticlesManagedChannel(): ManagedChannel {
-        return createSecureChannel(
-            Constants.Network.ARTICLES_SERVER_HOST,
-            Constants.Network.ARTICLES_SERVER_PORT
-        )
-    }
+    fun provideTestsApi(retrofit: Retrofit): TestsApi = retrofit.create(TestsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideArticlesApi(retrofit: Retrofit): ArticlesApi = retrofit.create(ArticlesApi::class.java)
 
     @Provides
     @Singleton
@@ -140,50 +127,26 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthGrpcClient(@AuthChannel channel: ManagedChannel): AuthGrpcClient {
-        return AuthGrpcClient(channel)
+    fun provideAuthRepository(api: AuthApi): AuthRepository {
+        return AuthRepositoryImpl(api)
     }
 
     @Provides
     @Singleton
-    fun provideUserInfoGrpcClient(@UserInfoChannel channel: ManagedChannel, session: AppSession): UserInfoGrpcClient {
-        return UserInfoGrpcClient(channel, session)
+    fun provideUserInfoRepository(api: UserInfoApi): UserInfoRepository {
+        return UserInfoRepositoryImpl(api)
     }
 
     @Provides
     @Singleton
-    fun provideTestsGrpcClient(@TestsChannel channel: ManagedChannel, session: AppSession, @ApplicationContext context: Context): TestsGrpcClient {
-        return TestsGrpcClient(channel, session, context)
+    fun provideTestsRepository(api: TestsApi, @ApplicationContext context: Context): TestsRepository {
+        return TestsRepositoryImpl(api, context)
     }
 
     @Provides
     @Singleton
-    fun provideArticlesGrpcClient(@ArticlesChannel channel: ManagedChannel, session: AppSession): ArticlesGrpcClient {
-        return ArticlesGrpcClient(channel, session)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAuthRepository(authGrpcClient: AuthGrpcClient): AuthRepository {
-        return AuthRepositoryImpl(authGrpcClient)
-    }
-
-    @Provides
-    @Singleton
-    fun provideUserInfoRepository(userInfoGrpcClient: UserInfoGrpcClient): UserInfoRepository {
-        return UserInfoRepositoryImpl(userInfoGrpcClient)
-    }
-
-    @Provides
-    @Singleton
-    fun provideTestsRepository(testsGrpcClient: TestsGrpcClient, @ApplicationContext context: Context): TestsRepository {
-        return TestsRepositoryImpl(testsGrpcClient, context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideArticlesRepository(articlesGrpcClient: ArticlesGrpcClient): ArticlesRepository {
-        return ArticlesRepositoryImpl(articlesGrpcClient)
+    fun provideArticlesRepository(api: ArticlesApi): ArticlesRepository {
+        return ArticlesRepositoryImpl(api)
     }
 
     @Provides

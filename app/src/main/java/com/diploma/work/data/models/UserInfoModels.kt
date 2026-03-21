@@ -1,8 +1,5 @@
 package com.diploma.work.data.models
 
-import com.diploma.work.grpc.userinfo.Direction
-import com.diploma.work.grpc.userinfo.Level
-
 data class GetUserRequest(
     val userId: Long
 )
@@ -15,8 +12,8 @@ data class User(
     val id: Long,
     val username: String,
     val email: String,
-    val direction: Direction,
-    val level: Level,
+    val direction: UserDirection,
+    val level: UserLevel,
     val totalCorrectAnswers: Int,
     val totalIncorrectAnswers: Int,
     val completedTestsCount: Int,
@@ -36,8 +33,8 @@ data class Achievement(
 data class UpdateUserProfileRequest(
     val userId: Long,
     val username: String,
-    val direction: Direction,
-    val level: Level
+    val direction: UserDirection,
+    val level: UserLevel
 )
 
 data class UpdateUserProfileResponse(
@@ -76,8 +73,8 @@ data class GetUserAchievementsResponse(
 )
 
 data class GetLeaderboardRequest(
-    val direction: Direction,
-    val level: Level,
+    val direction: UserDirection,
+    val level: UserLevel,
     val pagination: Pagination
 )
 
@@ -170,3 +167,27 @@ data class GetUserAvatarResponse(
     val avatarUrl: String,
     val message: String
 )
+
+enum class UserDirection {
+    DIRECTION_UNSPECIFIED,
+    BACKEND,
+    FRONTEND,
+    DEVOPS,
+    DATA_SCIENCE,
+    UNRECOGNIZED;
+
+    val queryValue: Int
+        get() = ordinal
+}
+
+enum class UserLevel {
+    LEVEL_UNSPECIFIED,
+    JUNIOR,
+    MIDDLE,
+    SENIOR,
+    UNRECOGNIZED;
+
+    val queryValue: Int
+        get() = ordinal
+}
+

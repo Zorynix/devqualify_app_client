@@ -15,8 +15,6 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -53,8 +51,13 @@ import androidx.navigation.NavController
 import com.diploma.work.R
 import com.diploma.work.data.models.Question
 import com.diploma.work.data.models.QuestionType
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 import com.diploma.work.ui.components.CodeHighlighterText
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
+
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -143,6 +146,7 @@ fun TestSessionScreen(
     }
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.taking_test_title), style = TextStyle.TitleLarge.value) },
@@ -172,10 +176,12 @@ fun TestSessionScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
-    ) { paddingValues ->        Box(
+    ) { paddingValues ->
+        Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
@@ -325,13 +331,9 @@ fun QuestionScreen(
             .verticalScroll(rememberScrollState())
     ) {
 
-        Card(
+        GlassSurface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            shape = GlassTokens.CardShape
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -424,13 +426,9 @@ fun QuestionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
 
-        Card(
+        GlassSurface(
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            shape = GlassTokens.CardShape
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -742,7 +740,7 @@ fun ExplanationDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss, colors = ButtonDefaults.buttonColors(
+            TextButton(onClick = onDismiss, shape = GlassTokens.ButtonShape, colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )) {

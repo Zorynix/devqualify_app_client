@@ -3,6 +3,7 @@ package com.diploma.work.ui.feature.profile
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
@@ -36,8 +36,6 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DismissibleDrawerSheet
 import androidx.compose.material3.DrawerState
@@ -58,6 +56,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -71,7 +70,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -85,12 +83,18 @@ import androidx.navigation.NavController
 import com.diploma.work.R
 import com.diploma.work.data.AppSession
 import com.diploma.work.data.models.User
-import com.diploma.work.grpc.userinfo.Direction
-import com.diploma.work.grpc.userinfo.Level
+import com.diploma.work.data.models.UserDirection as Direction
+import com.diploma.work.data.models.UserLevel as Level
 import com.diploma.work.ui.DiplomTextField
+import com.diploma.work.ui.components.AccentGlassSurface
 import com.diploma.work.ui.components.AvatarImage
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
+import com.diploma.work.ui.components.GlassDialogSurface
 import com.diploma.work.ui.components.LoadingCard
+import com.diploma.work.ui.components.glassBorder
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -115,11 +119,10 @@ fun ProfileScreen(
     val level by viewModel.level.collectAsState()
     val avatarUrl by viewModel.avatarUrl.collectAsState()
     val theme by themeManager.currentTheme.collectAsState()
-    
+
     val snackbarHostState = remember { SnackbarHostState() }
     val errorOccurredText = stringResource(R.string.error_occurred)
     val profileUpdatedText = stringResource(R.string.profile_updated_successfully)
-
 
     var showStatisticsDialog by remember { mutableStateOf(false) }
     var showGradeDialog by remember { mutableStateOf(false) }
@@ -154,18 +157,17 @@ fun ProfileScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.profile), style = TextStyle.TitleLarge.value) }
+                title = { Text(stringResource(R.string.profile), style = TextStyle.TitleLarge.value) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
+            modifier = Modifier.padding(paddingValues).fillMaxSize()
         ) {
             if (isLoading && user == null) {
                 LoadingCard(
@@ -186,7 +188,6 @@ fun ProfileScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
                     }
-                    
 
                     ProfileHeader(
                         user = user!!,
@@ -199,21 +200,17 @@ fun ProfileScreen(
                         isLoading = isLoading
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         ProfileActionCard(
                             title = "Статистика",
                             subtitle = "${user!!.completedTestsCount} тестов",
                             icon = Icons.Default.Analytics,
-                            gradientColors = listOf(
-                                Color(0xFF5C6BC0), // Indigo 400
-                                Color(0xFF512DA8)  // Deep Purple 700
-                            ),
+                            gradientColors = listOf(Color(0xFF667EEA), Color(0xFF764BA2)),
                             onClick = { showStatisticsDialog = true },
                             modifier = Modifier.weight(1f)
                         )
@@ -222,29 +219,23 @@ fun ProfileScreen(
                             title = "Мой грейд",
                             subtitle = levelToString(level),
                             icon = Icons.Default.WorkspacePremium,
-                            gradientColors = listOf(
-                                Color(0xFFEC407A), // Pink 400
-                                Color(0xFFC2185B)  // Pink 700
-                            ),
+                            gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
                             onClick = { showGradeDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         ProfileActionCard(
                             title = "Достижения",
                             subtitle = "${user!!.achievementsCount} получено",
                             icon = Icons.Default.EmojiEvents,
-                            gradientColors = listOf(
-                                Color(0xFF29B6F6), // Light Blue 400
-                                Color(0xFF0288D1)  // Light Blue 700
-                            ),
+                            gradientColors = listOf(Color(0xFF4FACFE), Color(0xFF00F2FE)),
                             onClick = { showAchievementsDialog = true },
                             modifier = Modifier.weight(1f)
                         )
@@ -253,16 +244,12 @@ fun ProfileScreen(
                             title = "Направление",
                             subtitle = directionToString(direction),
                             icon = Icons.Default.School,
-                            gradientColors = listOf(
-                                Color(0xFF66BB6A), // Green 400
-                                Color(0xFF388E3C)  // Green 700
-                            ),
+                            gradientColors = listOf(Color(0xFF43E97B), Color(0xFF38F9D7)),
                             onClick = { showDirectionDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
-
 
                 if (showStatisticsDialog) {
                     StatisticsDialog(
@@ -336,12 +323,9 @@ private fun ProfileHeader(
         }
     )
 
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier
@@ -349,10 +333,7 @@ private fun ProfileHeader(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Box(
-                contentAlignment = Alignment.BottomEnd
-            ) {
+            Box(contentAlignment = Alignment.BottomEnd) {
                 AvatarImage(
                     avatarUrl = avatarUrl,
                     session = session,
@@ -379,7 +360,6 @@ private fun ProfileHeader(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
             Text(
                 text = user.email,
                 style = TextStyle.BodyMedium.value,
@@ -387,7 +367,6 @@ private fun ProfileHeader(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             DiplomTextField(
                 value = username,
@@ -404,12 +383,11 @@ private fun ProfileHeader(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
             Button(
                 onClick = onUpdateClick,
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
+                shape = GlassTokens.ButtonShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -432,14 +410,9 @@ private fun ProfileHeader(
         }
     }
 
-
     if (showAvatarDialog) {
         Dialog(onDismissRequest = { showAvatarDialog = false }) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
-            ) {
+            GlassDialogSurface() {
                 Column(
                     modifier = Modifier
                         .padding(24.dp)
@@ -468,7 +441,7 @@ private fun ProfileHeader(
                             showAvatarDialog = false
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = GlassTokens.ButtonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -503,43 +476,45 @@ private fun ProfileActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Surface(
         onClick = onClick,
         modifier = modifier.height(120.dp),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        shape = GlassTokens.CardShape,
+        color = Color.Transparent
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(gradientColors),
-                    shape = MaterialTheme.shapes.large
-                )
-                .padding(16.dp)
+        AccentGlassSurface(
+            accentColors = gradientColors,
+            shape = GlassTokens.CardShape,
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.size(28.dp)
-                )
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.size(28.dp)
+                    )
 
-                Column {
-                    Text(
-                        text = title,
-                        style = TextStyle.TitleMedium.value,
-                        color = Color.White
-                    )
-                    Text(
-                        text = subtitle,
-                        style = TextStyle.BodySmall.value,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Column {
+                        Text(
+                            text = title,
+                            style = TextStyle.TitleMedium.value,
+                            color = Color.White
+                        )
+                        Text(
+                            text = subtitle,
+                            style = TextStyle.BodySmall.value,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }
@@ -552,11 +527,7 @@ private fun StatisticsDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
-        ) {
+        GlassDialogSurface() {
             Column(
                 modifier = Modifier
                     .padding(24.dp)
@@ -625,7 +596,7 @@ private fun StatisticItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = GlassTokens.SmallShape,
             color = color.copy(alpha = 0.1f),
             modifier = Modifier.size(44.dp)
         ) {
@@ -668,11 +639,7 @@ private fun LevelSelectionDialog(
     var levelExpanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
-        ) {
+        GlassDialogSurface() {
             Column(
                 modifier = Modifier
                     .padding(24.dp)
@@ -743,6 +710,7 @@ private fun LevelSelectionDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = onSave,
+                        shape = GlassTokens.ButtonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -770,11 +738,7 @@ private fun DirectionSelectionDialog(
     var directionExpanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
-        ) {
+        GlassDialogSurface() {
             Column(
                 modifier = Modifier
                     .padding(24.dp)
@@ -845,6 +809,7 @@ private fun DirectionSelectionDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = onSave,
+                        shape = GlassTokens.ButtonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -867,11 +832,7 @@ private fun AchievementsPreviewDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
-        ) {
+        GlassDialogSurface() {
             Column(
                 modifier = Modifier
                     .padding(24.dp)
@@ -920,7 +881,6 @@ private fun AchievementsPreviewDialog(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppDrawerContent(
@@ -936,44 +896,37 @@ fun AppDrawerContent(
     modifier: Modifier = Modifier
 ) {
     val headerGradient = if (theme == AppThemeType.Dark) {
-        listOf(
-            Color(0xFF1A237E), // Dark Indigo
-            Color(0xFF4A148C)  // Dark Purple
-        )
+        listOf(Color(0xFF1A1040), Color(0xFF2D1B69))
     } else {
-        listOf(
-            Color(0xFF5C6BC0), // Indigo 400
-            Color(0xFF7E57C2)  // Deep Purple 400
-        )
+        listOf(Color(0xFF667EEA), Color(0xFF764BA2))
     }
 
     DismissibleDrawerSheet(
         modifier = modifier.width(300.dp),
-        drawerContainerColor = Color.Transparent
+        drawerContainerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxHeight()
         ) {
-
-            Box(
+            AccentGlassSurface(
+                accentColors = headerGradient,
+                shape = GlassTokens.CardShape,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.linearGradient(colors = headerGradient),
-                        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-                    )
-                    .padding(24.dp)
-                    .padding(top = 16.dp)
+                    .padding(8.dp)
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .padding(top = 16.dp)
+                ) {
                     Box(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .border(3.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         AvatarImage(
@@ -986,7 +939,6 @@ fun AppDrawerContent(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Greeting + Username
                     Text(
                         text = "Привет,",
                         style = TextStyle.BodyMedium.value,
@@ -1000,16 +952,15 @@ fun AppDrawerContent(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-
-
                     Surface(
                         onClick = onThemeToggle,
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.25f),
+                        shape = GlassTokens.ChipShape,
+                        color = Color.White.copy(alpha = 0.18f),
+                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Image(
@@ -1032,7 +983,7 @@ fun AppDrawerContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             DrawerMenuItem(
                 icon = {
@@ -1073,10 +1024,12 @@ fun AppDrawerContent(
                 onClick = onFeedbackClick
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
 
             DrawerMenuItem(
                 icon = {
@@ -1108,8 +1061,8 @@ private fun DrawerMenuItem(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
+            .padding(horizontal = 12.dp, vertical = 3.dp),
+        shape = GlassTokens.SmallShape,
         color = Color.Transparent
     ) {
         Row(
@@ -1128,7 +1081,6 @@ private fun DrawerMenuItem(
         }
     }
 }
-
 
 @Composable
 private fun directionToString(direction: Direction): String {

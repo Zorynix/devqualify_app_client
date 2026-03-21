@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -23,12 +24,19 @@ import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.ui.graphics.Color
+import com.diploma.work.ui.components.GlassNavigationBarBackground
+import com.diploma.work.ui.components.GlassTokens
+import com.diploma.work.ui.components.GradientScaffoldBackground
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.diploma.work.R
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -236,10 +245,19 @@ fun AppNavigation(
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 if (shouldShowBottomNav.value) {
-                    NavigationBar {
+                    val navBarBg = GlassNavigationBarBackground()
+                    Surface(
+                        color = navBarBg,
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                    ) {
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp
+                    ) {
                         val currentRoute by navController.currentBackStackEntryAsState()
                         navItems.forEach { item ->                            val selected = currentRoute?.destination?.hierarchy?.any {
                             it.route == when (item.route) {
@@ -253,6 +271,9 @@ fun AppNavigation(
                         } == true
 
                             NavigationBarItem(
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                ),
                                 selected = selected,
                                 onClick = {
                                     val route = when (item.route) {
@@ -301,8 +322,10 @@ fun AppNavigation(
                         }
                     }
                 }
+                }
             }
         ) { innerPadding ->
+            GradientScaffoldBackground {
             NavHost(
                 navController = navController,
                 startDestination = if (isLoggedIn) "Home" else "Login",
@@ -481,6 +504,7 @@ fun AppNavigation(
                     shouldShowBottomNav.value = false
                     FeedbackScreen(navController)
                 }
+            }
             }
         }
     }

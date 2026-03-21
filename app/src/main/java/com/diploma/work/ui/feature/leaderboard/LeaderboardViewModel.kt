@@ -9,8 +9,8 @@ import com.diploma.work.data.models.GetUserResponse
 import com.diploma.work.data.models.Pagination
 import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
-import com.diploma.work.grpc.userinfo.Direction
-import com.diploma.work.grpc.userinfo.Level
+import com.diploma.work.data.models.UserDirection as Direction
+import com.diploma.work.data.models.UserLevel as Level
 import com.diploma.work.ui.base.BaseViewModel
 import com.diploma.work.utils.Constants
 import com.diploma.work.utils.ErrorHandler

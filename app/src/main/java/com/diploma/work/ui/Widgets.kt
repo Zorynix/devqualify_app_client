@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.diploma.work.ui.components.GlassTokens
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -106,7 +107,7 @@ fun BasicDialog(
             Button(
                 onClick = onClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Theme.extendedColorScheme.primaryActive),
-                shape = RoundedCornerShape(16.dp),
+                shape = GlassTokens.ButtonShape,
             ) {                com.diploma.work.ui.theme.Text(
                     text = stringResource(id = R.string.ok),
                     style = com.diploma.work.ui.theme.TextStyle.ButtonText.value,
@@ -133,7 +134,7 @@ fun DiplomTextField(
     singleLine: Boolean = false,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },    shape: Shape = RoundedCornerShape(10.dp),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },    shape: Shape = GlassTokens.SmallShape,
     colors: TextFieldColors = TextFieldDefaults.colors(
         focusedIndicatorColor = Theme.extendedColorScheme.outlineActive,
         unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,

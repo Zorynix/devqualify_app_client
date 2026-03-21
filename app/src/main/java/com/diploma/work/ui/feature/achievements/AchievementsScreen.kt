@@ -18,15 +18,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -62,7 +60,11 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.diploma.work.R
 import com.diploma.work.data.models.Achievement
+import com.diploma.work.ui.components.AccentGlassSurface
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassDialogSurface
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
@@ -90,6 +92,7 @@ fun AchievementsScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.achievements), style = TextStyle.TitleLarge.value) },
@@ -97,62 +100,67 @@ fun AchievementsScreen(
                     IconButton(onClick = onOpenDrawer) {
                         Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = { viewModel.loadAchievements() },
-                modifier = Modifier.fillMaxSize(),
-                state = state,
-                indicator = {
-                    PullToRefreshDefaults.Indicator(
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        isRefreshing = isRefreshing,
-                        state = state
-                    )
-                }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    if (uiState.achievements.isNotEmpty()) {
-                        AchievementsStatsCard(
-                            total = uiState.achievements.size,
-                            earned = uiState.achievements.count { it.dateEarned.isNotEmpty() }
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.loadAchievements() },
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    indicator = {
+                        PullToRefreshDefaults.Indicator(
+                            modifier = Modifier.align(Alignment.TopCenter),
+                            isRefreshing = isRefreshing,
+                            state = state
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        if (uiState.achievements.isNotEmpty()) {
+                            AchievementsStatsCard(
+                                total = uiState.achievements.size,
+                                earned = uiState.achievements.count { it.dateEarned.isNotEmpty() }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
 
-                    when {
-                        isRefreshing && uiState.achievements.isEmpty() -> {
-                            LoadingCard(
-                                message = stringResource(R.string.loading_achievements),
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        uiState.errorMessage != null -> {
-                            ErrorCard(
-                                error = uiState.errorMessage ?: "Unknown error",
-                                onRetry = { viewModel.loadAchievements() }
-                            )
-                        }
-                        uiState.achievements.isEmpty() -> {
-                            EmptyAchievementsView(onRefresh = { viewModel.loadAchievements() })
-                        }
-                        else -> {
-                            AchievementsGrid(
-                                achievements = uiState.achievements,
-                                onAchievementClick = { viewModel.showAchievementDetails(it) }
-                            )
+                        when {
+                            isRefreshing && uiState.achievements.isEmpty() -> {
+                                LoadingCard(
+                                    message = stringResource(R.string.loading_achievements),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            uiState.errorMessage != null -> {
+                                ErrorCard(
+                                    error = uiState.errorMessage ?: "Unknown error",
+                                    onRetry = { viewModel.loadAchievements() }
+                                )
+                            }
+                            uiState.achievements.isEmpty() -> {
+                                EmptyAchievementsView(
+                                    onRefresh = { viewModel.loadAchievements() },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            else -> {
+                                AchievementsGrid(
+                                    achievements = uiState.achievements,
+                                    onAchievementClick = { viewModel.showAchievementDetails(it) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }
-            }
         }
 
         if (uiState.showAchievementDetails && uiState.selectedAchievement != null) {
@@ -169,55 +177,44 @@ private fun AchievementsStatsCard(
     total: Int,
     earned: Int
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    AccentGlassSurface(
+        accentColors = listOf(Color(0xFFFFD700), Color(0xFFFFA500)),
+        shape = GlassTokens.CardShape,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0xFFE6A800), Color(0xFFD48400))
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(20.dp)
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Ваши достижения",
-                        style = TextStyle.TitleMedium.value,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Получено $earned из $total",
-                        style = TextStyle.BodyMedium.value,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
+            Column {
+                Text(
+                    text = "Ваши достижения",
+                    style = TextStyle.TitleMedium.value,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Получено $earned из $total",
+                    style = TextStyle.BodyMedium.value,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
 
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.2f),
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.2f),
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }
@@ -235,7 +232,7 @@ fun AchievementsGrid(
         contentPadding = PaddingValues(4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxSize()
     ) {
         items(achievements) { achievement ->
             AchievementCard(
@@ -263,25 +260,16 @@ fun AchievementCard(
         )
     }
 
-    Card(
+    GlassSurface(
         modifier = modifier
             .height(160.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (hasBeenEarned) 4.dp else 1.dp
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        )
+        shape = GlassTokens.CardShape
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(gradientColors),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                .background(brush = Brush.verticalGradient(gradientColors))
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -340,7 +328,7 @@ fun AchievementCard(
                 if (hasBeenEarned) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = GlassTokens.TagShape,
                         color = Color(0xFFFFD700).copy(alpha = 0.2f)
                     ) {
                         Text(
@@ -364,14 +352,10 @@ fun AchievementDetailsDialog(
     val hasBeenEarned = achievement.dateEarned.isNotEmpty()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(
+        GlassDialogSurface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -453,7 +437,7 @@ fun AchievementDetailsDialog(
                     
                     Surface(
                         color = Color(0xFFFFD700).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = GlassTokens.SmallShape
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
@@ -537,6 +521,7 @@ fun EmptyAchievementsView(
         
         Button(
             onClick = onRefresh,
+            shape = GlassTokens.ButtonShape,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary

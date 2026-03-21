@@ -2,7 +2,6 @@ package com.diploma.work.ui.feature.feedback
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,8 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.R
+import androidx.compose.ui.graphics.Color
 import com.diploma.work.ui.DiplomTextField
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassTokens
+
 import com.diploma.work.ui.theme.Text
 import com.diploma.work.ui.theme.TextStyle
 
@@ -51,9 +53,11 @@ fun FeedbackScreen(
     
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Обратная связь", style = TextStyle.TitleLarge.value) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
                     IconButton(onClick = { 
                         try {
@@ -79,6 +83,7 @@ fun FeedbackScreen(
             )
         }
     ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -177,7 +182,7 @@ fun FeedbackScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = GlassTokens.ButtonShape
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(
@@ -196,6 +201,7 @@ fun FeedbackScreen(
 
                 }
             }
+        }
         }
     }
 }

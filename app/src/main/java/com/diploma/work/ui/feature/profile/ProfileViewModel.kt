@@ -14,8 +14,8 @@ import com.diploma.work.data.models.UploadUserAvatarRequest
 import com.diploma.work.data.models.UploadUserAvatarResponse
 import com.diploma.work.data.models.User
 import com.diploma.work.data.repository.UserInfoRepository
-import com.diploma.work.grpc.userinfo.Direction
-import com.diploma.work.grpc.userinfo.Level
+import com.diploma.work.data.models.UserDirection as Direction
+import com.diploma.work.data.models.UserLevel as Level
 import com.diploma.work.ui.base.BaseViewModel
 import com.diploma.work.ui.theme.AppThemeType
 import com.diploma.work.ui.theme.ThemeManager

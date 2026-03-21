@@ -86,6 +86,7 @@ fun CodeHighlighterText(
                 fontFamily = FontFamily.Monospace,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()
             )
         }

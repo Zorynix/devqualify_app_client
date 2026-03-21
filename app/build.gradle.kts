@@ -7,7 +7,6 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
     alias(libs.plugins.compose.compiler)
-    id("com.google.protobuf")
 }
 
 android {
@@ -37,18 +36,16 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain(25)
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -61,14 +58,14 @@ android {
 dependencies {
     configurations.all {
         resolutionStrategy {
-            force("org.jetbrains:annotations:26.0.2")
+            force("org.jetbrains:annotations:26.1.0")
             exclude(group = "org.jetbrains", module = "annotations-java5")
         }
     }
 
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.espresso.remote)
-    val composeBom = platform("androidx.compose:compose-bom:2025.08.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.03.00")
     implementation(libs.material3)
     implementation(libs.ui.tooling.preview)
     debugImplementation(libs.ui.tooling)
@@ -111,7 +108,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.mockk.android)
-    androidTestImplementation("androidx.test:runner:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.junit.ktx)
     debugImplementation(libs.androidx.compose.ui.ui.test.manifest)
@@ -143,11 +140,6 @@ dependencies {
     ksp(libs.kotlinx.metadata.jvm)
     implementation(libs.android.maps.utils)
     implementation(libs.androidx.compose.material3.material3)
-    implementation(libs.grpc.okhttp)
-    implementation(libs.grpc.protobuf)
-    implementation(libs.grpc.stub)
-    implementation(libs.protobuf.java)
-    implementation(libs.javax.annotation.api)
     implementation(libs.androidx.compose.material3.material32)
     implementation(libs.kotlin.reflect)
     implementation(libs.accompanist.swiperefresh)
@@ -163,29 +155,5 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.grpc.stub)
     testImplementation(kotlin("test"))
-}
-
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:4.30.2"
-    }
-    plugins {
-        create("java")
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.72.0"
-        }
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                create("grpc")
-            }
-            it.builtins {
-                create("java")
-            }
-        }
-    }
 }

@@ -1,7 +1,6 @@
 package com.diploma.work.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Refresh
@@ -15,7 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.diploma.work.R
 
-
 @Composable
 fun ErrorCard(
     error: String,
@@ -23,39 +21,37 @@ fun ErrorCard(
     icon: ImageVector = Icons.Default.Error,
     onRetry: (() -> Unit)? = null
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        ),
-        shape = RoundedCornerShape(12.dp)
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = stringResource(R.string.error_short),
-                tint = MaterialTheme.colorScheme.onErrorContainer,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(48.dp)
             )
-            
+
             Text(
                 text = error,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            
+
             if (onRetry != null) {
                 OutlinedButton(
                     onClick = onRetry,
+                    shape = GlassTokens.ButtonShape,
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Icon(
@@ -71,31 +67,28 @@ fun ErrorCard(
     }
 }
 
-
 @Composable
 fun LoadingCard(
     modifier: Modifier = Modifier,
     message: String? = null
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(12.dp)
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(40.dp),
-                color = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(36.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 3.dp
             )
-            
+
             if (message != null) {
                 Text(
                     text = message,
@@ -108,7 +101,6 @@ fun LoadingCard(
     }
 }
 
-
 @Composable
 fun EmptyStateCard(
     title: String = stringResource(R.string.empty_state_title),
@@ -117,17 +109,14 @@ fun EmptyStateCard(
     action: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(12.dp)
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -136,24 +125,24 @@ fun EmptyStateCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier.size(56.dp)
                 )
             }
-            
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
+
             action?.invoke()
         }
     }

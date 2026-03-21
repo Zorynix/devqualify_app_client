@@ -22,7 +22,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.diploma.work.R
 import com.diploma.work.data.models.Article
+import androidx.compose.ui.graphics.Color
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
+
 import com.diploma.work.ui.components.LoadingCard
 import com.orhanobut.logger.Logger
 import java.time.ZoneId
@@ -39,6 +43,7 @@ fun HistoryScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("История") },
@@ -46,15 +51,16 @@ fun HistoryScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
         ) {
             TabRow(
                 selectedTabIndex = uiState.selectedTab.ordinal,
@@ -102,6 +108,7 @@ fun HistoryScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -139,15 +146,15 @@ private fun HistoryArticleCard(
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var showRemoveConfirm by remember { mutableStateOf(false) }
     
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { 
+            .clickable {
                 if (article.url.isNotEmpty()) {
                     uriHandler.openUri(article.url)
                 }
             },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -345,10 +352,11 @@ private fun HistoryArticleCard(
 
 @Composable
 private fun EmptyHistoryCard(selectedTab: HistoryTab) {
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier.padding(32.dp),

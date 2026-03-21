@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -25,8 +24,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,10 +48,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.diploma.work.R
 import com.diploma.work.data.models.QuestionResult
-import com.diploma.work.ui.components.ErrorCard
-import com.diploma.work.ui.components.LoadingCard
-import com.diploma.work.ui.components.CodeHighlighterText
 import com.diploma.work.ui.components.ClickableTextWithLinks
+import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
+import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.navigation.Home
 import com.diploma.work.ui.navigation.safeNavigate
 import com.diploma.work.ui.navigation.safeNavigateBack
@@ -76,11 +75,13 @@ fun TestResultScreen(
     }
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.test_results), style = TextStyle.TitleLarge.value) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
-                    IconButton(onClick = { 
+                    IconButton(onClick = {
                         if (!navController.popBackStack()) {
                             navController.safeNavigate(Home)
                         }
@@ -95,129 +96,117 @@ fun TestResultScreen(
         }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center        ) {
-            if (state.isLoading) {
-                LoadingCard(
-                    message = stringResource(R.string.loading_test_results_message)
-                )            }
-            else if (state.error != null) {
-                ErrorCard(
-                    error = state.error!!,
-                    onRetry = { viewModel.loadTestResult(sessionId) }
-                )
-            } else if (state.result == null) {
-                Text(
-                    text = stringResource(R.string.no_results_found),
-                    style = TextStyle.BodyLarge.value,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    item {
-                        ScoreSection(
-                            score = state.result?.score ?: 0,
-                            totalPoints = state.result?.totalPoints ?: 0,
-                            durationMillis = state.result?.durationMillis ?: 0
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-
-                    item {
-                        Text(
-                            text = stringResource(R.string.feedback),
-                            style = TextStyle.TitleMedium.value,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        ) {
-                            ClickableTextWithLinks(
-                                text = state.result?.feedback ?: "",
-                                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.isLoading) {
+                    LoadingCard(message = stringResource(R.string.loading_test_results_message))
+                } else if (state.error != null) {
+                    ErrorCard(
+                        error = state.error!!,
+                        onRetry = { viewModel.loadTestResult(sessionId) }
+                    )
+                } else if (state.result == null) {
+                    Text(
+                        text = stringResource(R.string.no_results_found),
+                        style = TextStyle.BodyLarge.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        item {
+                            ScoreSection(
+                                score = state.result?.score ?: 0,
+                                totalPoints = state.result?.totalPoints ?: 0,
+                                durationMillis = state.result?.durationMillis ?: 0
                             )
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
 
-                    item {
-                        Text(
-                            text = stringResource(R.string.question_results),
-                            style = TextStyle.TitleMedium.value,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    items(state.result?.questionResults ?: emptyList()) { questionResult ->
-                        QuestionResultItem(questionResult = questionResult)
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.safeNavigate("Home", clearStack = true) },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        item {
+                            Text(
+                                text = stringResource(R.string.feedback),
+                                style = TextStyle.TitleMedium.value,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = stringResource(R.string.home_short)
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(R.string.back_to_home_short), style = TextStyle.LabelLarge.value, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            GlassSurface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = GlassTokens.CardShape
+                            ) {
+                                ClickableTextWithLinks(
+                                    text = state.result?.feedback ?: "",
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
+
+                        item {
+                            Text(
+                                text = stringResource(R.string.question_results),
+                                style = TextStyle.TitleMedium.value,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        items(state.result?.questionResults ?: emptyList()) { questionResult ->
+                            QuestionResultItem(questionResult = questionResult)
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { navController.safeNavigate("Home", clearStack = true) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = GlassTokens.ButtonShape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = stringResource(R.string.home_short)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    stringResource(R.string.back_to_home_short),
+                                    style = TextStyle.LabelLarge.value,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
                     }
                 }
             }
-        }
     }
 }
 
 @Composable
 fun ScoreSection(
-    score: Int, 
-    totalPoints: Int, 
+    score: Int,
+    totalPoints: Int,
     durationMillis: Long,
     modifier: Modifier = Modifier
 ) {
     val percentage = if (totalPoints > 0) (score.toFloat() / totalPoints) * 100 else 0f
     val scoreColor = when {
-        percentage >= 80 -> Color(0xFF4CAF50) // Green
-        percentage >= 60 -> Color(0xFFFFA726) // Orange
-        else -> Color(0xFFF44336) // Red
-    }
-    val scoreBgColor = when {
-        percentage >= 80 -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-        percentage >= 60 -> Color(0xFFFFA726).copy(alpha = 0.1f)
-        else -> Color(0xFFF44336).copy(alpha = 0.1f)
+        percentage >= 80 -> Color(0xFF43E97B)
+        percentage >= 60 -> Color(0xFFFFA726)
+        else -> Color(0xFFF5576C)
     }
 
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier
@@ -225,7 +214,6 @@ fun ScoreSection(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             val emoji = when {
                 percentage >= 80 -> "🎉"
                 percentage >= 60 -> "👍"
@@ -258,7 +246,7 @@ fun ScoreSection(
             Surface(
                 modifier = Modifier.size(140.dp),
                 shape = CircleShape,
-                color = scoreBgColor
+                color = scoreColor.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -282,8 +270,8 @@ fun ScoreSection(
             Spacer(modifier = Modifier.height(20.dp))
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
+                shape = GlassTokens.SmallShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
@@ -312,15 +300,15 @@ fun formatTime(millis: Long): String {
     val seconds = (millis / 1000) % 60
     val minutes = (millis / (1000 * 60)) % 60
     val hours = (millis / (1000 * 60 * 60))
-    
+
     val formatted = if (hours > 0) {
         String.format("%d:%02d:%02d", hours, minutes, seconds)
     } else {
         String.format("%02d:%02d", minutes, seconds)
     }
-    
+
     Logger.d("formatTime: millis=$millis, seconds=${millis/1000}s, formatted=$formatted")
-    
+
     return formatted
 }
 
@@ -329,23 +317,15 @@ fun QuestionResultItem(
     questionResult: QuestionResult,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = if (questionResult.isCorrect)
-        Color(0xFF4CAF50).copy(alpha = 0.1f)
-    else
-        Color(0xFFF44336).copy(alpha = 0.1f)
+    val isCorrect = questionResult.isCorrect
+    val accentColor = if (isCorrect) Color(0xFF43E97B) else Color(0xFFF5576C)
+    val bgAlpha = if (isCorrect) 0.08f else 0.08f
 
-    val accentColor = if (questionResult.isCorrect)
-        Color(0xFF2E7D32)
-    else
-        Color(0xFFC62828)
-
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = bgColor
-        )
+        shape = GlassTokens.CardShape,
+        backgroundColor = accentColor.copy(alpha = bgAlpha),
+        borderColor = accentColor.copy(alpha = 0.2f)
     ) {
         Row(
             modifier = Modifier
@@ -357,20 +337,12 @@ fun QuestionResultItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (questionResult.isCorrect)
-                            Color(0xFF4CAF50).copy(alpha = 0.2f)
-                        else
-                            Color(0xFFF44336).copy(alpha = 0.2f)
-                    ),
+                    .background(accentColor.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (questionResult.isCorrect)
-                        Icons.Default.CheckCircle
-                    else
-                        Icons.Default.Error,
-                    contentDescription = if (questionResult.isCorrect) "Correct" else "Incorrect",
+                    imageVector = if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Error,
+                    contentDescription = if (isCorrect) "Correct" else "Incorrect",
                     modifier = Modifier.size(24.dp),
                     tint = accentColor
                 )
@@ -385,15 +357,15 @@ fun QuestionResultItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (questionResult.isCorrect) stringResource(R.string.correct) else stringResource(R.string.incorrect),
+                        text = if (isCorrect) stringResource(R.string.correct) else stringResource(R.string.incorrect),
                         style = TextStyle.LabelLarge.value,
                         fontWeight = FontWeight.Bold,
                         color = accentColor
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = accentColor.copy(alpha = 0.15f)
+                        shape = GlassTokens.TagShape,
+                        color = accentColor.copy(alpha = 0.12f)
                     ) {
                         Text(
                             text = "+${questionResult.pointsEarned}",
@@ -407,7 +379,7 @@ fun QuestionResultItem(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (!questionResult.isCorrect) {
+                if (!isCorrect) {
                     Text(
                         text = stringResource(R.string.your_answer_format, questionResult.userAnswer),
                         style = TextStyle.BodySmall.value,
@@ -419,16 +391,13 @@ fun QuestionResultItem(
                     Text(
                         text = stringResource(R.string.correct_answer_format, questionResult.correctAnswer),
                         style = TextStyle.BodySmall.value,
-                        color = Color(0xFF2E7D32),
+                        color = Color(0xFF43E97B),
                         fontWeight = FontWeight.Medium
                     )
 
                     if (questionResult.feedback.isNotBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        ClickableTextWithLinks(
-                            text = questionResult.feedback,
-                            modifier = Modifier
-                        )
+                        ClickableTextWithLinks(text = questionResult.feedback)
                     }
                 }
             }

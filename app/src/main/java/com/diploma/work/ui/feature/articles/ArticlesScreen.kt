@@ -30,8 +30,6 @@ import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -44,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -67,6 +66,8 @@ import com.diploma.work.R
 import com.diploma.work.data.models.Article
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
 import com.diploma.work.ui.components.LoadingCard
 import com.orhanobut.logger.Logger
 import java.time.ZoneId
@@ -88,6 +89,7 @@ fun ArticlesScreen(
     
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.articles)) },
@@ -103,7 +105,8 @@ fun ArticlesScreen(
                             contentDescription = stringResource(R.string.filter)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { paddingValues ->
@@ -111,7 +114,6 @@ fun ArticlesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
         ) {
             SearchBar(
                 query = uiState.searchQuery,
@@ -210,13 +212,11 @@ private fun FiltersPanel(
     onClearFilters: () -> Unit,
     onApplyUserPreferences: () -> Unit
 ){
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -375,20 +375,16 @@ private fun ArticleCard(
         colors[kotlin.math.abs(hash) % colors.size]
     }
 
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { 
+            .clickable {
                 onClick()
                 if (article.url.isNotEmpty()) {
                     uriHandler.openUri(article.url)
                 }
             },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        shape = GlassTokens.CardShape
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
 
@@ -589,10 +585,11 @@ private fun ArticleCard(
 
 @Composable
 private fun EmptyStateCard() {
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier.padding(32.dp),

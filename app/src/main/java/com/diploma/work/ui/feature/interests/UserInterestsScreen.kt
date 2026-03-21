@@ -33,8 +33,6 @@ import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -73,6 +71,9 @@ import com.diploma.work.R
 import com.diploma.work.data.models.ArticleDirection
 import com.diploma.work.data.models.ArticleTechnology
 import com.diploma.work.data.models.DeliveryFrequency
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
+
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.theme.TextStyle
 
@@ -88,6 +89,7 @@ fun UserInterestsScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -114,9 +116,7 @@ fun UserInterestsScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         snackbarHost = {
@@ -132,6 +132,7 @@ fun UserInterestsScreen(
             }
         }
     ) { padding ->
+        Box(modifier = Modifier.fillMaxSize()) {
         if (state.isLoading && state.technologies.isEmpty()) {
             LoadingCard(
                 message = stringResource(R.string.loading_user_interests),
@@ -202,7 +203,7 @@ fun UserInterestsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = GlassTokens.ButtonShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
@@ -257,6 +258,7 @@ fun UserInterestsScreen(
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
         }
+        }
     }
 }
 
@@ -279,13 +281,9 @@ private fun TechnologyCategoryCard(
 
     val (categoryColor, categoryIcon) = getCategoryStyle(direction)
 
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = categoryColor.copy(alpha = 0.1f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = GlassTokens.CardShape
     ) {
         Column {
 
@@ -406,12 +404,9 @@ private fun SettingsCard(
     onPushNotificationsChange: (Boolean) -> Unit,
     onArticlesPerDayChange: (Int) -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        shape = GlassTokens.CardShape
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

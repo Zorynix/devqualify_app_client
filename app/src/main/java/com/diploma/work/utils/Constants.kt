@@ -1,28 +1,15 @@
 package com.diploma.work.utils
 
 object Constants {
-    
-    object Network {
-        const val USE_PLAINTEXT = true
 
-        const val AUTH_SERVER_HOST = "172.22.233.86"
-        const val AUTH_SERVER_PORT = 50051
-        const val USER_INFO_SERVER_HOST = "172.22.233.86"
-        const val USER_INFO_SERVER_PORT = 50052
-        const val TESTS_SERVER_HOST = "172.22.233.86"
-        const val TESTS_SERVER_PORT = 50053
-        const val ARTICLES_SERVER_HOST = "172.22.233.86"
-        const val ARTICLES_SERVER_PORT = 50054
-        
+    object Network {
+        const val GATEWAY_BASE_URL = "http://172.22.233.86:8080/api/v1/"
+
         const val CONNECTION_TIMEOUT_SECONDS = 30L
         const val READ_TIMEOUT_SECONDS = 30L
         const val WRITE_TIMEOUT_SECONDS = 30L
-        
-        const val TIMEOUT_SECONDS = 30L
-        const val GRPC_PORT = 50051
-        const val BASE_URL = "http://172.22.233.86"
     }
-    
+
     object PrefsKeys {
         const val APP_SESSION = "app_session"
         const val ACCESS_TOKEN = "access_token"
@@ -41,14 +28,14 @@ object Constants {
         const val LIKED_ARTICLES = "liked_articles"
         const val DISLIKED_ARTICLES = "disliked_articles"
     }
-    
+
     object UI {
         const val DEFAULT_AVATAR_SIZE = 120
         const val AVATAR_BORDER_WIDTH = 2
         const val ANIMATION_DURATION_MS = 300
         const val DEBOUNCE_DELAY_MS = 500L
     }
-    
+
     object Business {
         const val MIN_ARTICLES_PER_DAY = 1
         const val MAX_ARTICLES_PER_DAY = 100
@@ -56,28 +43,28 @@ object Constants {
         const val AVATAR_COMPRESSION_QUALITY = 80
         const val GENERATED_AVATAR_SIZE = 200
     }
-    
+
     object App {
         const val APP_ID = 1
         const val MIN_PASSWORD_LENGTH = 8
         const val MAX_USERNAME_LENGTH = 50
         const val DEFAULT_AVATAR_URL = "https://via.placeholder.com/150"
     }
-    
+
     object Test {
         const val MAX_QUESTIONS_PER_TEST = 50
         const val MIN_QUESTIONS_PER_TEST = 5
         const val DEFAULT_TIME_LIMIT_MINUTES = 30
         const val PASSING_SCORE_PERCENTAGE = 70
     }
-    
+
     object Article {
         const val DEFAULT_PAGE_SIZE = 20
         const val MAX_PAGE_SIZE = 100
         const val MIN_READ_TIME = 1
         const val MAX_READ_TIME = 60
     }
-    
+
     object ErrorMessages {
         const val GENERIC_ERROR = "An error occurred"
         const val NETWORK_ERROR = "Network connection error"

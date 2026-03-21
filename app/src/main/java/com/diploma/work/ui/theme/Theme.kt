@@ -3,7 +3,9 @@ package com.diploma.work.ui.theme
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.ripple
@@ -14,9 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 sealed class AppThemeType {
     object Light : AppThemeType()
@@ -37,7 +37,10 @@ data class ExtendedColorScheme(
     val outlineDanger: Color,
     val backgroundBox: Color,
     val surfaceContainerHigh: Color = Color.Unspecified,
-    val surfaceContainerLow: Color = Color.Unspecified
+    val surfaceContainerLow: Color = Color.Unspecified,
+    val glassBackground: Color = Color.Unspecified,
+    val glassBorder: Color = Color.Unspecified,
+    val glassHighlight: Color = Color.Unspecified
 )
 
 @Immutable
@@ -90,13 +93,31 @@ data class ColorScheme(
                 onPrimary = onPrimary,
                 primaryContainer = primaryContainer,
                 onPrimaryContainer = onPrimaryContainer,
+                secondary = secondary,
+                onSecondary = onSecondary,
+                secondaryContainer = secondaryContainer,
+                onSecondaryContainer = onSecondaryContainer,
+                tertiary = tertiary,
+                onTertiary = onTertiary,
+                tertiaryContainer = tertiaryContainer,
+                onTertiaryContainer = onTertiaryContainer,
                 background = background,
                 onBackground = onBackground,
                 surface = surface,
                 onSurface = onSurface,
+                surfaceVariant = surfaceVariant,
+                onSurfaceVariant = onSurfaceVariant,
                 error = error,
                 onError = onError,
-                outline = outline
+                errorContainer = errorContainer,
+                onErrorContainer = onErrorContainer,
+                outline = outline,
+                outlineVariant = outlineVariant,
+                surfaceContainerLowest = surfaceContainerLowest,
+                surfaceContainerLow = surfaceContainerLow,
+                surfaceContainer = surfaceContainer,
+                surfaceContainerHigh = surfaceContainerHigh,
+                surfaceContainerHighest = surfaceContainerHighest,
             )
         } else {
             lightColorScheme(
@@ -104,13 +125,31 @@ data class ColorScheme(
                 onPrimary = onPrimary,
                 primaryContainer = primaryContainer,
                 onPrimaryContainer = onPrimaryContainer,
+                secondary = secondary,
+                onSecondary = onSecondary,
+                secondaryContainer = secondaryContainer,
+                onSecondaryContainer = onSecondaryContainer,
+                tertiary = tertiary,
+                onTertiary = onTertiary,
+                tertiaryContainer = tertiaryContainer,
+                onTertiaryContainer = onTertiaryContainer,
                 background = background,
                 onBackground = onBackground,
                 surface = surface,
                 onSurface = onSurface,
+                surfaceVariant = surfaceVariant,
+                onSurfaceVariant = onSurfaceVariant,
                 error = error,
                 onError = onError,
-                outline = outline
+                errorContainer = errorContainer,
+                onErrorContainer = onErrorContainer,
+                outline = outline,
+                outlineVariant = outlineVariant,
+                surfaceContainerLowest = surfaceContainerLowest,
+                surfaceContainerLow = surfaceContainerLow,
+                surfaceContainer = surfaceContainer,
+                surfaceContainerHigh = surfaceContainerHigh,
+                surfaceContainerHighest = surfaceContainerHighest,
             )
         }
 
@@ -122,6 +161,9 @@ data class ColorScheme(
             outlineActive = outlineActive,
             outlineDanger = outlineDanger,
             backgroundBox = backgroundBox,
+            glassBackground = if (isDark) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.72f),
+            glassBorder = if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.45f),
+            glassHighlight = if (isDark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.35f),
         )
 }
 
@@ -132,18 +174,36 @@ object AppTheme {
         primaryContainer = primaryContainerLightHighContrast,
         primaryActive = primaryContainerLightHighContrast,
         onPrimary = onPrimaryLightHighContrast,
+        secondary = secondaryLight,
+        onSecondary = onSecondaryLight,
+        secondaryContainer = secondaryContainerLight,
+        onSecondaryContainer = onSecondaryContainerLight,
+        tertiary = tertiaryLight,
+        onTertiary = onTertiaryLight,
+        tertiaryContainer = tertiaryContainerLight,
+        onTertiaryContainer = onTertiaryContainerLight,
         background = backgroundLightHighContrast,
         onBackground = onBackgroundLightHighContrast,
         onBackgroundPositive = secondaryLightHighContrast,
         onBackgroundHint = outlineLightHighContrast,
         surface = surfaceLightHighContrast,
         onSurface = onSurfaceLightHighContrast,
+        surfaceVariant = surfaceVariantLight,
+        onSurfaceVariant = onSurfaceVariantLight,
         error = errorLightHighContrast,
         onError = onErrorLightHighContrast,
+        errorContainer = errorContainerLight,
+        onErrorContainer = onErrorContainerLight,
         outline = outlineLightHighContrast,
         outlineActive = outlineVariantLightHighContrast,
         outlineDanger = errorContainerLightHighContrast,
+        outlineVariant = outlineVariantLight,
         backgroundBox = surfaceContainerLightHighContrast,
+        surfaceContainerLowest = surfaceContainerLowestLight,
+        surfaceContainerLow = surfaceContainerLowLight,
+        surfaceContainer = surfaceContainerLight,
+        surfaceContainerHigh = surfaceContainerHighLight,
+        surfaceContainerHighest = surfaceContainerHighestLight,
         isDark = false
     )
 
@@ -153,18 +213,36 @@ object AppTheme {
         onPrimaryContainer = onPrimaryContainerDarkHighContrast,
         primaryActive = primaryContainerDarkHighContrast,
         onPrimary = onPrimaryDarkHighContrast,
+        secondary = secondaryDark,
+        onSecondary = onSecondaryDark,
+        secondaryContainer = secondaryContainerDark,
+        onSecondaryContainer = onSecondaryContainerDark,
+        tertiary = tertiaryDark,
+        onTertiary = onTertiaryDark,
+        tertiaryContainer = tertiaryContainerDark,
+        onTertiaryContainer = onTertiaryContainerDark,
         background = backgroundDarkHighContrast,
         onBackground = onBackgroundDarkHighContrast,
         onBackgroundPositive = secondaryDarkHighContrast,
         onBackgroundHint = outlineDarkHighContrast,
         surface = surfaceDarkHighContrast,
         onSurface = onSurfaceDarkHighContrast,
+        surfaceVariant = surfaceVariantDark,
+        onSurfaceVariant = onSurfaceVariantDark,
         error = errorDarkHighContrast,
         onError = onErrorDarkHighContrast,
+        errorContainer = errorContainerDark,
+        onErrorContainer = onErrorContainerDark,
         outline = outlineDarkHighContrast,
         outlineActive = tertiaryContainerDarkHighContrast,
         outlineDanger = errorContainerDarkHighContrast,
+        outlineVariant = outlineVariantDark,
         backgroundBox = surfaceContainerDarkHighContrast,
+        surfaceContainerLowest = surfaceContainerLowestDark,
+        surfaceContainerLow = surfaceContainerLowDark,
+        surfaceContainer = surfaceContainerDark,
+        surfaceContainerHigh = surfaceContainerHighDark,
+        surfaceContainerHighest = surfaceContainerHighestDark,
         isDark = true
     )
 }
@@ -198,6 +276,14 @@ val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
 
+val GlassShapes = Shapes(
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
 @Composable
 fun DiplomaWorkTheme(
     themeManager: ThemeManager,
@@ -213,6 +299,7 @@ fun DiplomaWorkTheme(
     MaterialTheme(
         colorScheme = colorScheme.material,
         typography = Typography,
+        shapes = GlassShapes,
     ) {
         CompositionLocalProvider(
             LocalExtendedColors provides colorScheme.extended,

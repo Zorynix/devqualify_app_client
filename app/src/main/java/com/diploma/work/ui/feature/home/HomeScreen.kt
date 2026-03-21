@@ -5,8 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
@@ -33,8 +30,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -45,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,8 +49,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -67,7 +63,11 @@ import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.data.models.Technology
 import com.diploma.work.data.models.TestInfo
+import com.diploma.work.ui.components.AccentGlassSurface
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.navigation.TestDetails
 import com.diploma.work.ui.navigation.safeNavigate
@@ -90,9 +90,11 @@ fun HomeScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.available_tests), style = TextStyle.TitleLarge.value) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
                     IconButton(onClick = {
                         Logger.d("Navigation: Menu button clicked in Home screen")
@@ -113,116 +115,115 @@ fun HomeScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+        Box(
+            modifier = Modifier.padding(paddingValues).fillMaxSize()
         ) {
-            if (showFilterDialog) {
-                AlertDialog(
-                    onDismissRequest = { showFilterDialog = false },
-                    title = { Text(stringResource(R.string.filter), style = TextStyle.TitleLarge.value) },
-                    text = {
-                        Column {
-                            val allText = stringResource(R.string.all)
-
-                            Text(
-                                text = stringResource(R.string.filter_by_direction),
-                                style = TextStyle.LabelMedium.value,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                            ChipGroup(
-                                items = listOf(null) + Direction.entries.filter { it != Direction.UNSPECIFIED },
-                                selectedItem = state.selectedDirection?.toModelDirection(),
-                                onSelectChange = { direction ->
-                                    viewModel.selectDirection(direction?.toProtoDirection())
-                                },
-                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = stringResource(R.string.filter_by_level),
-                                style = TextStyle.LabelMedium.value,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                            ChipGroup(
-                                items = listOf(null) + Level.entries.filter { it != Level.UNSPECIFIED },
-                                selectedItem = state.selectedLevel?.toModelLevel(),
-                                onSelectChange = { level ->
-                                    viewModel.selectLevel(level?.toProtoLevel())
-                                },
-                                chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
-                            )
-
-                            if (state.technologies.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(16.dp))
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (showFilterDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showFilterDialog = false },
+                        shape = GlassTokens.DialogShape,
+                        title = { Text(stringResource(R.string.filter), style = TextStyle.TitleLarge.value) },
+                        text = {
+                            Column {
+                                val allText = stringResource(R.string.all)
 
                                 Text(
-                                    text = stringResource(R.string.filter_by_technology),
+                                    text = stringResource(R.string.filter_by_direction),
                                     style = TextStyle.LabelMedium.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                                 ChipGroup(
-                                    items = listOf(null) + state.technologies,
-                                    selectedItem = state.selectedTechnology,
-                                    onSelectChange = { technology ->
-                                        viewModel.selectTechnology(technology)
+                                    items = listOf(null) + Direction.entries.filter { it != Direction.UNSPECIFIED },
+                                    selectedItem = state.selectedDirection?.toModelDirection(),
+                                    onSelectChange = { direction ->
+                                        viewModel.selectDirection(direction?.toProtoDirection())
                                     },
-                                    chipLabel = { it?.name ?: allText }
+                                    chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
                                 )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Text(
+                                    text = stringResource(R.string.filter_by_level),
+                                    style = TextStyle.LabelMedium.value,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                ChipGroup(
+                                    items = listOf(null) + Level.entries.filter { it != Level.UNSPECIFIED },
+                                    selectedItem = state.selectedLevel?.toModelLevel(),
+                                    onSelectChange = { level ->
+                                        viewModel.selectLevel(level?.toProtoLevel())
+                                    },
+                                    chipLabel = { it?.name?.lowercase()?.replaceFirstChar { c -> c.uppercase() } ?: allText }
+                                )
+
+                                if (state.technologies.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Text(
+                                        text = stringResource(R.string.filter_by_technology),
+                                        style = TextStyle.LabelMedium.value,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                    ChipGroup(
+                                        items = listOf(null) + state.technologies,
+                                        selectedItem = state.selectedTechnology,
+                                        onSelectChange = { technology ->
+                                            viewModel.selectTechnology(technology)
+                                        },
+                                        chipLabel = { it?.name ?: allText }
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showFilterDialog = false }) {
+                                Text(stringResource(R.string.close))
                             }
                         }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = { showFilterDialog = false }
-                        ) {
-                            Text(stringResource(R.string.close))
-                        }
-                    }
-                )
-            }
-
-            if (isLoading) {
-                LoadingCard(
-                    message = stringResource(R.string.loading_tests),
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else if (errorMessage != null) {
-                ErrorCard(
-                    error = errorMessage!!,
-                    onRetry = { viewModel.loadTests() },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else if (state.tests.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_tests_available),
-                        style = TextStyle.BodyLarge.value,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
                     )
                 }
-            } else {
-                TestsListWithCategories(
-                    tests = state.tests,
-                    selectedLevel = state.selectedLevel?.toModelLevel(),
-                    onLevelSelect = { level ->
-                        viewModel.selectLevel(level?.toProtoLevel())
-                    },
-                    onTestSelect = { test ->
-                        navController.safeNavigate("TestDetails/${test.id}")
+
+                if (isLoading) {
+                    LoadingCard(
+                        message = stringResource(R.string.loading_tests),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (errorMessage != null) {
+                    ErrorCard(
+                        error = errorMessage!!,
+                        onRetry = { viewModel.loadTests() },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (state.tests.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_tests_available),
+                            style = TextStyle.BodyLarge.value,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
                     }
-                )
+                } else {
+                    TestsListWithCategories(
+                        tests = state.tests,
+                        selectedLevel = state.selectedLevel?.toModelLevel(),
+                        onLevelSelect = { level ->
+                            viewModel.selectLevel(level?.toProtoLevel())
+                        },
+                        onTestSelect = { test ->
+                            navController.safeNavigate("TestDetails/${test.id}")
+                        }
+                    )
+                }
             }
         }
     }
@@ -239,7 +240,7 @@ private fun TestsListWithCategories(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             Text(
@@ -251,12 +252,12 @@ private fun TestsListWithCategories(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 LevelCategoryCard(
                     level = Level.JUNIOR,
                     icon = Icons.Default.School,
-                    gradientColors = listOf(Color(0xFF4CAF50), Color(0xFF8BC34A)),
+                    gradientColors = listOf(Color(0xFF43E97B), Color(0xFF38F9D7)),
                     testsCount = tests.count { it.level == Level.JUNIOR },
                     isSelected = selectedLevel == Level.JUNIOR,
                     onClick = {
@@ -268,7 +269,7 @@ private fun TestsListWithCategories(
                 LevelCategoryCard(
                     level = Level.MIDDLE,
                     icon = Icons.Default.TrendingUp,
-                    gradientColors = listOf(Color(0xFF2196F3), Color(0xFF03A9F4)),
+                    gradientColors = listOf(Color(0xFF667EEA), Color(0xFF764BA2)),
                     testsCount = tests.count { it.level == Level.MIDDLE },
                     isSelected = selectedLevel == Level.MIDDLE,
                     onClick = {
@@ -280,7 +281,7 @@ private fun TestsListWithCategories(
                 LevelCategoryCard(
                     level = Level.SENIOR,
                     icon = Icons.Default.WorkspacePremium,
-                    gradientColors = listOf(Color(0xFFFF9800), Color(0xFFFF5722)),
+                    gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
                     testsCount = tests.count { it.level == Level.SENIOR },
                     isSelected = selectedLevel == Level.SENIOR,
                     onClick = {
@@ -290,7 +291,6 @@ private fun TestsListWithCategories(
                 )
             }
         }
-
 
         item {
             val filteredTests = if (selectedLevel != null) {
@@ -322,7 +322,6 @@ private fun TestsListWithCategories(
             }
         }
 
-
         val filteredTests = if (selectedLevel != null) {
             tests.filter { it.level == selectedLevel }
         } else {
@@ -335,7 +334,6 @@ private fun TestsListWithCategories(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LevelCategoryCard(
     level: Level,
@@ -353,69 +351,68 @@ private fun LevelCategoryCard(
         else -> ""
     }
 
-    Card(
+    Surface(
         onClick = onClick,
         modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 2.dp
-        )
+        shape = GlassTokens.CardShape,
+        color = Color.Transparent
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(colors = gradientColors),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(12.dp)
+        AccentGlassSurface(
+            accentColors = gradientColors,
+            shape = GlassTokens.CardShape,
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
 
-                    if (isSelected) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color.White.copy(alpha = 0.3f),
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
-                                )
+                        if (isSelected) {
+                            Surface(
+                                shape = GlassTokens.TagShape,
+                                color = Color.White.copy(alpha = 0.3f),
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                Column {
-                    Text(
-                        text = levelName,
-                        style = TextStyle.TitleSmall.value,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "$testsCount тестов",
-                        style = TextStyle.BodySmall.value,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Column {
+                        Text(
+                            text = levelName,
+                            style = TextStyle.TitleSmall.value,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "$testsCount тестов",
+                            style = TextStyle.BodySmall.value,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
         }
@@ -438,6 +435,7 @@ private fun <T> ChipGroup(
                 selected = item == selectedItem,
                 onClick = { onSelectChange(item) },
                 label = { Text(chipLabel(item)) },
+                shape = GlassTokens.ChipShape,
                 leadingIcon = if (item == selectedItem) {
                     {
                         Icon(
@@ -458,22 +456,18 @@ fun TestCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val levelColor = when (test.level) {
-        Level.JUNIOR -> Color(0xFF4CAF50)
-        Level.MIDDLE -> Color(0xFF2196F3)
-        Level.SENIOR -> Color(0xFFFF9800)
+        Level.JUNIOR -> if (isDark) Color(0xFF43E97B) else Color(0xFF1B8A3E)
+        Level.MIDDLE -> if (isDark) Color(0xFF667EEA) else Color(0xFF3A55C7)
+        Level.SENIOR -> if (isDark) Color(0xFFF093FB) else Color(0xFFC040D0)
         else -> MaterialTheme.colorScheme.primary
     }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    GlassCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = GlassTokens.CardShape
     ) {
         Row(
             modifier = Modifier
@@ -481,11 +475,10 @@ fun TestCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Surface(
                 modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = levelColor.copy(alpha = 0.15f)
+                shape = GlassTokens.SmallShape,
+                color = levelColor.copy(alpha = 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -499,9 +492,7 @@ fun TestCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = test.title,
                     style = TextStyle.TitleMedium.value,
@@ -522,30 +513,28 @@ fun TestCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(6.dp)
+                        shape = GlassTokens.TagShape
                     ) {
                         Text(
                             text = test.technologyName,
                             style = TextStyle.LabelSmall.value,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
 
                     Surface(
                         color = levelColor.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(6.dp)
+                        shape = GlassTokens.TagShape
                     ) {
                         Text(
                             text = test.level.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = TextStyle.LabelSmall.value,
                             color = levelColor,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
                 }

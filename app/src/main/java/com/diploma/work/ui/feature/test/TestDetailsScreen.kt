@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,8 +20,6 @@ import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,12 +28,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +46,8 @@ import com.diploma.work.R
 import com.diploma.work.data.models.Direction
 import com.diploma.work.data.models.Level
 import com.diploma.work.ui.components.ErrorCard
+import com.diploma.work.ui.components.GlassSurface
+import com.diploma.work.ui.components.GlassTokens
 import com.diploma.work.ui.components.LoadingCard
 import com.diploma.work.ui.navigation.TestSession
 import com.diploma.work.ui.navigation.safeNavigate
@@ -75,9 +76,11 @@ fun TestDetailsScreen(
     }
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.test_details), style = TextStyle.TitleLarge.value) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
                     IconButton(onClick = { navController.safeNavigateBack() }) {
                         Icon(
@@ -90,225 +93,206 @@ fun TestDetailsScreen(
         }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            if (state.isLoading) {
-                LoadingCard(
-                    message = stringResource(R.string.loading_test_details),
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            else if (state.error != null) {
-                ErrorCard(
-                    error = state.error!!,
-                    onRetry = { viewModel.loadTest(testId) },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else if (state.test == null) {
-                Text(
-                    text = "Тест не найден",
-                    style = TextStyle.BodyLarge.value,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                if (state.isLoading) {
+                    LoadingCard(
+                        message = stringResource(R.string.loading_test_details),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (state.error != null) {
+                    ErrorCard(
+                        error = state.error!!,
+                        onRetry = { viewModel.loadTest(testId) },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (state.test == null) {
+                    Text(
+                        text = "Тест не найден",
+                        style = TextStyle.BodyLarge.value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
+                        GlassSurface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = GlassTokens.CardShape
                         ) {
-                            Text(
-                                text = state.test?.info?.title ?: "",
-                                style = TextStyle.HeadlineMedium.value,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = state.test?.info?.description ?: "",
-                                style = TextStyle.BodyLarge.value,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                TestInfoTag(
-                                    text = state.test?.info?.technologyName ?: "",
-                                    icon = getDirectionIcon(state.test?.info?.direction),
-                                    contentDescription = stringResource(R.string.technology)
-                                )
-
-                                TestInfoTag(
-                                    text = state.test?.info?.level?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "",
-                                    icon = getLevelIcon(state.test?.info?.level),
-                                    contentDescription = stringResource(R.string.level)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Информация о тесте",
-                                style = TextStyle.TitleMedium.value,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
                                 Text(
-                                    text = "Вопросы:",
-                                    style = TextStyle.BodyMedium.value,
+                                    text = state.test?.info?.title ?: "",
+                                    style = TextStyle.HeadlineMedium.value,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = state.test?.info?.description ?: "",
+                                    style = TextStyle.BodyLarge.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(
-                                    text = "${state.test?.info?.questionsCount ?: 0}",
-                                    style = TextStyle.BodyMedium.value,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                            val questionsCount = state.test?.info?.questionsCount ?: 0
-                            val test = state.test
-                            val avgPointsPerQuestion = if (test?.questions?.isNotEmpty() == true) {
-                                test.questions.sumOf { it.points }.toFloat() / test.questions.size
-                            } else 0f
-                            val totalPoints = (avgPointsPerQuestion * questionsCount).toInt()
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Всего очков:",
-                                    style = TextStyle.BodyMedium.value,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "$totalPoints",
-                                    style = TextStyle.BodyMedium.value,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    if (state.hasUnfinishedSession) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = "Незавершенный тест",
-                                        style = TextStyle.TitleMedium.value,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    TestInfoTag(
+                                        text = state.test?.info?.technologyName ?: "",
+                                        icon = getDirectionIcon(state.test?.info?.direction),
+                                        contentDescription = stringResource(R.string.technology)
                                     )
 
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    Text(
-                                        text = stringResource(R.string.continued_test_message, state.lastSavedQuestionIndex + 1),
-                                        style = TextStyle.BodyMedium.value,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    TestInfoTag(
+                                        text = state.test?.info?.level?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "",
+                                        icon = getLevelIcon(state.test?.info?.level),
+                                        contentDescription = stringResource(R.string.level)
                                     )
                                 }
                             }
+                        }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                            Button(
-                                onClick = { viewModel.continueTest() },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiary,
-                                    contentColor = MaterialTheme.colorScheme.onTertiary
-                                )
-                            ) {
+                        GlassSurface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = GlassTokens.CardShape
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
                                 Text(
-                                    "Продолжить тест",
+                                    text = "Информация о тесте",
+                                    style = TextStyle.TitleMedium.value,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Вопросы:",
+                                        style = TextStyle.BodyMedium.value,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "${state.test?.info?.questionsCount ?: 0}",
+                                        style = TextStyle.BodyMedium.value,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                val questionsCount = state.test?.info?.questionsCount ?: 0
+                                val test = state.test
+                                val avgPointsPerQuestion = if (test?.questions?.isNotEmpty() == true) {
+                                    test.questions.sumOf { it.points }.toFloat() / test.questions.size
+                                } else 0f
+                                val totalPoints = (avgPointsPerQuestion * questionsCount).toInt()
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Всего очков:",
+                                        style = TextStyle.BodyMedium.value,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$totalPoints",
+                                        style = TextStyle.BodyMedium.value,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        if (state.hasUnfinishedSession) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                GlassSurface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = GlassTokens.CardShape,
+                                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                    borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = "Незавершенный тест",
+                                            style = TextStyle.TitleMedium.value,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Text(
+                                            text = stringResource(R.string.continued_test_message, state.lastSavedQuestionIndex + 1),
+                                            style = TextStyle.BodyMedium.value,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Button(
+                                    onClick = { viewModel.continueTest() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = GlassTokens.ButtonShape,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                        contentColor = MaterialTheme.colorScheme.onTertiary
+                                    )
+                                ) {
+                                    Text(
+                                        "Продолжить тест",
+                                        style = TextStyle.LabelLarge.value,
+                                        color = MaterialTheme.colorScheme.onTertiary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
+
+                        Button(
+                            onClick = { viewModel.startTest() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = GlassTokens.ButtonShape,
+                            enabled = !state.isStartingTest
+                        ) {
+                            if (state.isStartingTest) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    if (state.hasUnfinishedSession) "Начать заново" else stringResource(R.string.start_test),
                                     style = TextStyle.LabelLarge.value,
-                                    color = MaterialTheme.colorScheme.onTertiary
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    }
-
-                    Button(
-                        onClick = { viewModel.startTest() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isStartingTest
-                    ) {
-                        if (state.isStartingTest) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text(
-                                if (state.hasUnfinishedSession) "Начать заново" else stringResource(R.string.start_test),
-                                style = TextStyle.LabelLarge.value,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
                         }
                     }
                 }
             }
-        }
     }
 }
 
@@ -321,11 +305,11 @@ fun TestInfoTag(
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = RoundedCornerShape(4.dp)
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+        shape = GlassTokens.TagShape
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
